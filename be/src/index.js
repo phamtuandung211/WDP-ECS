@@ -17,7 +17,6 @@ const PORT = process.env.PORT || 5000;
 app.use(morgan("dev"));
 app.use(cors());
 app.use(bodyParser.json());
-
 connectDB();
 
 app.get("/", (req, res) => {
