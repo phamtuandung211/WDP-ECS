@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import userBaseSchema from "./UserBase.schema.js";
+import userBaseSchema from "./UserBase.js";
 import { RANK } from "../constants/Customer.enum.js";
 
 const customerSchema = new mongoose.Schema(

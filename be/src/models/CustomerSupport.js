@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import userBaseSchema from "./UserBase.schema.js";
+import userBaseSchema from "./UserBase.js";
 
 const customerSupportSchema = new mongoose.Schema(
   {

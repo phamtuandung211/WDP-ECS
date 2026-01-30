@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import userBaseSchema from "./UserBase.schema.js";
+import userBaseSchema from "./UserBase.js";
 
 const doctorSchema = new mongoose.Schema(
   {
@@ -15,6 +15,6 @@ const doctorSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-saleStaffSchema.add(userBaseSchema);
+doctorSchema.add(userBaseSchema);
 
-export default mongoose.model("SaleStaff", saleStaffSchema);
+export default mongoose.model("Doctor", doctorSchema);

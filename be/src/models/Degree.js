@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import { CERTIFICATE_STATUS } from "../constants/Certificate.enum";
+import { DEGREE_STATUS } from "../constants/Degree.enum.js";
 
-const certificateSchema = new mongoose.Schema(
+const degreeSchema = new mongoose.Schema(
   {
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -9,24 +9,22 @@ const certificateSchema = new mongoose.Schema(
       required: true,
     },
     name: { type: String, required: true },
-    issuedBy: { type: String, required: true },
-    issueDate: { type: Date, required: true },
     fileUrl: { type: String, required: true },
     status: {
       type: String,
-      enum: Object.values(CERTIFICATE_STATUS),
-      default: CERTIFICATE_STATUS.PENDING,
+      enum: Object.values(DEGREE_STATUS),
+      default: DEGREE_STATUS.PENDING,
     },
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SaleStaff",
     },
     reviewedAt: Date,
-    replacedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Certificate" },
+    replacedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Degree" },
     note: String,
   },
 
   { timestamps: true },
 );
 
-export default mongoose.model("Certificate", certificateSchema);
+export default mongoose.model("Degree", degreeSchema);

@@ -6,9 +6,9 @@ const accountSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     passwordHash: { type: String, required: true },
     role: {
-      type: String,
-      enum: Object.values(ACCOUNT_ROLE),
-      default: ACCOUNT_ROLE.CUSTOMER,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      required: true,
     },
     status: {
       type: String,
