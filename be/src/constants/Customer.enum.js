@@ -1,0 +1,9 @@
+const RANK = {
+  NORMAL: "NORMAL",
+  SILVER: "SILVER",
+  GOLD: "GOLD",
+  PLATINUM: "PLATINUM",
+  DIAMOND: "DIAMOND",
+};
+
+export { RANK };

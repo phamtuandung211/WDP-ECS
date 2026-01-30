@@ -1,0 +1,11 @@
+const SLOT_TYPE = {
+  BASIC: "BASIC",
+  ADVANCED: "ADVANCED",
+};
+
+const SLOT_STATUS = {
+  AVAILABLE: "AVAILABLE",
+  BOOKED: "BOOKED",
+};
+
+export { SLOT_TYPE, SLOT_STATUS };
