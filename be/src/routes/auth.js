@@ -1,6 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+// import User from "../models/User.js";
 import { validateRegister } from "../utils/validators.js";
 
 const router = express.Router();

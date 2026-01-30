@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { CERTIFICATE_STATUS } from "../constants/Certificate.enum";
+import { CERTIFICATE_STATUS } from "../constants/Certificate.enum.js";
 
 const certificateSchema = new mongoose.Schema(
   {

@@ -4,10 +4,9 @@ import morgan from "morgan";
 import cors from "cors";
 import bodyParser from "body-parser";
 import connectDB from "./config/db.js";
-import { errorHandler, authenticate } from "./middleware/auth.js";
+import { errorHandler, authenticate } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.js";
-import servicesRoutes from "./routes/services.js";
-import appointmentsRoutes from "./routes/appointments.js";
+import rolesRoutes from "./routes/role.route.js";
 
 dotenv.config();
 
@@ -24,8 +23,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/services", servicesRoutes);
-app.use("/api/appointments", appointmentsRoutes);
+app.use("/api/roles", rolesRoutes);
 
 app.use(errorHandler);
 

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { SLOT_STATUS, SLOT_TYPE } from "../constants/Slot.enum.js";
 const medicalRecordSchema = new mongoose.Schema(
   {
     appointmentId: {
