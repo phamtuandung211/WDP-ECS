@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ACCOUNT_ROLE, ACCOUNT_STATUS } from "../constants/Account.enum";
+import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
 
 const accountSchema = new mongoose.Schema(
   {
