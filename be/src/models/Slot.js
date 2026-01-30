@@ -9,7 +9,7 @@ const slotSchema = new mongoose.Schema(
     },
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
-    maxPatients: { type: Number, required: true, min: 1 },
+    maxPatients: { type: Number, required: true, min: 1, max: 3 },
     bookedCount: { type: Number, default: 0, min: 0 },
     type: {
       type: String,
