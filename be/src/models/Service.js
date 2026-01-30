@@ -3,12 +3,13 @@ import mongoose from "mongoose";
 const serviceSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    description: String,
+    description: { type: String, required: true },
     price: { type: Number, required: true },
-    duration: Number, // minutes
-    category: String,
-    image: String,
-    isActive: { type: Boolean, default: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SaleStaff",
+      required: true,
+    },
   },
   { timestamps: true },
 );

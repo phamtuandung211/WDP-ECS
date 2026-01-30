@@ -1,31 +1,36 @@
 import mongoose from "mongoose";
+import {
+  APPOINTMENT_TYPE,
+  APPOINTMENT_STATUS,
+} from "../constants/Appointment.enum.js";
 
 const appointmentSchema = new mongoose.Schema(
   {
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+      ref: "Customer",
     },
-    serviceId: {
+    desiredDate: { type: Date, required: true },
+    type: {
+      type: String,
+      enum: Object.values(APPOINTMENT_TYPE),
+    },
+    slotId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Service",
-      required: true,
+      ref: "Slot",
     },
-    doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    date: { type: Date, required: true },
-    time: { type: String, required: true },
+    doctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Doctor",
+    },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "completed", "cancelled"],
-      default: "pending",
+      enum: Object.values(APPOINTMENT_STATUS),
     },
-    notes: String,
-    totalPrice: Number,
-    paymentStatus: {
-      type: String,
-      enum: ["pending", "completed", "failed"],
-      default: "pending",
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SaleStaff",
+      default: null,
     },
   },
   { timestamps: true },
