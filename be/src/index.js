@@ -5,7 +5,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import connectDB from "./config/db.js";
 import { errorHandler, authenticate } from "./middleware/auth.middleware.js";
-import authRoutes from "./routes/auth.js";
+import authRoutes from "./routes/auth.route.js";
 import rolesRoutes from "./routes/role.route.js";
 
 dotenv.config();

@@ -20,6 +20,7 @@ const accountSchema = new mongoose.Schema(
     otpExpiredAt: Date,
     otpAttempts: { type: Number, default: 0, max: 5 },
     otpResendCount: { type: Number, default: 0 },
+    otpResendBlockedUntil: Date,
   },
   { timestamps: true },
 );
