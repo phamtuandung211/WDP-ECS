@@ -12,7 +12,7 @@ const doctorSchema = new mongoose.Schema(
       ref: "CustomerSupport",
     },
   },
-  { timestamps: true },
+  { timestamps: true, _id: true },
 );
 
 doctorSchema.add(userBaseSchema);

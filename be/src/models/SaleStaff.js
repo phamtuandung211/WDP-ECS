@@ -8,7 +8,7 @@ const saleStaffSchema = new mongoose.Schema(
       ref: "Admin",
     },
   },
-  { timestamps: true },
+  { timestamps: true, _id: true },
 );
 
 saleStaffSchema.add(userBaseSchema);

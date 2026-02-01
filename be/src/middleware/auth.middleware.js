@@ -19,11 +19,22 @@ export const authenticate = (req, res, next) => {
 export const authorize =
   (...roles) =>
   (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!roles || roles.length === 0) {
+      return next();
+    }
+
+    const role = req.user.role;
+    if (!role || !roles.includes(role)) {
       return res.status(403).json({ message: "Unauthorized" });
     }
     next();
   };
+
+export const authorizeAny = (roles = []) => authorize(...roles);
 
 export const errorHandler = (err, req, res, next) => {
   console.error(err);

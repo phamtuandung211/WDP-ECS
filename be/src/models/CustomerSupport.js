@@ -8,7 +8,7 @@ const customerSupportSchema = new mongoose.Schema(
       ref: "Admin",
     },
   },
-  { timestamps: true },
+  { timestamps: true, _id: true },
 );
 
 customerSupportSchema.add(userBaseSchema);

@@ -6,7 +6,7 @@ const customerSchema = new mongoose.Schema(
   {
     rank: { type: String, enum: Object.values(RANK), default: RANK.NORMAL },
   },
-  { timestamps: true },
+  { timestamps: true, _id: true },
 );
 
 customerSchema.add(userBaseSchema);
