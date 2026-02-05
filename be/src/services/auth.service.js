@@ -17,6 +17,7 @@ import { buildVerifyOtpMail } from "../utils/mailTemplates.js";
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_MAX_RESEND = 3;
 const OTP_RESEND_BLOCK_SECONDS = 60;
+const RESEND_RESET_WINDOW = 3600 * 1000; // 1 hour in ms
 
 const ensureCustomerRole = async () => {
   let role = await Role.findOne({ name: ROLE_NAME.CUSTOMER });
@@ -161,18 +162,23 @@ export const verifyOtp = async ({ email, otpCode }) => {
   account.otpCodeHash = undefined;
   account.otpExpiredAt = undefined;
   account.otpAttempts = 0;
+  account.otpResendCount = 0;
+  account.otpResendBlockedUntil = undefined;
+  account.otpResendLastResetAt = undefined;
   await account.save();
 
   return { message: "OTP verified successfully" };
 };
 
 export const resendOtp = async ({ email }) => {
-  const emailErrors = {};
-  if (!email || !validator.isEmail(email)) emailErrors.email = "Invalid email";
-  if (Object.keys(emailErrors).length > 0) {
+  const errors = {};
+  if (!email || !validator.isEmail(email)) {
+    errors.email = "Invalid email";
+  }
+  if (Object.keys(errors).length > 0) {
     const err = new Error("Validation failed");
     err.status = 400;
-    err.data = emailErrors;
+    err.data = errors;
     throw err;
   }
 
@@ -188,6 +194,17 @@ export const resendOtp = async ({ email }) => {
   }
 
   const now = new Date();
+
+  if (
+    account.otpResendLastResetAt &&
+    now.getTime() - account.otpResendLastResetAt.getTime() > RESEND_RESET_WINDOW
+  ) {
+    account.otpResendCount = 0;
+    account.otpResendBlockedUntil = undefined;
+    account.otpResendLastResetAt = now;
+  }
+
+  // Check if currently blocked from resending
   if (account.otpResendBlockedUntil && account.otpResendBlockedUntil > now) {
     const waitSeconds = Math.ceil(
       (account.otpResendBlockedUntil.getTime() - now.getTime()) / 1000,
@@ -197,18 +214,28 @@ export const resendOtp = async ({ email }) => {
     throw err;
   }
 
+  // Clear block if expired
+  if (account.otpResendBlockedUntil && account.otpResendBlockedUntil <= now) {
+    account.otpResendBlockedUntil = undefined;
+    account.otpResendCount = 0;
+    account.otpResendLastResetAt = now;
+  }
+
+  // Check if resend limit exceeded
   if (account.otpResendCount >= OTP_MAX_RESEND) {
     account.otpResendBlockedUntil = new Date(
-      Date.now() + OTP_RESEND_BLOCK_SECONDS * 1000,
+      now.getTime() + OTP_RESEND_BLOCK_SECONDS * 1000,
     );
     await account.save();
+
     const err = new Error(
-      `Please wait ${OTP_RESEND_BLOCK_SECONDS}s before resending OTP`,
+      `Too many resend attempts. Please wait ${OTP_RESEND_BLOCK_SECONDS}s`,
     );
     err.status = 429;
     throw err;
   }
 
+  // Generate and send new OTP
   const otpCode = generateOtpCode();
   const otpCodeHash = await hashOtp(otpCode);
   const otpExpiredAt = getOtpExpiry(5);
@@ -217,9 +244,10 @@ export const resendOtp = async ({ email }) => {
   account.otpExpiredAt = otpExpiredAt;
   account.otpAttempts = 0;
   account.otpResendCount += 1;
-  account.otpResendBlockedUntil = undefined;
+  account.otpResendLastResetAt = account.otpResendLastResetAt || now;
   await account.save();
 
+  // Send email (consider using a queue for reliability)
   const mail = buildVerifyOtpMail({ otpCode, expiresAt: otpExpiredAt });
   await sendMail({
     to: account.email,

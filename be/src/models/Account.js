@@ -18,9 +18,10 @@ const accountSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     otpCodeHash: String,
     otpExpiredAt: Date,
-    otpAttempts: { type: Number, default: 0, max: 5 },
-    otpResendCount: { type: Number, default: 0 },
-    otpResendBlockedUntil: Date,
+    otpAttempts: { type: Number, default: 0, max: 5 }, // Số lần thử OTP hiện tại
+    otpResendCount: { type: Number, default: 0 }, // Số lần đã gửi lại OTP trong khung thời gian
+    otpResendBlockedUntil: Date, // Thời gian cho đến khi có thể gửi lại OTP
+    otpResendLastResetAt: Date, // Thời gian lần cuối reset bộ đếm gửi lại OTP
   },
   { timestamps: true },
 );

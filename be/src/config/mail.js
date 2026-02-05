@@ -25,7 +25,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendMail = async ({ to, subject, html, text }) => {
   return transporter.sendMail({
-    from: mailUser,
+    from: `EyesCare Support <${mailUser}>`,
     to,
     subject,
     html,
