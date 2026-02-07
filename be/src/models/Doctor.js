@@ -11,6 +11,10 @@ const doctorSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CustomerSupport",
     },
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomerSupport",
+    },
   },
   { timestamps: true, _id: true },
 );

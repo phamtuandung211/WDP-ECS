@@ -22,6 +22,7 @@ const accountSchema = new mongoose.Schema(
     otpResendCount: { type: Number, default: 0 }, // Số lần đã gửi lại OTP trong khung thời gian
     otpResendBlockedUntil: Date, // Thời gian cho đến khi có thể gửi lại OTP
     otpResendLastResetAt: Date, // Thời gian lần cuối reset bộ đếm gửi lại OTP
+    rejectionReason: String,
   },
   { timestamps: true },
 );

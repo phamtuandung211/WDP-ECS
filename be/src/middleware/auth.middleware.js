@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
 
 export const authenticate = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -42,4 +43,13 @@ export const errorHandler = (err, req, res, next) => {
     message: err.message || "Server error",
     error: process.env.NODE_ENV === "development" ? err : {},
   });
+};
+
+export const blockRejectedAccount = (req, res, next) => {
+  if (req.user.status === ACCOUNT_STATUS.REJECTED) {
+    return res.status(403).json({
+      message: "Account is rejected. Please update profile and resubmit.",
+    });
+  }
+  next();
 };

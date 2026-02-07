@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import { errorHandler, authenticate } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.route.js";
 import rolesRoutes from "./routes/role.route.js";
+import approvalRoutes from "./routes/approval.route.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/approval", approvalRoutes);
 
 app.use(errorHandler);
 
