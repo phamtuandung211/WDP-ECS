@@ -7,6 +7,10 @@ const saleStaffSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
     },
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+    },
   },
   { timestamps: true, _id: true },
 );

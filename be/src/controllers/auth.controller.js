@@ -2,7 +2,8 @@ import {
   registerCustomer,
   verifyOtp,
   resendOtp,
-  loginCustomer,
+  loginService,
+  registerStaffByRole,
 } from "../services/auth.service.js";
 
 export const register = async (req, res) => {
@@ -23,6 +24,38 @@ export const register = async (req, res) => {
   } catch (err) {
     return res.status(err.status || 500).json({
       message: err.message || "Register failed",
+      errors: err.data,
+    });
+  }
+};
+
+export const registerStaff = async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      staffRole,
+      fullName,
+      phone,
+      gender,
+      dateOfBirth,
+      address,
+    } = req.body;
+
+    const result = await registerStaffByRole(
+      email,
+      password,
+      staffRole,
+      fullName,
+      phone,
+      gender,
+      dateOfBirth,
+      address,
+    );
+    return res.status(201).json(result);
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || `Register ${role} failed`,
       errors: err.data,
     });
   }
@@ -60,7 +93,7 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const result = await loginCustomer({ email, password });
+    const result = await loginService({ email, password });
     return res.status(200).json(result);
   } catch (err) {
     return res.status(err.status || 500).json({
