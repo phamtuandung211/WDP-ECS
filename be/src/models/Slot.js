@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { SLOT_STATUS, SLOT_TYPE } from "../constants/Slot.enum.js";
+import { SLOT_STATUS } from "../constants/Slot.enum.js";
 const slotSchema = new mongoose.Schema(
   {
     doctorId: {
@@ -11,18 +11,16 @@ const slotSchema = new mongoose.Schema(
     endTime: { type: Date, required: true },
     maxPatients: { type: Number, required: true, min: 1, max: 3 },
     bookedCount: { type: Number, default: 0, min: 0 },
-    type: {
-      type: String,
-      enum: Object.values(SLOT_TYPE),
-      default: SLOT_TYPE.BASIC,
-    },
     status: {
       type: String,
       enum: Object.values(SLOT_STATUS),
       default: SLOT_STATUS.AVAILABLE,
     },
+    isExclusive: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
+
+slotSchema.index({ doctorId: 1, startTime: 1, endTime: 1 }, { unique: true });
 
 export default mongoose.model("Slot", slotSchema);
