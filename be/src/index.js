@@ -2,7 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
-import bodyParser from "body-parser";
 import connectDB from "./config/db.js";
 import swaggerDocument from "./config/swagger.js";
 import swaggerUi from "swagger-ui-express";
@@ -13,6 +12,10 @@ import approvalRoutes from "./routes/approval.route.js";
 import manageServiceRoutes from "./routes/manageService.route.js";
 import serviceRoutes from "./routes/service.route.js";
 import manageBlogRoutes from "./routes/manageBlog.route.js";
+import appointmentRoutes from "./routes/appointment.route.js";
+import paymentRoutes from "./routes/payment.route.js";
+import slotRoutes from "./routes/slot.route.js";
+import { registerCronJobs } from "./cron/index.js";
 
 dotenv.config();
 
@@ -21,8 +24,12 @@ const PORT = process.env.PORT || 5000;
 
 app.use(morgan("dev"));
 app.use(cors());
-app.use(bodyParser.json());
+
+app.use(express.json());
 connectDB();
+
+// Register cron jobs after DB connection
+registerCronJobs();
 
 app.get("/", (req, res) => {
   res.json({ ok: true, message: "WDP-ECS API running" });
@@ -36,6 +43,9 @@ app.use("/api/approval", approvalRoutes);
 app.use("/api/manage-services", manageServiceRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/manage-blogs", manageBlogRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/slots", slotRoutes);
 
 app.use(errorHandler);
 
