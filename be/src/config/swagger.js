@@ -40,6 +40,25 @@ const options = {
             price: { type: "number", minimum: 0 },
           },
         },
+        Blog: {
+          type: "object",
+          properties: {
+            _id: { type: "string" },
+            title: { type: "string" },
+            content: { type: "string" },
+            createdBy: { type: "string" },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        BlogCreate: {
+          type: "object",
+          required: ["title", "content"],
+          properties: {
+            title: { type: "string" },
+            content: { type: "string" },
+          },
+        },
       },
     },
   },
