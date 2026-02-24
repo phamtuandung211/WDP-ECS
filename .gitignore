@@ -48,10 +48,6 @@ Thumbs.db
 # Vite
 .vite/
 
-# Docker
-.dockerignore
-docker-compose.override.yml
-
 # Misc
 *.pid
 *.seed

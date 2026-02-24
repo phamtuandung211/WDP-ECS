@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Input, Button, Alert } from "./UI";
+import { Input, Button, Alert } from "../components/UI";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");

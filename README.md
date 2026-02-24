@@ -42,7 +42,7 @@ WDP-ECS/
 │   ├── .env.example
 │   ├── .gitignore
 │   ├── README.md
-│   └── MONGODB_SETUP.md
+│   
 │
 ├── fe/                          # Frontend App
 │   ├── src/
@@ -60,7 +60,6 @@ WDP-ECS/
 │   ├── .gitignore
 │   └── README.md
 │
-├── docker-compose.yml          # Docker setup
 ├── .gitignore                  # Root gitignore
 ├── .gitattributes              # Line endings
 └── README.md                   # This file
@@ -100,16 +99,6 @@ npm run dev
 App runs on `http://localhost:3000`
 
 See [fe/README.md](fe/README.md) for details.
-
-### Docker Setup (Optional)
-
-```bash
-docker-compose up
-```
-
-- **Backend:** http://localhost:5000
-- **Frontend:** http://localhost:3000
-- **MongoDB:** localhost:27017
 
 ## Key Features
 
@@ -197,13 +186,6 @@ npm install          # Install dependencies
 npm run dev          # Start dev server
 npm run build        # Build for production
 npm run preview      # Preview production build
-```
-
-**Docker:**
-
-```bash
-docker-compose up    # Start all services
-docker-compose down  # Stop services
 ```
 
 ## Database Models
