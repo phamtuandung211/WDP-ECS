@@ -27,4 +27,28 @@ const router = express.Router();
  */
 router.get("/", list);
 
+/**
+ * @openapi
+ * /api/services/{id}:
+ *   get:
+ *     tags:
+ *       - Service (Customer)
+ *     summary: Chi tiết gói dịch vụ (Service Detail - Customer / Guest)
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: "string" }
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Service"
+ *       404:
+ *         description: Không tìm thấy
+ */
+router.get("/:id", getById);
+
 export default router;
