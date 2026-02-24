@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.route.js";
 import rolesRoutes from "./routes/role.route.js";
 import approvalRoutes from "./routes/approval.route.js";
 import manageServiceRoutes from "./routes/manageService.route.js";
+import serviceRoutes from "./routes/service.route.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/approval", approvalRoutes);
 app.use("/api/manage-services", manageServiceRoutes);
+app.use("/api/services", serviceRoutes);
 
 app.use(errorHandler);
 

@@ -16,7 +16,7 @@ const router = express.Router();
  * /api/manage-services:
  *   get:
  *     tags:
- *       - Manage Service
+ *       - Manage Service (Sale Staff)
  *     summary: Danh sách gói dịch vụ
  *     parameters:
  *       - name: page
@@ -40,7 +40,7 @@ router.get("/", list);
  * /api/manage-services/{id}:
  *   get:
  *     tags:
- *       - Manage Service
+ *       - Manage Service (Sale Staff)
  *     summary: Chi tiết gói dịch vụ
  *     parameters:
  *       - name: id
@@ -60,7 +60,7 @@ router.get("/:id", getById);
  * /api/manage-services:
  *   post:
  *     tags:
- *       - Manage Service
+ *       - Manage Service (Sale Staff)
  *     summary: Tạo gói dịch vụ
  *     security:
  *       - bearerAuth: []
@@ -91,7 +91,7 @@ router.post("/", authenticate, authorize(ROLE_NAME.SALE_STAFF), create);
  * /api/manage-services/{id}:
  *   put:
  *     tags:
- *       - Manage Service
+ *       - Manage Service (Sale Staff)
  *     summary: Cập nhật gói dịch vụ
  *     security:
  *       - bearerAuth: []
@@ -132,7 +132,7 @@ router.put("/:id", authenticate, authorize(ROLE_NAME.SALE_STAFF), update);
  * /api/manage-services/{id}:
  *   delete:
  *     tags:
- *       - Manage Service
+ *       - Manage Service (Sale Staff)
  *     summary: Xóa gói dịch vụ
  *     security:
  *       - bearerAuth: []
