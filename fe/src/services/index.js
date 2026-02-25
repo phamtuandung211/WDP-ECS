@@ -39,6 +39,15 @@ export const serviceService = {
   getById: (id) => apiClient.get(`/services/${id}`),
 };
 
+export const manageServiceService = {
+  getList: (params = {}) =>
+    apiClient.get("/manage-services", { params }),
+  getById: (id) => apiClient.get(`/manage-services/${id}`),
+  create: (data) => apiClient.post("/manage-services", data),
+  update: (id, data) => apiClient.put(`/manage-services/${id}`, data),
+  delete: (id) => apiClient.delete(`/manage-services/${id}`),
+};
+
 export const userService = {
   getProfile: () => apiClient.get("/users/profile"),
   updateProfile: (data) => apiClient.put("/users/profile", data),
