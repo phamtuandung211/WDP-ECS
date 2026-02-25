@@ -1,0 +1,209 @@
+import mongoose from "mongoose";
+import Slot from "../models/Slot.js";
+import Doctor from "../models/Doctor.js";
+import Account from "../models/Account.js";
+import Role from "../models/Role.js";
+import {
+  SLOT_STATUS,
+  WORKING_HOURS,
+  SLOT_DURATION_MINUTES,
+  MAX_PATIENTS,
+} from "../constants/Slot.enum.js";
+import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
+import { ROLE_NAME } from "../constants/Role.enum.js";
+import { APPOINTMENT_TYPE } from "../constants/Appointment.enum.js";
+
+function generateSlotTimesForDate(date) {
+  const slots = [];
+  const d = new Date(date);
+
+  const sessions = [
+    { start: WORKING_HOURS.MORNING_START, end: WORKING_HOURS.MORNING_END },
+    { start: WORKING_HOURS.AFTERNOON_START, end: WORKING_HOURS.AFTERNOON_END },
+  ];
+
+  for (const session of sessions) {
+    let cursor = new Date(d);
+    cursor.setHours(session.start.hour, session.start.minute, 0, 0);
+
+    const sessionEnd = new Date(d);
+    sessionEnd.setHours(session.end.hour, session.end.minute, 0, 0);
+
+    while (cursor < sessionEnd) {
+      const startTime = new Date(cursor);
+      const endTime = new Date(
+        cursor.getTime() + SLOT_DURATION_MINUTES * 60 * 1000,
+      );
+      if (endTime <= sessionEnd) {
+        slots.push({ startTime, endTime });
+      }
+      cursor = endTime;
+    }
+  }
+
+  return slots;
+}
+
+export const generateSlotsForDate = async (date) => {
+  const doctorRole = await Role.findOne({ name: ROLE_NAME.DOCTOR }).lean();
+  if (!doctorRole) {
+    console.warn("[SlotGen] DOCTOR role not found – skipping");
+    return { created: 0 };
+  }
+
+  const doctors = await Doctor.find({
+    approvedBy: { $ne: null },
+  })
+    .populate({
+      path: "accountId",
+      match: {
+        role: doctorRole._id,
+        status: ACCOUNT_STATUS.ACTIVE,
+        isVerified: true,
+      },
+      select: "_id",
+    })
+    .select("_id")
+    .lean();
+
+  const approvedDoctors = doctors.filter((d) => d.accountId);
+  if (!approvedDoctors.length) {
+    return { created: 0 };
+  }
+
+  const slotTimes = generateSlotTimesForDate(date);
+  const bulkOps = [];
+
+  for (const doctor of approvedDoctors) {
+    for (const { startTime, endTime } of slotTimes) {
+      bulkOps.push({
+        updateOne: {
+          filter: {
+            doctorId: doctor._id,
+            startTime,
+            endTime,
+          },
+          update: {
+            $setOnInsert: {
+              doctorId: doctor._id,
+              startTime,
+              endTime,
+              maxPatients: MAX_PATIENTS,
+              bookedCount: 0,
+              status: SLOT_STATUS.AVAILABLE,
+              isExclusive: false,
+            },
+          },
+          upsert: true,
+        },
+      });
+    }
+  }
+
+  if (!bulkOps.length) return { created: 0 };
+
+  const result = await Slot.bulkWrite(bulkOps, { ordered: false });
+  const created = result.upsertedCount || 0;
+
+  console.log(
+    `[SlotGen] Date=${date.toISOString().slice(0, 10)} doctors=${approvedDoctors.length} created=${created}`,
+  );
+
+  return { created };
+};
+
+export const generateSlotsForNextDays = async (days = 7) => {
+  let totalCreated = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 1; i <= days; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() + i);
+    const { created } = await generateSlotsForDate(date);
+    totalCreated += created;
+  }
+
+  return { totalCreated };
+};
+
+export const getAvailableSlots = async (params = {}) => {
+  const { date, doctorId } = params;
+
+  const query = { status: SLOT_STATUS.AVAILABLE };
+
+  if (date) {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+    query.startTime = { $gte: dayStart, $lte: dayEnd };
+  }
+
+  if (doctorId) {
+    query.doctorId = new mongoose.Types.ObjectId(doctorId);
+  }
+
+  // Only return slots that still have capacity
+  query.$expr = { $lt: ["$bookedCount", "$maxPatients"] };
+
+  const slots = await Slot.find(query)
+    .populate("doctorId", "fullName specializations")
+    .sort({ startTime: 1 })
+    .lean();
+
+  return slots;
+};
+
+/**
+ * Atomically book a slot: increment bookedCount and mark BOOKED if full.
+ * Returns the updated slot or null if no capacity.
+ */
+export const bookSlotByType = async (
+  slotId,
+  appointmentType,
+  session = null,
+) => {
+  const opts = session ? { session } : {};
+
+  const slot = await Slot.findOneAndUpdate(
+    {
+      _id: slotId,
+      status: SLOT_STATUS.AVAILABLE,
+      $expr: { $lt: ["$bookedCount", "$maxPatients"] },
+      isExclusive: false, // không cho book nếu đã exclusive
+    },
+    [
+      {
+        $set: {
+          bookedCount: { $add: ["$bookedCount", 1] },
+
+          // Nếu ADVANCED → set exclusive
+          isExclusive: {
+            $cond: [
+              { $eq: [appointmentType, APPOINTMENT_TYPE.ADVANCED] },
+              true,
+              "$isExclusive",
+            ],
+          },
+
+          status:
+            appointmentType === APPOINTMENT_TYPE.ADVANCED
+              ? SLOT_STATUS.BOOKED
+              : {
+                  $cond: {
+                    if: {
+                      $gte: [{ $add: ["$bookedCount", 1] }, "$maxPatients"],
+                    },
+                    then: SLOT_STATUS.BOOKED,
+                    else: SLOT_STATUS.AVAILABLE,
+                  },
+                },
+        },
+      },
+    ],
+    { new: true, ...opts },
+  );
+
+  return slot;
+};
