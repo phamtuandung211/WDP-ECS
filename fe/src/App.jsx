@@ -6,6 +6,7 @@ import { Home } from "./pages/Home";
 import { Services } from "./pages/Services";
 import { LoginPage } from "./pages/Login";
 import { Appointments } from "./pages/Appointments";
+import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
 import "./styles.css";
 
 function ProtectedRoute({ element }) {
@@ -23,6 +24,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/staff/dashboard"
+              element={<ProtectedRoute element={<SaleStaffDashboard />} />}
+            />
             <Route
               path="/appointments"
               element={<ProtectedRoute element={<Appointments />} />}

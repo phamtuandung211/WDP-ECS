@@ -18,6 +18,7 @@ export function Header() {
           <a href="/services">Services</a>
           {user ? (
             <>
+              <a href="/staff/dashboard">Dashboard</a>
               <a href="/appointments">Appointments</a>
               <span className="user-info">{user.email}</span>
               <button onClick={handleLogout} className="btn-logout">
