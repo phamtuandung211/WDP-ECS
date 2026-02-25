@@ -8,6 +8,7 @@ import { LoginPage } from "./pages/Login";
 import { Appointments } from "./pages/Appointments";
 import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
 import { ManageServiceList } from "./pages/ManageServiceList";
+import { ManageServiceForm } from "./pages/ManageServiceForm";
 import "./styles.css";
 
 function ProtectedRoute({ element }) {
@@ -32,6 +33,10 @@ function App() {
             <Route
               path="/staff/manage-services"
               element={<ProtectedRoute element={<ManageServiceList />} />}
+            />
+            <Route
+              path="/staff/manage-services/:id"
+              element={<ProtectedRoute element={<ManageServiceForm />} />}
             />
             <Route
               path="/appointments"

@@ -170,6 +170,27 @@ button {
   margin-top: 4px;
 }
 
+.form-narrow {
+  max-width: 520px;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.form-actions .btn {
+  width: auto;
+  margin-top: 0;
+}
+
 /* Components */
 .btn {
   background-color: #0366d6;
