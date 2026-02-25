@@ -58,6 +58,11 @@ export const manageBlogService = {
   delete: (id) => apiClient.delete(`/manage-blogs/${id}`),
 };
 
+/** Customer/Guest xem blog (read-only) */
+export const blogService = {
+  getList: (params = {}) => apiClient.get("/manage-blogs", { params }),
+};
+
 export const userService = {
   getProfile: () => apiClient.get("/users/profile"),
   updateProfile: (data) => apiClient.put("/users/profile", data),

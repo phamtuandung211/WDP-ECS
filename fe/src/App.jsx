@@ -5,6 +5,7 @@ import { Header, Footer } from "./components/Layout";
 import { Home } from "./pages/Home";
 import { Services } from "./pages/Services";
 import { ServiceDetail } from "./pages/ServiceDetail";
+import { Blogs } from "./pages/Blogs";
 import { LoginPage } from "./pages/Login";
 import { Appointments } from "./pages/Appointments";
 import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
@@ -29,6 +30,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
             <Route path="/services/:id" element={<ServiceDetail />} />
+            <Route path="/blogs" element={<Blogs />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               path="/staff/dashboard"

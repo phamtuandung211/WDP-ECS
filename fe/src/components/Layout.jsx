@@ -16,6 +16,7 @@ export function Header() {
         <nav className="nav">
           <a href="/">Home</a>
           <a href="/services">Services</a>
+          <a href="/blogs">Blog</a>
           {user ? (
             <>
               <a href="/staff/dashboard">Dashboard</a>
