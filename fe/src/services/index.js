@@ -48,6 +48,15 @@ export const manageServiceService = {
   delete: (id) => apiClient.delete(`/manage-services/${id}`),
 };
 
+export const manageBlogService = {
+  getList: (params = {}) =>
+    apiClient.get("/manage-blogs", { params }),
+  getById: (id) => apiClient.get(`/manage-blogs/${id}`),
+  create: (data) => apiClient.post("/manage-blogs", data),
+  update: (id, data) => apiClient.put(`/manage-blogs/${id}`, data),
+  delete: (id) => apiClient.delete(`/manage-blogs/${id}`),
+};
+
 export const userService = {
   getProfile: () => apiClient.get("/users/profile"),
   updateProfile: (data) => apiClient.put("/users/profile", data),
