@@ -10,6 +10,7 @@ import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
 import { ManageServiceList } from "./pages/ManageServiceList";
 import { ManageServiceForm } from "./pages/ManageServiceForm";
 import { ManageBlogList } from "./pages/ManageBlogList";
+import { ManageBlogForm } from "./pages/ManageBlogForm";
 import "./styles.css";
 
 function ProtectedRoute({ element }) {
@@ -42,6 +43,10 @@ function App() {
             <Route
               path="/staff/manage-blogs"
               element={<ProtectedRoute element={<ManageBlogList />} />}
+            />
+            <Route
+              path="/staff/manage-blogs/:id"
+              element={<ProtectedRoute element={<ManageBlogForm />} />}
             />
             <Route
               path="/appointments"
