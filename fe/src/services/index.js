@@ -36,6 +36,7 @@ export const appointmentService = {
 
 export const serviceService = {
   getAll: () => apiClient.get("/services"),
+  getList: (params = {}) => apiClient.get("/services", { params }),
   getById: (id) => apiClient.get(`/services/${id}`),
 };
 

@@ -417,6 +417,24 @@ button {
 }
 
 /* Services Grid */
+.services-page-title {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.services-page-desc {
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.services-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #666;
+  padding: 32px;
+}
+
 .services-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -449,8 +467,48 @@ button {
   margin-bottom: 16px;
 }
 
-.service-card button {
+.service-card button,
+.service-card a.btn {
+  display: block;
   width: 100%;
+  text-align: center;
+  text-decoration: none;
+  margin-top: 12px;
+}
+
+.service-card a.btn:hover {
+  text-decoration: none;
+}
+
+.service-detail-page {
+  max-width: 640px;
+}
+
+.service-detail-card {
+  background: white;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 16px;
+}
+
+.service-detail-title {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.service-detail-desc {
+  color: #666;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.service-detail-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #22863a;
+  margin-bottom: 24px;
 }
 
 /* Appointments */
