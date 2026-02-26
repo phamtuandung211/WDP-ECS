@@ -6,6 +6,7 @@ import { Home } from "./pages/Home";
 import { Services } from "./pages/Services";
 import { ServiceDetail } from "./pages/ServiceDetail";
 import { Blogs } from "./pages/Blogs";
+import { BlogDetail } from "./pages/BlogDetail";
 import { LoginPage } from "./pages/Login";
 import { Appointments } from "./pages/Appointments";
 import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
@@ -31,6 +32,7 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/services/:id" element={<ServiceDetail />} />
             <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               path="/staff/dashboard"

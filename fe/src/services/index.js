@@ -61,6 +61,7 @@ export const manageBlogService = {
 /** Customer/Guest xem blog (read-only) */
 export const blogService = {
   getList: (params = {}) => apiClient.get("/manage-blogs", { params }),
+  getById: (id) => apiClient.get(`/manage-blogs/${id}`),
 };
 
 export const userService = {

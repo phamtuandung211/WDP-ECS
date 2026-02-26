@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { blogService } from "../services";
 import { Loading, Alert } from "../components/UI";
 
@@ -75,6 +76,9 @@ export function Blogs() {
             <article key={blog._id} className="blog-card">
               <h3 className="blog-card-title">{blog.title}</h3>
               <p className="blog-card-content">{truncate(blog.content, 120)}</p>
+              <Link to={`/blogs/${blog._id}`} className="btn btn-primary">
+                Xem chi tiết
+              </Link>
             </article>
           ))
         ) : (
