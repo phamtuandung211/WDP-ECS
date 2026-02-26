@@ -6,7 +6,7 @@ const doctorSchema = new mongoose.Schema(
     specializations: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Specialization" },
     ],
-    experienceYears: { type: Number, default: 0 },
+    experienceYears: { type: Number, default: 1 },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CustomerSupport",

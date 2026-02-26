@@ -67,3 +67,8 @@ export const userService = {
   getProfile: () => apiClient.get("/users/profile"),
   updateProfile: (data) => apiClient.put("/users/profile", data),
 };
+
+export const doctorService = {
+  getAllDoctor: () => apiClient.get("/doctors"),
+  getDoctorById: (id) => apiClient.get(`/doctors/${id}`)
+}
