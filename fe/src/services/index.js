@@ -58,10 +58,10 @@ export const manageBlogService = {
   delete: (id) => apiClient.delete(`/manage-blogs/${id}`),
 };
 
-/** Customer/Guest xem blog (read-only) */
+/** Customer/Guest xem blog (read-only) - API riêng /api/blogs */
 export const blogService = {
-  getList: (params = {}) => apiClient.get("/manage-blogs", { params }),
-  getById: (id) => apiClient.get(`/manage-blogs/${id}`),
+  getList: (params = {}) => apiClient.get("/blogs", { params }),
+  getById: (id) => apiClient.get(`/blogs/${id}`),
 };
 
 export const userService = {
