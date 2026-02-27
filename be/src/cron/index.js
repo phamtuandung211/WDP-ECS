@@ -7,13 +7,24 @@ import { autoExpirePendingAppointments } from "../services/appointment.service.j
  * Call this once after DB connection is established.
  */
 export const registerCronJobs = () => {
-  // ──────────────────────────────────────────
-  // 1. Auto-generate slots – every day at 00:00
-  // ──────────────────────────────────────────
+  // Run immediately when server starts
+  (async () => {
+    console.log("[Startup] Generating slots for next 7 days...");
+    try {
+      const { totalCreated } = await generateSlotsForNextDays(7);
+      console.log(
+        `[Startup] Slot generation complete. Created: ${totalCreated}`,
+      );
+    } catch (err) {
+      console.error("[Startup] Slot generation failed:", err.message);
+    }
+  })();
+
+  // 1. Run every day at 00:00 VN
   cron.schedule(
-    "* * * * *",
+    "0 0 * * *",
     async () => {
-      console.log("[Cron] Generating slots for next 7 days…");
+      console.log("[Cron] Generating slots for next 7 days...");
       try {
         const { totalCreated } = await generateSlotsForNextDays(7);
         console.log(
@@ -28,9 +39,7 @@ export const registerCronJobs = () => {
     },
   );
 
-  // ──────────────────────────────────────────
-  // 2. Auto-cancel expired appointments – every minute
-  // ──────────────────────────────────────────
+  // 2. Auto-expire every minute
   cron.schedule(
     "* * * * *",
     async () => {

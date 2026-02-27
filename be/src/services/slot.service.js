@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+
 import Slot from "../models/Slot.js";
 import Doctor from "../models/Doctor.js";
 import Account from "../models/Account.js";
@@ -12,6 +16,9 @@ import {
 import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
 import { ROLE_NAME } from "../constants/Role.enum.js";
 import { APPOINTMENT_TYPE } from "../constants/Appointment.enum.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 function generateSlotTimesForDate(date) {
   const slots = [];
@@ -114,12 +121,10 @@ export const generateSlotsForDate = async (date) => {
 
 export const generateSlotsForNextDays = async (days = 7) => {
   let totalCreated = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = dayjs().tz("Asia/Ho_Chi_Minh").startOf("day");
 
   for (let i = 1; i <= days; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
+    const date = today.add(i, "day").toDate();
     const { created } = await generateSlotsForDate(date);
     totalCreated += created;
   }
