@@ -13,10 +13,13 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { data } = await authService.login(email, password);
-      authService.setToken(data.token);
-      authService.setUser(data.user);
-      setUser(data.user);
-      return data.user;
+      // Support different backend shapes: { token, user } or { accessToken }
+      const token = data?.token || data?.accessToken || data?.access_token;
+      if (token) authService.setToken(token);
+      const userData = data?.user || { email };
+      authService.setUser(userData);
+      setUser(userData);
+      return userData;
     } catch (err) {
       const message = err.response?.data?.message || "Login failed";
       setError(message);
@@ -26,14 +29,44 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const register = useCallback(async (email, password, name, role) => {
+  const register = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await authService.register(email, password, name, role);
+      const { data } = await authService.register(payload);
       return data;
     } catch (err) {
       const message = err.response?.data?.message || "Registration failed";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await authService.verifyOtp(payload);
+      return data;
+    } catch (err) {
+      const message = err.response?.data?.message || "Verify OTP failed";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const resendOtp = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await authService.resendOtp(payload);
+      return data;
+    } catch (err) {
+      const message = err.response?.data?.message || "Resend OTP failed";
       setError(message);
       throw err;
     } finally {
@@ -47,8 +80,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, error, login, register, logout }),
-    [user, loading, error, login, register, logout],
+    () => ({
+      user,
+      loading,
+      error,
+      login,
+      register,
+      verifyOtp,
+      resendOtp,
+      logout,
+    }),
+    [user, loading, error, login, register, verifyOtp, resendOtp, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

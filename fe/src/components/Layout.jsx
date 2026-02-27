@@ -20,7 +20,7 @@ export function Header() {
             <>
               <a href="/staff/dashboard">Dashboard</a>
               <a href="/appointments">Appointments</a>
-              <span className="user-info">{user.email}</span>
+              <span className="user-info">Xin chào, {user.fullName || user.name || user.email}</span>
               <button onClick={handleLogout} className="btn-logout">
                 Logout
               </button>
