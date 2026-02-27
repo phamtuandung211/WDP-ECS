@@ -14,7 +14,13 @@ export const authService = {
 
   getCurrentUser: () => {
     const user = localStorage.getItem("user");
-    return user ? JSON.parse(user) : null;
+    if (!user || user === "undefined") return null;
+    try {
+      return JSON.parse(user);
+    } catch {
+      localStorage.removeItem("user");
+      return null;
+    }
   },
 
   setToken: (token) => {
@@ -58,7 +64,6 @@ export const manageBlogService = {
   delete: (id) => apiClient.delete(`/manage-blogs/${id}`),
 };
 
-/** Customer/Guest xem blog (read-only) - API riêng /api/blogs */
 export const blogService = {
   getList: (params = {}) => apiClient.get("/blogs", { params }),
   getById: (id) => apiClient.get(`/blogs/${id}`),
