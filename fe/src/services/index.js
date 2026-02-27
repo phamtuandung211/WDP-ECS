@@ -1,8 +1,12 @@
 import apiClient from "./apiClient";
 
 export const authService = {
-  register: (email, password, name, role = "customer") =>
-    apiClient.post("/auth/register", { email, password, name, role }),
+  register: (payload) => apiClient.post("/auth/register", payload),
+
+  verifyOtp: ({ email, otpCode }) =>
+    apiClient.post("/auth/verify-otp", { email, otpCode }),
+
+  resendOtp: ({ email }) => apiClient.post("/auth/resend-otp", { email }),
 
   login: (email, password) =>
     apiClient.post("/auth/login", { email, password }),
@@ -14,21 +18,34 @@ export const authService = {
 
   getCurrentUser: () => {
     const user = localStorage.getItem("user");
-    if (!user || user === "undefined") return null;
+    if (!user || user === "undefined" || user === "null") {
+      // cleanup invalid stored values
+      localStorage.removeItem("user");
+      return null;
+    }
     try {
       return JSON.parse(user);
-    } catch {
+    } catch (err) {
+      console.error("Failed to parse user from localStorage:", err);
       localStorage.removeItem("user");
       return null;
     }
   },
 
   setToken: (token) => {
-    localStorage.setItem("token", token);
+    if (token === undefined || token === null) {
+      localStorage.removeItem("token");
+    } else {
+      localStorage.setItem("token", token);
+    }
   },
 
   setUser: (user) => {
-    localStorage.setItem("user", JSON.stringify(user));
+    if (user === undefined || user === null) {
+      localStorage.removeItem("user");
+    } else {
+      localStorage.setItem("user", JSON.stringify(user));
+    }
   },
 };
 
@@ -47,8 +64,7 @@ export const serviceService = {
 };
 
 export const manageServiceService = {
-  getList: (params = {}) =>
-    apiClient.get("/manage-services", { params }),
+  getList: (params = {}) => apiClient.get("/manage-services", { params }),
   getById: (id) => apiClient.get(`/manage-services/${id}`),
   create: (data) => apiClient.post("/manage-services", data),
   update: (id, data) => apiClient.put(`/manage-services/${id}`, data),
@@ -56,8 +72,7 @@ export const manageServiceService = {
 };
 
 export const manageBlogService = {
-  getList: (params = {}) =>
-    apiClient.get("/manage-blogs", { params }),
+  getList: (params = {}) => apiClient.get("/manage-blogs", { params }),
   getById: (id) => apiClient.get(`/manage-blogs/${id}`),
   create: (data) => apiClient.post("/manage-blogs", data),
   update: (id, data) => apiClient.put(`/manage-blogs/${id}`, data),
