@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { manageServiceService } from "../services";
 import { Loading, Alert } from "../components/UI";
+import { PageHeader } from "../components/PageHeader";
+import { SearchForm } from "../components/SearchForm";
+import { Pagination } from "../components/Pagination";
 
 export function ManageServiceList() {
   const [result, setResult] = useState({ data: [], metadata: {} });
@@ -33,40 +36,34 @@ export function ManageServiceList() {
     fetchList();
   }, [page, search]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setPage(1);
-    setSearch(e.target.search?.value?.trim() ?? "");
-  };
-
   const totalPages = metadata?.totalPages ?? 1;
 
   if (loading && !services?.length) return <Loading />;
 
   return (
     <div className="page manage-service-list-page">
-      <div className="page-header">
-        <div>
-          <Link to="/staff/dashboard" className="back-link">← Dashboard</Link>
-          <h1 className="page-title">Quản lý gói dịch vụ</h1>
-        </div>
-        <Link to="/staff/manage-services/new" className="btn btn-primary">
-          Thêm gói dịch vụ
-        </Link>
-      </div>
+      <PageHeader
+        backTo="/staff/dashboard"
+        backLabel="← Dashboard"
+        title="Quản lý gói dịch vụ"
+        action={
+          <Link to="/staff/manage-services/new" className="btn btn-primary">
+            Thêm gói dịch vụ
+          </Link>
+        }
+      />
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <form onSubmit={handleSearchSubmit} className="search-form">
-        <input
-          type="text"
-          name="search"
-          className="form-input search-input"
-          placeholder="Tìm theo tên hoặc mô tả..."
-          defaultValue={search}
-        />
-        <button type="submit" className="btn btn-secondary">Tìm kiếm</button>
-      </form>
+      <SearchForm
+        placeholder="Tìm theo tên hoặc mô tả..."
+        defaultValue={search}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setPage(1);
+          setSearch(e.target.search?.value?.trim() ?? "");
+        }}
+      />
 
       <div className="table-wrap">
         <table className="data-table">
@@ -106,29 +103,13 @@ export function ManageServiceList() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Trước
-          </button>
-          <span className="pagination-info">
-            Trang {page} / {totalPages} (tổng {metadata?.total ?? 0})
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Sau
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={metadata?.total}
+        onPrev={() => setPage((p) => p - 1)}
+        onNext={() => setPage((p) => p + 1)}
+      />
     </div>
   );
 }
