@@ -1,4 +1,5 @@
 import React, { createContext, useState, useCallback, useMemo } from "react";
+import { jwtDecode } from "jwt-decode";
 import { authService } from "../services";
 
 export const AuthContext = createContext();
@@ -13,10 +14,13 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { data } = await authService.login(email, password);
-      // Support different backend shapes: { token, user } or { accessToken }
       const token = data?.token || data?.accessToken || data?.access_token;
       if (token) authService.setToken(token);
-      const userData = data?.user || { email };
+      const payload = token ? jwtDecode(token) : {};
+      const userData = data?.user || {
+        email,
+        role: payload.role || data?.role,
+      };
       authService.setUser(userData);
       setUser(userData);
       return userData;
