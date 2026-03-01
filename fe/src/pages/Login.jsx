@@ -12,8 +12,12 @@ export function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
-      navigate("/");
+      const user = await login(email, password);
+      if (user?.role === "SALE_STAFF") {
+        navigate("/staff/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error("Login error:", err);
     }

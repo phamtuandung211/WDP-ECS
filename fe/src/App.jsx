@@ -6,7 +6,11 @@ import { Home } from "./pages/Home";
 import { Services } from "./pages/Services";
 import { ServiceDetail } from "./pages/ServiceDetail";
 import { Blogs } from "./pages/Blogs";
+import { BlogDetail } from "./pages/BlogDetail";
 import { LoginPage } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { Verify } from "./pages/Verify";
+import { VerifySuccess } from "./pages/VerifySuccess";
 import { Appointments } from "./pages/Appointments";
 import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
 import { ManageServiceList } from "./pages/ManageServiceList";
@@ -29,8 +33,12 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify" element={<Verify />} />
+            <Route path="/verify/success" element={<VerifySuccess />} />
             <Route path="/services/:id" element={<ServiceDetail />} />
             <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               path="/staff/dashboard"

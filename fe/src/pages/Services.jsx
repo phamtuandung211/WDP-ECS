@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { serviceService } from "../services";
 import { Loading, Alert } from "../components/UI";
+import { SearchForm } from "../components/SearchForm";
+import { Pagination } from "../components/Pagination";
 
 export function Services() {
   const [result, setResult] = useState({ data: [], metadata: {} });
@@ -33,12 +35,6 @@ export function Services() {
     fetchList();
   }, [page, search]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setPage(1);
-    setSearch(e.target.search?.value?.trim() ?? "");
-  };
-
   const totalPages = metadata?.totalPages ?? 1;
 
   if (loading && !services?.length) return <Loading />;
@@ -52,18 +48,15 @@ export function Services() {
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <form onSubmit={handleSearchSubmit} className="search-form">
-        <input
-          type="text"
-          name="search"
-          className="form-input search-input"
-          placeholder="Tìm theo tên hoặc mô tả..."
-          defaultValue={search}
-        />
-        <button type="submit" className="btn btn-secondary">
-          Tìm kiếm
-        </button>
-      </form>
+      <SearchForm
+        placeholder="Tìm theo tên hoặc mô tả..."
+        defaultValue={search}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setPage(1);
+          setSearch(e.target.search?.value?.trim() ?? "");
+        }}
+      />
 
       <div className="services-grid">
         {services?.length ? (
@@ -86,29 +79,13 @@ export function Services() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Trước
-          </button>
-          <span className="pagination-info">
-            Trang {page} / {totalPages} (tổng {metadata?.total ?? 0})
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Sau
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={metadata?.total}
+        onPrev={() => setPage((p) => p - 1)}
+        onNext={() => setPage((p) => p + 1)}
+      />
     </div>
   );
 }

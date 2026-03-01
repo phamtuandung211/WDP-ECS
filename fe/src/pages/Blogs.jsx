@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { blogService } from "../services";
 import { Loading, Alert } from "../components/UI";
+import { SearchForm } from "../components/SearchForm";
+import { Pagination } from "../components/Pagination";
 
 function truncate(str, maxLen) {
   if (!str) return "";
@@ -37,12 +40,6 @@ export function Blogs() {
     fetchList();
   }, [page, search]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setPage(1);
-    setSearch(e.target.search?.value?.trim() ?? "");
-  };
-
   const totalPages = metadata?.totalPages ?? 1;
 
   if (loading && !blogs?.length) return <Loading />;
@@ -56,18 +53,15 @@ export function Blogs() {
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <form onSubmit={handleSearchSubmit} className="search-form">
-        <input
-          type="text"
-          name="search"
-          className="form-input search-input"
-          placeholder="Tìm theo tiêu đề hoặc nội dung..."
-          defaultValue={search}
-        />
-        <button type="submit" className="btn btn-secondary">
-          Tìm kiếm
-        </button>
-      </form>
+      <SearchForm
+        placeholder="Tìm theo tiêu đề hoặc nội dung..."
+        defaultValue={search}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setPage(1);
+          setSearch(e.target.search?.value?.trim() ?? "");
+        }}
+      />
 
       <div className="blogs-grid">
         {blogs?.length ? (
@@ -75,6 +69,9 @@ export function Blogs() {
             <article key={blog._id} className="blog-card">
               <h3 className="blog-card-title">{blog.title}</h3>
               <p className="blog-card-content">{truncate(blog.content, 120)}</p>
+              <Link to={`/blogs/${blog._id}`} className="btn btn-primary">
+                Xem chi tiết
+              </Link>
             </article>
           ))
         ) : (
@@ -82,29 +79,13 @@ export function Blogs() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Trước
-          </button>
-          <span className="pagination-info">
-            Trang {page} / {totalPages} (tổng {metadata?.total ?? 0})
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Sau
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={metadata?.total}
+        onPrev={() => setPage((p) => p - 1)}
+        onNext={() => setPage((p) => p + 1)}
+      />
     </div>
   );
 }

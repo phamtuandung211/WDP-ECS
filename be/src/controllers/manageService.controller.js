@@ -6,7 +6,6 @@ import {
   updateService,
   deleteService,
 } from "../services/manageService.service.js";
-import { ROLE_NAME } from "../constants/Role.enum.js";
 
 export const list = async (req, res) => {
   try {

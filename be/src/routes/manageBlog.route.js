@@ -17,7 +17,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Manage Blog (Sale Staff)
- *     summary: Danh sách bài blog
+ *     summary: Danh sách bài blog (Sale Staff quản lý)
  *     parameters:
  *       - name: page
  *         in: query
@@ -41,7 +41,7 @@ router.get("/", list);
  *   get:
  *     tags:
  *       - Manage Blog (Sale Staff)
- *     summary: Chi tiết bài blog
+ *     summary: Chi tiết bài blog (Sale Staff)
  *     parameters:
  *       - name: id
  *         in: path

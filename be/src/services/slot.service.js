@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+
 import Slot from "../models/Slot.js";
 import Doctor from "../models/Doctor.js";
 import Account from "../models/Account.js";
@@ -13,9 +17,13 @@ import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
 import { ROLE_NAME } from "../constants/Role.enum.js";
 import { APPOINTMENT_TYPE } from "../constants/Appointment.enum.js";
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 function generateSlotTimesForDate(date) {
   const slots = [];
-  const d = new Date(date);
+
+  const base = dayjs(date).tz("Asia/Ho_Chi_Minh").startOf("day");
 
   const sessions = [
     { start: WORKING_HOURS.MORNING_START, end: WORKING_HOURS.MORNING_END },
@@ -23,21 +31,29 @@ function generateSlotTimesForDate(date) {
   ];
 
   for (const session of sessions) {
-    let cursor = new Date(d);
-    cursor.setHours(session.start.hour, session.start.minute, 0, 0);
+    let cursor = base
+      .hour(session.start.hour)
+      .minute(session.start.minute)
+      .second(0)
+      .millisecond(0);
 
-    const sessionEnd = new Date(d);
-    sessionEnd.setHours(session.end.hour, session.end.minute, 0, 0);
+    const sessionEnd = base
+      .hour(session.end.hour)
+      .minute(session.end.minute)
+      .second(0)
+      .millisecond(0);
 
-    while (cursor < sessionEnd) {
-      const startTime = new Date(cursor);
-      const endTime = new Date(
-        cursor.getTime() + SLOT_DURATION_MINUTES * 60 * 1000,
-      );
-      if (endTime <= sessionEnd) {
-        slots.push({ startTime, endTime });
-      }
-      cursor = endTime;
+    while (cursor.isBefore(sessionEnd)) {
+      const end = cursor.add(SLOT_DURATION_MINUTES, "minute");
+
+      if (end.isAfter(sessionEnd)) break;
+
+      slots.push({
+        startTime: cursor.toDate(),
+        endTime: end.toDate(),
+      });
+
+      cursor = end;
     }
   }
 
@@ -114,12 +130,10 @@ export const generateSlotsForDate = async (date) => {
 
 export const generateSlotsForNextDays = async (days = 7) => {
   let totalCreated = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = dayjs().tz("Asia/Ho_Chi_Minh").startOf("day");
 
   for (let i = 1; i <= days; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
+    const date = today.add(i, "day").toDate();
     const { created } = await generateSlotsForDate(date);
     totalCreated += created;
   }

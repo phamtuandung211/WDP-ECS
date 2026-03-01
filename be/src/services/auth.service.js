@@ -431,7 +431,15 @@ export const resendOtp = async ({ email }) => {
     html: mail.html,
   });
 
-  return { message: "OTP resent successfully" };
+  const result = { message: "OTP resent successfully" };
+  if (
+    process.env.NODE_ENV !== "production" ||
+    process.env.SHOW_OTP === "true"
+  ) {
+    // For development/testing only: include OTP in response so frontend can log it
+    result.otp = otpCode;
+  }
+  return result;
 };
 
 export const loginService = async ({ email, password }) => {

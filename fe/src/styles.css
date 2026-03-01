@@ -557,6 +557,44 @@ button {
   margin: 0;
 }
 
+.blog-card .btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  margin-top: 12px;
+}
+
+.blog-card .btn:hover {
+  text-decoration: none;
+}
+
+/* Blog Detail (Customer) */
+.blog-detail-page {
+  max-width: 720px;
+}
+
+.blog-detail-card {
+  background: white;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 16px;
+}
+
+.blog-detail-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.blog-detail-content {
+  color: #333;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin-bottom: 24px;
+}
+
 /* Appointments */
 .appointments-list {
   display: grid;
