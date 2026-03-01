@@ -23,7 +23,10 @@
     "nodemailer": "^6.10.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "validator": "^13.11.0"
+    "validator": "^13.11.0",
+    "multer": "^2.0.2",
+    "cloudinary": "^1.41.0",
+    "multer-storage-cloudinary": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
