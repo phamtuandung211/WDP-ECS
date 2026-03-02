@@ -17,11 +17,17 @@ import { ManageServiceList } from "./pages/ManageServiceList";
 import { ManageServiceForm } from "./pages/ManageServiceForm";
 import { ManageBlogList } from "./pages/ManageBlogList";
 import { ManageBlogForm } from "./pages/ManageBlogForm";
+import { ProfilePage } from "./pages/ProfilePage";
+import { MedicalRecordsPage } from "./pages/MedicalRecordsPage";
+import { FeedbacksPage } from "./pages/FeedbacksPage";
+import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import "./styles.css";
 
-function ProtectedRoute({ element }) {
+function ProtectedRoute({ element, allowedRoles }) {
   const { user } = useAuth();
-  return user ? element : <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" />;
+  return element;
 }
 
 function App() {
@@ -63,6 +69,28 @@ function App() {
             <Route
               path="/appointments"
               element={<ProtectedRoute element={<Appointments />} />}
+            />
+            {/* New API pages */}
+            <Route
+              path="/profile"
+              element={<ProtectedRoute element={<ProfilePage />} />}
+            />
+            <Route
+              path="/medical-records"
+              element={<ProtectedRoute element={<MedicalRecordsPage />} />}
+            />
+            <Route
+              path="/feedbacks"
+              element={<ProtectedRoute element={<FeedbacksPage />} />}
+            />
+            <Route
+              path="/admin/statistics"
+              element={
+                <ProtectedRoute
+                  element={<AdminStatisticsPage />}
+                  allowedRoles={["ADMIN"]}
+                />
+              }
             />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

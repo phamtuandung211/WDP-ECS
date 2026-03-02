@@ -650,3 +650,239 @@ button {
     padding: 16px 8px;
   }
 }
+
+/* ── Profile Page ─────────────────────────────────────────────────── */
+.profile-card {
+  background: white;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  max-width: 760px;
+}
+
+.profile-meta {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.profile-meta p { margin: 0; font-size: 14px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0 24px;
+}
+
+.mb-3 { margin-bottom: 12px; }
+
+/* ── Detail grid (Medical record detail) ─────────────────────────── */
+.record-detail {
+  background: white;
+  border-radius: 8px;
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+  border-bottom: 2px solid #e8e8e8;
+  padding-bottom: 8px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: .5px;
+}
+
+/* ── Filter bar ──────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-select {
+  width: auto;
+  min-width: 160px;
+}
+
+.stats-filter .form-label {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.stats-filter .form-input {
+  width: auto;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-success { background: #dafbe1; color: #22863a; }
+.badge-warning { background: #fffbdd; color: #e36209; }
+.badge-customer { background: #dbeafe; color: #1d4ed8; }
+.badge-doctor   { background: #ede9fe; color: #6d28d9; }
+.badge-admin    { background: #fce7f3; color: #9d174d; }
+.badge-sale_staff { background: #fef3c7; color: #92400e; }
+.badge-customer_support { background: #dcfce7; color: #166534; }
+
+/* ── Tab bar ─────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e8e8e8;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+}
+
+.tab-btn:hover { color: #4361ee; }
+
+.tab-btn-active {
+  color: #4361ee;
+  border-bottom-color: #4361ee;
+}
+
+.tab-content { padding-top: 4px; }
+
+/* ── Stat cards ──────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #666;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.highlight-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.highlight-card .stat-value { font-size: 32px; }
+
+.stats-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  margin-top: 8px;
+}
+
+/* ── Rating distribution bars ────────────────────────────────────── */
+.rating-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rating-star {
+  width: 36px;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.rating-bar-track {
+  flex: 1;
+  height: 14px;
+  background: #f0f0f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .4s ease;
+}
+
+.rating-count {
+  width: 80px;
+  font-size: 13px;
+  color: #555;
+  flex-shrink: 0;
+}

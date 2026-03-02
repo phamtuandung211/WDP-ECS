@@ -21,7 +21,13 @@ export function Header() {
           {user ? (
             <>
               <a href="/staff/dashboard">Dashboard</a>
-              <a href="/appointments">Appointments</a>
+              <a href="/appointments">Cuộc hẹn</a>
+              <a href="/medical-records">Hồ sơ bệnh án</a>
+              <a href="/feedbacks">Đánh giá</a>
+              <a href="/profile">Hồ sơ cá nhân</a>
+              {user.role === "ADMIN" && (
+                <a href="/admin/statistics">📊 Thống kê</a>
+              )}
               <span className="user-info">Xin chào, {user.fullName || user.name || user.email}</span>
               <button onClick={handleLogout} className="btn-logout">
                 Logout
