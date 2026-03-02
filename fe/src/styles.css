@@ -651,41 +651,324 @@ button {
   }
 }
 
-/* ── Profile Page ─────────────────────────────────────────────────── */
-.profile-card {
-  background: white;
-  border-radius: 8px;
-  padding: 32px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.1);
-  max-width: 760px;
+/* ── Profile Page v2 ──────────────────────────────────────────────── */
+.profile-page-v2 {
+  max-width: 1100px;
 }
 
-.profile-meta {
-  background: #f8f9fa;
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 24px;
+.pv2-title-row {
+  margin-bottom: 28px;
+}
+
+.pv2-heading {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+
+.pv2-subheading {
+  font-size: 14px;
+  color: #888;
+}
+
+/* Layout */
+.pv2-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Card base */
+.pv2-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.pv2-sidebar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.profile-meta p { margin: 0; font-size: 14px; }
+/* Avatar card */
+.pv2-avatar-card {
+  padding: 28px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
 
+.pv2-avatar-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.pv2-avatar-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 3px solid #e8ecf4;
+  transition: filter 0.25s;
+}
+
+.pv2-avatar-wrap:hover .pv2-avatar-img {
+  filter: brightness(0.65);
+}
+
+.pv2-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  cursor: pointer;
+}
+
+.pv2-avatar-wrap:hover .pv2-avatar-overlay {
+  opacity: 1;
+}
+
+.pv2-avatar-overlay-icon {
+  font-size: 22px;
+}
+
+.pv2-avatar-overlay-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.pv2-avatar-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv2-avatar-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+  text-align: center;
+}
+
+.pv2-avatar-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #0366d6;
+  background: #eef4ff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.pv2-avatar-hint-icon {
+  flex-shrink: 0;
+}
+
+/* Account info card */
+.pv2-info-card {
+  padding: 20px;
+}
+
+.pv2-info-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #aaa;
+  margin: 0 0 16px 0;
+}
+
+.pv2-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pv2-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pv2-info-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pv2-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 2px 0;
+}
+
+.pv2-info-value {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+  word-break: break-word;
+}
+
+.pv2-status-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* ── Main Form ── */
+.pv2-main .pv2-card {
+  padding: 28px 32px 32px;
+}
+
+.pv2-form-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pv2-form-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 4px 0;
+}
+
+.pv2-form-desc {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+}
+
+.pv2-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pv2-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+
+.pv2-required {
+  color: #d73a49;
+  margin-left: 2px;
+}
+
+.pv2-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pv2-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 28px !important;
+  font-size: 15px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.pv2-save-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.pv2-save-btn:disabled {
+  background: #aaa !important;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner inside button */
+.pv2-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pv2-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pv2-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pv2-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pv2-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pv2-main .pv2-card {
+    padding: 20px;
+  }
+}
+
+/* Keep .form-grid for other pages */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0 24px;
 }
 
-.mb-3 { margin-bottom: 12px; }
+.mb-3 {
+  margin-bottom: 12px;
+}
 
 /* ── Detail grid (Medical record detail) ─────────────────────────── */
 .record-detail {
   background: white;
   border-radius: 8px;
   padding: 28px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
 }
 
 .section-title {
@@ -751,13 +1034,40 @@ button {
   font-weight: 600;
 }
 
-.badge-success { background: #dafbe1; color: #22863a; }
-.badge-warning { background: #fffbdd; color: #e36209; }
-.badge-customer { background: #dbeafe; color: #1d4ed8; }
-.badge-doctor   { background: #ede9fe; color: #6d28d9; }
-.badge-admin    { background: #fce7f3; color: #9d174d; }
-.badge-sale_staff { background: #fef3c7; color: #92400e; }
-.badge-customer_support { background: #dcfce7; color: #166534; }
+.badge-success {
+  background: #dafbe1;
+  color: #22863a;
+}
+
+.badge-warning {
+  background: #fffbdd;
+  color: #e36209;
+}
+
+.badge-customer {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-doctor {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.badge-admin {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.badge-sale_staff {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-customer_support {
+  background: #dcfce7;
+  color: #166534;
+}
 
 /* ── Tab bar ─────────────────────────────────────────────────────── */
 .tab-bar {
@@ -781,14 +1091,18 @@ button {
   transition: color .15s, border-color .15s;
 }
 
-.tab-btn:hover { color: #4361ee; }
+.tab-btn:hover {
+  color: #4361ee;
+}
 
 .tab-btn-active {
   color: #4361ee;
   border-bottom-color: #4361ee;
 }
 
-.tab-content { padding-top: 4px; }
+.tab-content {
+  padding-top: 4px;
+}
 
 /* ── Stat cards ──────────────────────────────────────────────────── */
 .stat-grid {
@@ -802,7 +1116,7 @@ button {
   background: white;
   border-radius: 8px;
   padding: 20px 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
   text-align: center;
 }
 
@@ -827,14 +1141,16 @@ button {
   background: white;
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 24px;
 }
 
-.highlight-card .stat-value { font-size: 32px; }
+.highlight-card .stat-value {
+  font-size: 32px;
+}
 
 .stats-section-title {
   font-size: 16px;
@@ -885,4 +1201,57 @@ button {
   font-size: 13px;
   color: #555;
   flex-shrink: 0;
+}
+
+/* ── Profile Avatar Section ──────────────────────────────────────── */
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 10px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 112px;
+  height: 112px;
+}
+
+.profile-avatar-img {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e8e8e8;
+  display: block;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0366d6;
+  color: white;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s;
+}
+
+.avatar-edit-btn:hover {
+  background: #0256c7;
+}
+
+.avatar-hint {
+  font-size: 13px;
+  color: #666;
+  text-align: center;
 }

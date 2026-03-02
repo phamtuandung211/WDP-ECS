@@ -1,8 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { profileService } from "../services";
 import { Loading, Alert, Input, Button } from "../components/UI";
-import { PageHeader } from "../components/PageHeader";
+
+const DEFAULT_AVATAR = "https://ui-avatars.com/api/?background=4361ee&color=fff&size=200";
+
+const ROLE_LABEL = {
+  ADMIN: "Quản trị viên",
+  DOCTOR: "Bác sĩ",
+  CUSTOMER: "Khách hàng",
+  SALE_STAFF: "Nhân viên kinh doanh",
+  CUSTOMER_SUPPORT: "Hỗ trợ khách hàng",
+};
+
+const STATUS_CONFIG = {
+  ACTIVE:   { label: "Hoạt động",    color: "#22863a", bg: "#dafbe1" },
+  INACTIVE: { label: "Không hoạt động", color: "#e36209", bg: "#fffbdd" },
+  PENDING:  { label: "Chờ duyệt",    color: "#0366d6", bg: "#dbeafe" },
+  BANNED:   { label: "Bị khoá",      color: "#d73a49", bg: "#ffeef0" },
+};
 
 export function ProfilePage() {
   const { user } = useAuth();
@@ -17,35 +33,53 @@ export function ProfilePage() {
     gender: "",
     dateOfBirth: "",
     address: "",
-    avatar: "",
   });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const fetch = async () => {
+    const load = async () => {
       try {
         const { data } = await profileService.getMyProfile();
-        setProfile(data.data);
+        const d = data.data;
+        setProfile(d);
         setForm({
-          fullName: data.data.fullName || "",
-          phone: data.data.phone || "",
-          gender: data.data.gender || "",
-          dateOfBirth: data.data.dateOfBirth
-            ? data.data.dateOfBirth.slice(0, 10)
-            : "",
-          address: data.data.address || "",
-          avatar: data.data.avatar || "",
+          fullName: d.fullName || "",
+          phone: d.phone || "",
+          gender: d.gender || "",
+          dateOfBirth: d.dateOfBirth ? d.dateOfBirth.slice(0, 10) : "",
+          address: d.address || "",
         });
+        if (d.avatar) setAvatarPreview(d.avatar);
       } catch (err) {
         setError(err.response?.data?.message || "Không tải được thông tin");
       } finally {
         setLoading(false);
       }
     };
-    fetch();
+    load();
   }, []);
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setError("Chỉ chấp nhận file ảnh (jpg, png, webp)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Ảnh không được vượt quá 5MB");
+      return;
+    }
+    setError(null);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,10 +87,18 @@ export function ProfilePage() {
     setError(null);
     setSuccess(null);
     try {
-      const payload = { ...form };
-      if (!payload.dateOfBirth) delete payload.dateOfBirth;
-      await profileService.updateMyProfile(payload);
-      setSuccess("Cập nhật thành công!");
+      const formData = new FormData();
+      formData.append("fullName", form.fullName);
+      formData.append("phone", form.phone);
+      if (form.gender) formData.append("gender", form.gender);
+      if (form.dateOfBirth) formData.append("dateOfBirth", form.dateOfBirth);
+      if (form.address) formData.append("address", form.address);
+      if (avatarFile) formData.append("avatar", avatarFile);
+
+      const { data } = await profileService.updateMyProfile(formData);
+      if (data.data?.avatar) setAvatarPreview(data.data.avatar);
+      setAvatarFile(null);
+      setSuccess("Cập nhật thông tin thành công!");
     } catch (err) {
       setError(err.response?.data?.message || "Cập nhật thất bại");
     } finally {
@@ -66,82 +108,219 @@ export function ProfilePage() {
 
   if (loading) return <Loading />;
 
-  return (
-    <div className="page profile-page">
-      <PageHeader title="Thông tin cá nhân" />
+  const displayAvatar =
+    avatarPreview ||
+    `${DEFAULT_AVATAR}&name=${encodeURIComponent(form.fullName || "User")}`;
 
+  const statusCfg = STATUS_CONFIG[profile?.account?.status] || {};
+  const roleLabel = ROLE_LABEL[user?.role] || user?.role;
+
+  return (
+    <div className="page profile-page-v2">
+      {/* ── Page Title ── */}
+      <div className="pv2-title-row">
+        <div>
+          <h1 className="pv2-heading">Thông tin cá nhân</h1>
+          <p className="pv2-subheading">Quản lý thông tin hồ sơ của bạn</p>
+        </div>
+      </div>
+
+      {/* ── Alerts ── */}
       {error && <Alert type="error">{error}</Alert>}
       {success && <Alert type="success">{success}</Alert>}
 
-      <div className="card profile-card">
-        {profile?.account && (
-          <div className="profile-meta">
-            <p>
-              <strong>Email:</strong> {profile.account.email}
-            </p>
-            <p>
-              <strong>Role:</strong>{" "}
-              <span className={`badge badge-${user?.role?.toLowerCase()}`}>
-                {user?.role}
-              </span>
-            </p>
-            <p>
-              <strong>Trạng thái:</strong> {profile.account.status}
-            </p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="profile-form">
-          <div className="form-grid">
-            <Input
-              label="Họ và tên"
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              required
-            />
-            <Input
-              label="Số điện thoại"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              required
-            />
-            <div className="form-group">
-              <label className="form-label">Giới tính</label>
-              <select
-                name="gender"
-                className="form-input"
-                value={form.gender}
-                onChange={handleChange}
+      <div className="pv2-layout">
+        {/* ── Left Column: Avatar + Account Info ── */}
+        <aside className="pv2-sidebar">
+          {/* Avatar Card */}
+          <div className="pv2-card pv2-avatar-card">
+            <div className="pv2-avatar-wrap">
+              <img
+                src={displayAvatar}
+                alt="Avatar"
+                className="pv2-avatar-img"
+                onError={(e) => {
+                  e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
+                    form.fullName || "User"
+                  )}`;
+                }}
+              />
+              <button
+                type="button"
+                className="pv2-avatar-overlay"
+                onClick={() => fileInputRef.current?.click()}
+                title="Thay đổi ảnh đại diện"
               >
-                <option value="">-- Chọn --</option>
-                <option value="MALE">Nam</option>
-                <option value="FEMALE">Nữ</option>
-              </select>
+                <span className="pv2-avatar-overlay-icon">📷</span>
+                <span className="pv2-avatar-overlay-text">Thay ảnh</span>
+              </button>
             </div>
-            <Input
-              label="Ngày sinh"
-              name="dateOfBirth"
-              type="date"
-              value={form.dateOfBirth}
-              onChange={handleChange}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={handleAvatarChange}
             />
-            <Input
-              label="Địa chỉ"
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-            />
-           
+            <div className="pv2-avatar-info">
+              <p className="pv2-avatar-name">{form.fullName || "—"}</p>
+              <span className={`badge badge-${user?.role?.toLowerCase()}`}>
+                {roleLabel}
+              </span>
+            </div>
+            {avatarFile && (
+              <div className="pv2-avatar-hint">
+                <span className="pv2-avatar-hint-icon">📎</span>
+                <span>{avatarFile.name}</span>
+              </div>
+            )}
           </div>
 
-          <div className="form-actions">
-            <Button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? "Đang lưu..." : "Lưu thay đổi"}
-            </Button>
+          {/* Account Info Card */}
+          {profile?.account && (
+            <div className="pv2-card pv2-info-card">
+              <h3 className="pv2-info-card-title">Thông tin tài khoản</h3>
+              <ul className="pv2-info-list">
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">✉️</span>
+                  <div>
+                    <p className="pv2-info-label">Email</p>
+                    <p className="pv2-info-value">{profile.account.email}</p>
+                  </div>
+                </li>
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">🔰</span>
+                  <div>
+                    <p className="pv2-info-label">Vai trò</p>
+                    <p className="pv2-info-value">{roleLabel}</p>
+                  </div>
+                </li>
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">📋</span>
+                  <div>
+                    <p className="pv2-info-label">Trạng thái</p>
+                    <span
+                      className="pv2-status-badge"
+                      style={{
+                        color: statusCfg.color,
+                        background: statusCfg.bg,
+                      }}
+                    >
+                      {statusCfg.label || profile.account.status}
+                    </span>
+                  </div>
+                </li>
+                {profile.account.createdAt && (
+                  <li className="pv2-info-item">
+                    <span className="pv2-info-icon">🗓️</span>
+                    <div>
+                      <p className="pv2-info-label">Ngày tham gia</p>
+                      <p className="pv2-info-value">
+                        {new Date(profile.account.createdAt).toLocaleDateString("vi-VN")}
+                      </p>
+                    </div>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </aside>
+
+        {/* ── Right Column: Edit Form ── */}
+        <main className="pv2-main">
+          <div className="pv2-card">
+            <div className="pv2-form-header">
+              <h2 className="pv2-form-title">Chỉnh sửa thông tin</h2>
+              <p className="pv2-form-desc">
+                Cập nhật thông tin cá nhân của bạn tại đây
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="pv2-form">
+              {/* Row 1 */}
+              <div className="pv2-form-row">
+                <div className="form-group">
+                  <label className="form-label">
+                    Họ và tên <span className="pv2-required">*</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    name="fullName"
+                    value={form.fullName}
+                    onChange={handleChange}
+                    placeholder="Nhập họ và tên"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Số điện thoại <span className="pv2-required">*</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="Nhập số điện thoại"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Row 2 */}
+              <div className="pv2-form-row">
+                <div className="form-group">
+                  <label className="form-label">Giới tính</label>
+                  <select
+                    name="gender"
+                    className="form-input"
+                    value={form.gender}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- Chọn giới tính --</option>
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Ngày sinh</label>
+                  <input
+                    className="form-input"
+                    type="date"
+                    name="dateOfBirth"
+                    value={form.dateOfBirth}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3 – full width */}
+              <div className="form-group">
+                <label className="form-label">Địa chỉ</label>
+                <input
+                  className="form-input"
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  placeholder="Nhập địa chỉ"
+                />
+              </div>
+
+              <div className="pv2-form-footer">
+                <Button type="submit" className="btn-primary pv2-save-btn" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <span className="pv2-spinner" />
+                      Đang lưu...
+                    </>
+                  ) : (
+                    "💾  Lưu thay đổi"
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
+        </main>
       </div>
     </div>
   );
