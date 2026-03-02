@@ -1,37 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { appointmentService } from "../services";
 import { Loading, Alert } from "../components/UI";
+import { appointments as mockAppointments } from "../mockData";
 
 export function Appointments() {
   const { user } = useAuth();
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchAppointments = async () => {
-      try {
-        const { data } = await appointmentService.getAll();
-        setAppointments(data);
-      } catch (err) {
-        console.error("Failed to load appointments:", err);
-        setError("Failed to load appointments");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAppointments();
-  }, [user]);
+  const [appointments] = useState(mockAppointments);
+  const [loading] = useState(false);
+  const [error] = useState(null);
 
   if (!user) {
     return <Alert type="warning">Please log in to view appointments</Alert>;
   }
 
-  if (loading) return <Loading />;
-  if (error) return <Alert type="error">{error}</Alert>;
+  // using static data, no loading or error states
 
   return (
     <div className="page appointments-page">
@@ -41,11 +23,11 @@ export function Appointments() {
           No appointments yet. <a href="/services">Book one now</a>
         </p>
       ) : (
-        <div className="appointments-list">
+        <div className="appointments-list grid gap-4">
           {appointments.map((apt) => (
-            <div key={apt.id} className="appointment-card">
-              <h3>{apt.serviceName}</h3>
-              <p>Date: {new Date(apt.date).toLocaleDateString()}</p>
+            <div key={apt.id} className="border p-4 rounded bg-white">
+              <h3 className="font-semibold">{apt.serviceName}</h3>
+              <p>Date: {apt.date}</p>
               <p>Time: {apt.time}</p>
               <p>Status: {apt.status}</p>
             </div>

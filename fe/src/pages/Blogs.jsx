@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { blogService } from "../services";
-import { Loading, Alert } from "../components/UI";
+import { blogs as mockBlogs } from "../mockData";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
 
@@ -11,47 +10,22 @@ function truncate(str, maxLen) {
 }
 
 export function Blogs() {
-  const [result, setResult] = useState({ data: [], metadata: {} });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const limit = 9;
-  const { data: blogs, metadata } = result;
-
-  useEffect(() => {
-    const fetchList = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = await blogService.getList({
-          page,
-          limit,
-          search: search || undefined,
-        });
-        setResult(data);
-      } catch (err) {
-        setError(err.response?.data?.message || "Không tải được danh sách blog");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchList();
-  }, [page, search]);
-
-  const totalPages = metadata?.totalPages ?? 1;
-
-  if (loading && !blogs?.length) return <Loading />;
+  const perPage = 3;
+  const filtered = mockBlogs.filter((b) =>
+    b.title.toLowerCase().includes(search.toLowerCase()),
+  );
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
-    <div className="page blogs-page">
-      <h1 className="blogs-page-title">Bài viết</h1>
-      <p className="blogs-page-desc">
+    <div className="max-w-7xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-2">Bài viết</h1>
+      <p className="mb-4 text-gray-600">
         Các bài viết về chăm sóc mắt và sức khỏe.
       </p>
-
-      {error && <Alert type="error">{error}</Alert>}
 
       <SearchForm
         placeholder="Tìm theo tiêu đề hoặc nội dung..."
@@ -63,28 +37,33 @@ export function Blogs() {
         }}
       />
 
-      <div className="blogs-grid">
-        {blogs?.length ? (
-          blogs.map((blog) => (
-            <article key={blog._id} className="blog-card">
-              <h3 className="blog-card-title">{blog.title}</h3>
-              <p className="blog-card-content">{truncate(blog.content, 120)}</p>
-              <Link to={`/blogs/${blog._id}`} className="btn btn-primary">
+      <div className="grid gap-6">
+        {paged.length ? (
+          paged.map((blog) => (
+            <article key={blog.id} className="border p-4 rounded bg-white">
+              <h3 className="text-xl font-semibold mb-1">{blog.title}</h3>
+              <p className="text-gray-600 mb-2">
+                {truncate(blog.content, 120)}
+              </p>
+              <Link
+                to={`/blogs/${blog.id}`}
+                className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
                 Xem chi tiết
               </Link>
             </article>
           ))
         ) : (
-          <p className="blogs-empty">Chưa có bài viết nào.</p>
+          <p>Chưa có bài viết nào.</p>
         )}
       </div>
 
       <Pagination
         page={page}
         totalPages={totalPages}
-        total={metadata?.total}
-        onPrev={() => setPage((p) => p - 1)}
-        onNext={() => setPage((p) => p + 1)}
+        total={filtered.length}
+        onPrev={() => setPage((p) => Math.max(1, p - 1))}
+        onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
       />
     </div>
   );

@@ -6,7 +6,8 @@ import { Input, Button, Alert } from "../components/UI";
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loading, error } = useAuth();
+  const [error, setError] = useState(null);
+  const { login, loading, error: authError } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,15 +20,18 @@ export function LoginPage() {
         navigate("/");
       }
     } catch (err) {
-      console.error("Login error:", err);
+      // login error already stored in context; optionally set local error
+      setError(authError || "Đăng nhập thất bại");
     }
   };
 
   return (
     <div className="page login-page">
-      <div className="form-container">
-        <h2>Login</h2>
-        {error && <Alert type="error">{error}</Alert>}
+      <div className="max-w-md mx-auto mt-12 p-6 border rounded bg-white">
+        <h2 className="text-2xl font-bold mb-4">Login</h2>
+        {(error || authError) && (
+          <Alert type="error">{error || authError}</Alert>
+        )}
         <form onSubmit={handleSubmit}>
           <Input
             label="Email"
@@ -43,12 +47,13 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </Button>
+          <Button type="submit">Login</Button>
         </form>
-        <p>
-          Don't have an account? <a href="/register">Register</a>
+        <p className="mt-4 text-sm">
+          Don't have an account?{" "}
+          <a href="/register" className="text-blue-600">
+            Register
+          </a>
         </p>
       </div>
     </div>

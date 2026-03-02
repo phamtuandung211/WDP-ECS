@@ -1,7 +1,8 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Header, Footer } from "./components/Layout";
+import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Header, PageFooter as Footer } from "./components/Layout";
 import { Home } from "./pages/Home";
 import { Services } from "./pages/Services";
 import { ServiceDetail } from "./pages/ServiceDetail";
@@ -17,19 +18,18 @@ import { ManageServiceList } from "./pages/ManageServiceList";
 import { ManageServiceForm } from "./pages/ManageServiceForm";
 import { ManageBlogList } from "./pages/ManageBlogList";
 import { ManageBlogForm } from "./pages/ManageBlogForm";
+import { Doctors } from "./pages/Doctors";
+import { DoctorDetail } from "./pages/DoctorDetail";
+import { NotFound } from "./pages/NotFound";
 import "./styles.css";
 
-function ProtectedRoute({ element }) {
-  const { user } = useAuth();
-  return user ? element : <Navigate to="/login" />;
-}
-
+// Component bảo vệ route, có thể truyền thêm danh sách role cho phép
 function App() {
   return (
     <AuthProvider>
-      <div className="app">
+      <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="main-content">
+        <main className="flex-1 py-8">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
@@ -39,32 +39,34 @@ function App() {
             <Route path="/services/:id" element={<ServiceDetail />} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blogs/:id" element={<BlogDetail />} />
+            <Route path="/doctors" element={<Doctors />} />
+            <Route path="/doctors/:id" element={<DoctorDetail />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               path="/staff/dashboard"
-              element={<ProtectedRoute element={<SaleStaffDashboard />} />}
+              element={<ProtectedRoute allowedRoles={["SALE_STAFF"]} element={<SaleStaffDashboard />} />}
             />
             <Route
               path="/staff/manage-services"
-              element={<ProtectedRoute element={<ManageServiceList />} />}
+              element={<ProtectedRoute allowedRoles={["SALE_STAFF"]} element={<ManageServiceList />} />}
             />
             <Route
               path="/staff/manage-services/:id"
-              element={<ProtectedRoute element={<ManageServiceForm />} />}
+              element={<ProtectedRoute allowedRoles={["SALE_STAFF"]} element={<ManageServiceForm />} />}
             />
             <Route
               path="/staff/manage-blogs"
-              element={<ProtectedRoute element={<ManageBlogList />} />}
+              element={<ProtectedRoute allowedRoles={["SALE_STAFF"]} element={<ManageBlogList />} />}
             />
             <Route
               path="/staff/manage-blogs/:id"
-              element={<ProtectedRoute element={<ManageBlogForm />} />}
+              element={<ProtectedRoute allowedRoles={["SALE_STAFF"]} element={<ManageBlogForm />} />}
             />
             <Route
               path="/appointments"
               element={<ProtectedRoute element={<Appointments />} />}
             />
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />

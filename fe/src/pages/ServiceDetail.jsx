@@ -1,48 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { serviceService } from "../services";
-import { Loading, Alert } from "../components/UI";
+import { services as mockServices } from "../mockData";
+import { Card } from "../components/UI";
 
 export function ServiceDetail() {
   const { id } = useParams();
-  const [service, setService] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!id) return;
-    const fetchOne = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = await serviceService.getById(id);
-        setService(data);
-      } catch (err) {
-        setError(err.response?.data?.message || "Không tải được thông tin dịch vụ");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOne();
-  }, [id]);
-
-  if (loading) return <Loading />;
-  if (error) return <Alert type="error">{error}</Alert>;
-  if (!service) return null;
+  const service = mockServices.find((s) => s.id === id);
+  if (!service) return <p className="p-4">Dịch vụ không tồn tại.</p>;
 
   return (
-    <div className="page service-detail-page">
-      <Link to="/services" className="back-link">← Danh sách dịch vụ</Link>
-      <div className="service-detail-card">
-        <h1 className="service-detail-title">{service.name}</h1>
-        <p className="service-detail-desc">{service.description}</p>
-        <p className="service-detail-price">
-          {service.price != null
-            ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
-            : "—"}
+    <div className="max-w-3xl mx-auto p-4">
+      <Card className="p-6">
+        <h1 className="text-2xl font-bold mb-2">{service.name}</h1>
+        <p className="mb-4 text-gray-700">{service.description}</p>
+        <p className="font-bold mb-4">
+          Giá: {service.price.toLocaleString("vi-VN")} VNĐ
         </p>
-        <Link to="/services" className="btn btn-secondary">Quay lại danh sách</Link>
-      </div>
+        <Link
+          to="/services"
+          className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Quay lại danh sách
+        </Link>
+      </Card>
     </div>
   );
 }

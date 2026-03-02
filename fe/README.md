@@ -2,6 +2,8 @@
 
 Modern React + Vite frontend for the Eye Clinic Appointment Management System.
 
+**Note:** this version uses hard‑coded mock data and TailwindCSS via CDN; it does not perform any real API calls. It's intended as a static UI prototype / design showcase.
+
 ## Structure
 
 ```
@@ -15,28 +17,26 @@ src/
 └── main.jsx         # Entry point
 ```
 
-## Setup
+## Setup (Static Prototype)
 
-1. Copy `.env.example` to `.env` and set `VITE_API_URL`:
+No backend is required – all pages use mock data defined in `src/mockData.js` and styling relies on the Tailwind CSS CDN included in `index.html`.
 
-```
-VITE_API_URL=http://localhost:5000/api
-```
-
-2. Install dependencies:
+1. Install dependencies (only build tooling):
 
 ```bash
 cd fe
 npm install
 ```
 
-3. Start dev server:
+2. Start dev server:
 
 ```bash
 npm run dev
 ```
 
-Server runs on `http://localhost:3000`
+Server runs on `http://localhost:3000`.
+
+You may also rebuild for production with `npm run build`.
 
 ## Build
 
@@ -48,12 +48,12 @@ Outputs to `dist/`
 
 ## Features
 
-- **Auth Context**: Centralized authentication state
-- **Protected Routes**: Login guard for appointments
-- **API Service**: Axios client with interceptors
-- **Components**: Reusable UI components (Button, Input, Card, Alert, etc.)
-- **Responsive**: Mobile-friendly design
-- **Pages**: Home, Services, Login, Appointments
+- **Static Mock UI** – all data (doctors, services, blogs) are hard‑coded in `src/mockData.js`.
+- **Tailwind CSS CDN** – layout and utility classes provided via `<script src="https://cdn.tailwindcss.com"></script>` in `index.html`.
+- **Branding**: drop your logo image into `public/logo.png` or `public/logo.svg` and header/hero will display it.
+- **Simple Navigation**: Home, Services, Blogs, Doctors with static detail pages.
+- **Forms**: Login/Register/Verify pages show non‑functional dummy forms for demonstration.
+- **Responsive**: Designs are mobile friendly thanks to Tailwind's responsive utilities.
 
 ## API Endpoints
 

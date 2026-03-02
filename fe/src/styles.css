@@ -1,3 +1,5 @@
+﻿/* minimal global styles for static Tailwind-based UI */
+
 * {
   margin: 0;
   padding: 0;
@@ -23,92 +25,8 @@ a:hover {
   text-decoration: underline;
 }
 
-button {
-  cursor: pointer;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-}
+/* additional utility or custom classes can be added if needed */
 
-/* App Layout */
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.header {
-  background-color: #fff;
-  border-bottom: 1px solid #ddd;
-  padding: 16px 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.header .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 24px;
-  font-weight: 700;
-  color: #0366d6;
-}
-
-.nav {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-}
-
-.nav a {
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.nav a:hover {
-  color: #0366d6;
-  text-decoration: underline;
-}
-
-.user-info {
-  font-size: 12px;
-  color: #666;
-}
-
-.btn-logout {
-  background-color: #d73a49;
-  color: white;
-  padding: 8px 12px;
-}
-
-.btn-logout:hover {
-  background-color: #cb2431;
-}
-
-.main-content {
-  flex: 1;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 32px 16px;
-}
-
-.footer {
-  background-color: #333;
-  color: white;
-  text-align: center;
-  padding: 24px;
-  margin-top: auto;
-}
-
-/* Pages */
 .page {
   width: 100%;
 }
@@ -295,7 +213,9 @@ button {
   text-decoration: none;
   color: inherit;
   border: 1px solid #eee;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .dashboard-card:hover {

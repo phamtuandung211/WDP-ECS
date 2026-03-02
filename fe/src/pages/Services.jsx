@@ -1,52 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { serviceService } from "../services";
-import { Loading, Alert } from "../components/UI";
+import { services as mockServices } from "../mockData";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
 
 export function Services() {
-  const [result, setResult] = useState({ data: [], metadata: {} });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const limit = 9;
-  const { data: services, metadata } = result;
-
-  useEffect(() => {
-    const fetchList = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = await serviceService.getList({
-          page,
-          limit,
-          search: search || undefined,
-        });
-        setResult(data);
-      } catch (err) {
-        setError(err.response?.data?.message || "Không tải được danh sách dịch vụ");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchList();
-  }, [page, search]);
-
-  const totalPages = metadata?.totalPages ?? 1;
-
-  if (loading && !services?.length) return <Loading />;
+  const perPage = 6;
+  const filtered = mockServices.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase()),
+  );
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
-    <div className="page services-page">
-      <h1 className="services-page-title">Gói dịch vụ</h1>
-      <p className="services-page-desc">
+    <div className="max-w-7xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-2">Gói dịch vụ</h1>
+      <p className="mb-4 text-gray-600">
         Xem các gói dịch vụ chăm sóc mắt của chúng tôi.
       </p>
-
-      {error && <Alert type="error">{error}</Alert>}
 
       <SearchForm
         placeholder="Tìm theo tên hoặc mô tả..."
@@ -58,33 +32,36 @@ export function Services() {
         }}
       />
 
-      <div className="services-grid">
-        {services?.length ? (
-          services.map((service) => (
-            <div key={service._id} className="service-card">
-              <h3>{service.name}</h3>
-              <p>{service.description}</p>
-              <p className="price">
-                {service.price != null
-                  ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
-                  : "—"}
+      <div className="grid gap-6 md:grid-cols-2">
+        {paged.length ? (
+          paged.map((service) => (
+            <div
+              key={service.id}
+              className="border border-gray-200 rounded p-4 bg-white"
+            >
+              <h3 className="text-xl font-semibold mb-1">{service.name}</h3>
+              <p className="mb-2 text-gray-600">{service.description}</p>
+              <p className="font-bold mb-2">
+                {service.price.toLocaleString("vi-VN")} VNĐ
               </p>
-              <Link to={`/services/${service._id}`} className="btn">
+              <Link
+                to={`/services/${service.id}`}
+                className="inline-block mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
                 Xem chi tiết
               </Link>
             </div>
           ))
         ) : (
-          <p className="services-empty">Chưa có gói dịch vụ nào.</p>
+          <p>Chưa có gói dịch vụ nào.</p>
         )}
       </div>
-
       <Pagination
         page={page}
         totalPages={totalPages}
-        total={metadata?.total}
-        onPrev={() => setPage((p) => p - 1)}
-        onNext={() => setPage((p) => p + 1)}
+        total={filtered.length}
+        onPrev={() => setPage((p) => Math.max(1, p - 1))}
+        onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
       />
     </div>
   );
