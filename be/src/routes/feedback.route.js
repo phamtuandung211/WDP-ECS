@@ -12,7 +12,6 @@ import {
 
 const router = express.Router();
 
-// POST /api/feedbacks – Customer gửi đánh giá cuộc hẹn
 router.post(
     "/",
     authenticate,
@@ -20,7 +19,6 @@ router.post(
     createFeedbackController,
 );
 
-// GET /api/feedbacks/my – Customer xem tất cả đánh giá của mình
 router.get(
     "/my",
     authenticate,
@@ -28,7 +26,6 @@ router.get(
     getMyFeedbacksController,
 );
 
-// GET /api/feedbacks – Staff/Support xem tất cả feedback (có filter, page)
 router.get(
     "/",
     authenticate,
@@ -36,7 +33,6 @@ router.get(
     getAllFeedbacksController,
 );
 
-// GET /api/feedbacks/appointment/:appointmentId – Lấy feedback theo cuộc hẹn
 router.get(
     "/appointment/:appointmentId",
     authenticate,
@@ -49,7 +45,6 @@ router.get(
     getFeedbackByAppointmentController,
 );
 
-// GET /api/feedbacks/:id – Xem chi tiết 1 feedback
 router.get(
     "/:id",
     authenticate,
@@ -57,7 +52,6 @@ router.get(
     getFeedbackByIdController,
 );
 
-// PATCH /api/feedbacks/:id/review – Customer Support đánh dấu đã xem xét
 router.patch(
     "/:id/review",
     authenticate,

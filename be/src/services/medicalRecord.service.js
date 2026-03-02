@@ -11,9 +11,6 @@ function throwErr(status, message) {
     throw err;
 }
 
-/**
- * Doctor tạo hồ sơ bệnh án cho 1 cuộc hẹn
- */
 export const createMedicalRecord = async ({
     accountId,
     appointmentId,
@@ -63,9 +60,6 @@ export const createMedicalRecord = async ({
     return record.toObject();
 };
 
-/**
- * Customer xem lịch sử hồ sơ bệnh án của bản thân
- */
 export const getMyMedicalRecords = async ({ accountId, page = 1, limit = 10 }) => {
     const customer = await Customer.findOne({ accountId }).lean();
     if (!customer) throwErr(404, "Customer profile not found");
@@ -89,9 +83,6 @@ export const getMyMedicalRecords = async ({ accountId, page = 1, limit = 10 }) =
     };
 };
 
-/**
- * Lấy chi tiết 1 hồ sơ bệnh án (có phân quyền)
- */
 export const getMedicalRecordById = async ({ recordId, accountId, role }) => {
     const record = await MedicalRecord.findById(recordId)
         .populate("doctorId", "fullName specializations")
@@ -122,9 +113,6 @@ export const getMedicalRecordById = async ({ recordId, accountId, role }) => {
     return record;
 };
 
-/**
- * Lấy hồ sơ bệnh án theo appointmentId
- */
 export const getMedicalRecordByAppointment = async ({ appointmentId, accountId, role }) => {
     const record = await MedicalRecord.findOne({ appointmentId })
         .populate("doctorId", "fullName specializations")
@@ -145,9 +133,6 @@ export const getMedicalRecordByAppointment = async ({ appointmentId, accountId, 
     return record;
 };
 
-/**
- * Doctor cập nhật hồ sơ bệnh án (chỉ doctor tạo mới được sửa)
- */
 export const updateMedicalRecord = async ({ recordId, accountId, payload }) => {
     const doctor = await Doctor.findOne({ accountId }).lean();
     if (!doctor) throwErr(404, "Doctor profile not found");
@@ -183,9 +168,6 @@ export const updateMedicalRecord = async ({ recordId, accountId, payload }) => {
     return updated;
 };
 
-/**
- * Staff xem toàn bộ hồ sơ bệnh án (có filter, pagination)
- */
 export const getAllMedicalRecords = async ({ doctorId, customerId, page = 1, limit = 10 }) => {
     const query = {};
     if (doctorId) query.doctorId = doctorId;

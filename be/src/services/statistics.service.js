@@ -16,9 +16,6 @@ function throwErr(status, message) {
     throw err;
 }
 
-/**
- * Build date range filter from query params: from / to (YYYY-MM-DD)
- */
 function buildDateRange(from, to) {
     const filter = {};
     if (from) {
@@ -36,13 +33,6 @@ function buildDateRange(from, to) {
     return Object.keys(filter).length ? filter : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OVERVIEW DASHBOARD
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Tổng quan: tổng số tài khoản, cuộc hẹn, doanh thu, phản hồi trung bình
- */
 export const getOverviewStats = async ({ from, to }) => {
     const dateRange = buildDateRange(from, to);
     const createdAtFilter = dateRange ? { createdAt: dateRange } : {};
@@ -146,14 +136,6 @@ export const getOverviewStats = async ({ from, to }) => {
     };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// REVENUE STATS (theo tháng / ngày)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Thống kê doanh thu theo tháng hoặc ngày
- * groupBy: "day" | "month" (default: "month")
- */
 export const getRevenueStats = async ({ from, to, groupBy = "month" }) => {
     const dateRange = buildDateRange(from, to);
     const matchStage = {
@@ -179,13 +161,6 @@ export const getRevenueStats = async ({ from, to, groupBy = "month" }) => {
     return result;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// APPOINTMENT STATS (theo tháng / ngày)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Thống kê cuộc hẹn theo tháng hoặc ngày, chia nhỏ theo status / type
- */
 export const getAppointmentStats = async ({ from, to, groupBy = "month" }) => {
     const dateRange = buildDateRange(from, to);
     const matchStage = dateRange ? { createdAt: dateRange } : {};
@@ -224,13 +199,6 @@ export const getAppointmentStats = async ({ from, to, groupBy = "month" }) => {
     return result;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DOCTOR STATS
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Xếp hạng bác sĩ theo số cuộc hẹn, doanh thu, và rating trung bình
- */
 export const getDoctorStats = async ({ from, to, page = 1, limit = 10 }) => {
     const dateRange = buildDateRange(from, to);
     const matchStage = dateRange ? { createdAt: dateRange } : {};
@@ -322,13 +290,7 @@ export const getDoctorStats = async ({ from, to, page = 1, limit = 10 }) => {
     };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FEEDBACK STATS (rating distribution)
-// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Phân bổ rating (1-5 sao), feedback chưa được review
- */
 export const getFeedbackStats = async ({ from, to }) => {
     const dateRange = buildDateRange(from, to);
     const matchStage = dateRange ? { createdAt: dateRange } : {};
@@ -358,13 +320,6 @@ export const getFeedbackStats = async ({ from, to }) => {
     };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ACCOUNT STATS (new registrations by month)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Thống kê tài khoản mới đăng ký theo tháng/ngày, chia theo role
- */
 export const getAccountStats = async ({ from, to, groupBy = "month" }) => {
     const dateRange = buildDateRange(from, to);
     const matchStage = dateRange ? { createdAt: dateRange } : {};

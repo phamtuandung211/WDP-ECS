@@ -8,9 +8,7 @@ function throwErr(status, message) {
     throw err;
 }
 
-/**
- * Lấy profile của user hiện tại theo role
- */
+
 export const getProfileByAccountId = async ({ accountId, role }) => {
     const ProfileModel = PROFILE_MODEL_BY_ROLE[role];
     if (!ProfileModel) throwErr(403, "Invalid role");
@@ -22,8 +20,7 @@ export const getProfileByAccountId = async ({ accountId, role }) => {
 
     let profile = await ProfileModel.findOne({ accountId }).lean();
 
-    // Tài khoản ADMIN thường được seed trực tiếp vào DB mà không có profile document.
-    // Nếu chưa có thì tự động tạo với thông tin tối thiểu để không báo 404.
+    
     if (!profile) {
         const ROLES_WITH_AUTO_CREATE = [ROLE_NAME.ADMIN];
         if (ROLES_WITH_AUTO_CREATE.includes(role)) {
@@ -40,14 +37,11 @@ export const getProfileByAccountId = async ({ accountId, role }) => {
     return { ...profile, account };
 };
 
-/**
- * Cập nhật profile (chỉ các trường an toàn của UserBase)
- */
+
 export const updateProfileByAccountId = async ({ accountId, role, payload }) => {
     const ProfileModel = PROFILE_MODEL_BY_ROLE[role];
     if (!ProfileModel) throwErr(403, "Invalid role");
 
-    // Chỉ cho phép cập nhật các trường của UserBase
     const ALLOWED_FIELDS = ["fullName", "phone", "gender", "dateOfBirth", "address", "avatar"];
     const updateData = {};
     for (const field of ALLOWED_FIELDS) {

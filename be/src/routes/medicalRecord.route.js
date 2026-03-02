@@ -12,7 +12,6 @@ import {
 
 const router = express.Router();
 
-// POST /api/medical-records – Doctor tạo hồ sơ bệnh án
 router.post(
     "/",
     authenticate,
@@ -20,7 +19,6 @@ router.post(
     createMedicalRecordController,
 );
 
-// GET /api/medical-records/my – Customer xem lịch sử bệnh án của mình
 router.get(
     "/my",
     authenticate,
@@ -28,7 +26,6 @@ router.get(
     getMyMedicalRecordsController,
 );
 
-// GET /api/medical-records – Staff xem toàn bộ hồ sơ (có filter)
 router.get(
     "/",
     authenticate,
@@ -36,7 +33,6 @@ router.get(
     getAllMedicalRecordsController,
 );
 
-// GET /api/medical-records/appointment/:appointmentId – Lấy hồ sơ theo cuộc hẹn
 router.get(
     "/appointment/:appointmentId",
     authenticate,
@@ -44,7 +40,6 @@ router.get(
     getMedicalRecordByAppointmentController,
 );
 
-// GET /api/medical-records/:id – Xem chi tiết 1 hồ sơ
 router.get(
     "/:id",
     authenticate,

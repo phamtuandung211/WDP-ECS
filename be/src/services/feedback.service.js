@@ -11,9 +11,7 @@ function throwErr(status, message) {
     throw err;
 }
 
-/**
- * Customer gửi đánh giá cho cuộc hẹn đã hoàn thành
- */
+
 export const createFeedback = async ({ accountId, appointmentId, point, comment }) => {
     if (!appointmentId) throwErr(400, "appointmentId is required");
     if (point === undefined || point === null) throwErr(400, "point is required");
@@ -45,9 +43,6 @@ export const createFeedback = async ({ accountId, appointmentId, point, comment 
     return feedback.toObject();
 };
 
-/**
- * Customer xem tất cả feedback của mình
- */
 export const getMyFeedbacks = async ({ accountId, page = 1, limit = 10 }) => {
     const customer = await Customer.findOne({ accountId }).lean();
     if (!customer) throwErr(404, "Customer profile not found");
@@ -78,9 +73,6 @@ export const getMyFeedbacks = async ({ accountId, page = 1, limit = 10 }) => {
     };
 };
 
-/**
- * Lấy feedback theo appointmentId
- */
 export const getFeedbackByAppointment = async ({ appointmentId, accountId, role }) => {
     const appointment = await Appointment.findById(appointmentId).lean();
     if (!appointment) throwErr(404, "Appointment not found");
@@ -102,9 +94,6 @@ export const getFeedbackByAppointment = async ({ appointmentId, accountId, role 
     return feedback;
 };
 
-/**
- * Staff/Support xem tất cả feedback (có filter, pagination)
- */
 export const getAllFeedbacks = async ({ point, reviewed, page = 1, limit = 10 }) => {
     const query = {};
     if (point) query.point = Number(point);
@@ -142,9 +131,6 @@ export const getAllFeedbacks = async ({ point, reviewed, page = 1, limit = 10 })
     };
 };
 
-/**
- * Lấy chi tiết 1 feedback
- */
 export const getFeedbackById = async (feedbackId) => {
     const feedback = await Feedback.findById(feedbackId)
         .populate({
@@ -162,9 +148,6 @@ export const getFeedbackById = async (feedbackId) => {
     return feedback;
 };
 
-/**
- * Customer Support đánh dấu đã xem xét feedback
- */
 export const reviewFeedback = async ({ feedbackId, accountId }) => {
     const support = await CustomerSupport.findOne({ accountId }).lean();
     if (!support) throwErr(404, "Customer support profile not found");

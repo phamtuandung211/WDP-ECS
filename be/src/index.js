@@ -45,7 +45,7 @@ app.get("/", (req, res) => {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes) // TODO: add user router when ready
+app.use("/api/user", userRoutes) 
 app.use("/api/roles", rolesRoutes);
 app.use("/api/approval", approvalRoutes);
 app.use("/api/manage-services", manageServiceRoutes);
