@@ -133,13 +133,7 @@ export function ProfilePage() {
               value={form.address}
               onChange={handleChange}
             />
-            <Input
-              label="URL Avatar"
-              name="avatar"
-              value={form.avatar}
-              onChange={handleChange}
-              placeholder="https://..."
-            />
+           
           </div>
 
           <div className="form-actions">
