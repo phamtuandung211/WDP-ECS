@@ -78,8 +78,21 @@ button {
 }
 
 .user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   color: #666;
+}
+
+.header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e8ecf4;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(67, 97, 238, 0.15);
 }
 
 .btn-logout {
@@ -148,12 +161,14 @@ button {
   margin-bottom: 8px;
   font-weight: 500;
 }
+
 .form-hint {
   display: block;
   margin-top: 4px;
   font-size: 13px;
   color: #666;
 }
+
 .form-image-preview {
   margin-top: 12px;
   display: flex;
@@ -161,6 +176,7 @@ button {
   gap: 12px;
   flex-wrap: wrap;
 }
+
 .form-image-preview img {
   max-width: 200px;
   max-height: 150px;
@@ -168,6 +184,7 @@ button {
   border-radius: 6px;
   border: 1px solid #ddd;
 }
+
 .form-image-preview .btn-sm {
   padding: 6px 12px;
   font-size: 13px;
@@ -433,9 +450,11 @@ button {
   border-radius: 4px;
   display: block;
 }
+
 .text-muted {
   color: #999;
 }
+
 .data-table tbody tr:hover {
   background: #f8f9fa;
 }
@@ -1060,6 +1079,43 @@ button {
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 20px;
+}
+
+/* Avatar in Account Info Card */
+.pv2-account-avatar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pv2-account-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e8ecf4;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.12);
+}
+
+.pv2-account-avatar-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pv2-account-avatar-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Main Form ── */

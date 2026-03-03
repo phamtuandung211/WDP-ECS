@@ -83,6 +83,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updates) => {
+    setUser((prev) => {
+      const next = { ...prev, ...updates };
+      authService.setUser(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -93,8 +101,9 @@ export function AuthProvider({ children }) {
       verifyOtp,
       resendOtp,
       logout,
+      updateUser,
     }),
-    [user, loading, error, login, register, verifyOtp, resendOtp, logout],
+    [user, loading, error, login, register, verifyOtp, resendOtp, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -22,10 +22,6 @@ export const updateMyProfile = async (req, res) => {
     try {
         const { accountId, role } = req.user;
 
-        if (req.file) {
-            req.body.avatar = req.file.path;
-        }
-
         const result = await updateProfileByAccountId({
             accountId,
             role,

@@ -108,10 +108,7 @@ export const userService = {
 
 export const profileService = {
   getMyProfile: () => apiClient.get("/user/me"),
-  updateMyProfile: (data) =>
-    apiClient.put("/user/me", data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+  updateMyProfile: (data) => apiClient.put("/user/me", data),
 };
 
 export const medicalRecordService = {

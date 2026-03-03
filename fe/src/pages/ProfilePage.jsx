@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { profileService } from "../services";
+import { profileService, UploadService } from "../services";
 import { Loading, Alert, Input, Button } from "../components/UI";
 
 const DEFAULT_AVATAR = "https://ui-avatars.com/api/?background=4361ee&color=fff&size=200";
@@ -21,7 +21,7 @@ const STATUS_CONFIG = {
 };
 
 export function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,20 +87,34 @@ export function ProfilePage() {
     setError(null);
     setSuccess(null);
     try {
-      const formData = new FormData();
-      formData.append("fullName", form.fullName);
-      formData.append("phone", form.phone);
-      if (form.gender) formData.append("gender", form.gender);
-      if (form.dateOfBirth) formData.append("dateOfBirth", form.dateOfBirth);
-      if (form.address) formData.append("address", form.address);
-      if (avatarFile) formData.append("avatar", avatarFile);
+      let avatarUrl = null;
 
-      const { data } = await profileService.updateMyProfile(formData);
-      if (data.data?.avatar) setAvatarPreview(data.data.avatar);
+      if (avatarFile) {
+        avatarUrl = await UploadService.uploadImage(avatarFile);
+        if (!avatarUrl) throw new Error("Upload ảnh thất bại");
+      }
+
+      const payload = {
+        fullName: form.fullName,
+        phone: form.phone,
+        ...(form.gender && { gender: form.gender }),
+        ...(form.dateOfBirth && { dateOfBirth: form.dateOfBirth }),
+        ...(form.address && { address: form.address }),
+        ...(avatarUrl && { avatar: avatarUrl }),
+      };
+
+      const { data } = await profileService.updateMyProfile(payload);
+      const updatedAvatar = data.data?.avatar;
+      if (updatedAvatar) {
+        setAvatarPreview(updatedAvatar);
+        updateUser({ avatar: updatedAvatar, fullName: form.fullName });
+      } else {
+        updateUser({ fullName: form.fullName });
+      }
       setAvatarFile(null);
       setSuccess("Cập nhật thông tin thành công!");
     } catch (err) {
-      setError(err.response?.data?.message || "Cập nhật thất bại");
+      setError(err.response?.data?.message || err.message || "Cập nhật thất bại");
     } finally {
       setSaving(false);
     }
@@ -180,6 +194,27 @@ export function ProfilePage() {
           {profile?.account && (
             <div className="pv2-card pv2-info-card">
               <h3 className="pv2-info-card-title">Thông tin tài khoản</h3>
+
+              {/* Avatar hiển thị trong thông tin cá nhân */}
+              <div className="pv2-account-avatar-wrap">
+                <img
+                  src={displayAvatar}
+                  alt="Ảnh đại diện"
+                  className="pv2-account-avatar"
+                  onError={(e) => {
+                    e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
+                      form.fullName || "User"
+                    )}`;
+                  }}
+                />
+                <div className="pv2-account-avatar-meta">
+                  <p className="pv2-account-avatar-name">{form.fullName || "—"}</p>
+                  <span className={`badge badge-${user?.role?.toLowerCase()}`}>
+                    {roleLabel}
+                  </span>
+                </div>
+              </div>
+
               <ul className="pv2-info-list">
                 <li className="pv2-info-item">
                   <span className="pv2-info-icon">✉️</span>
