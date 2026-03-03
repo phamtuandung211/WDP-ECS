@@ -3,8 +3,6 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import swaggerDocument from "./config/swagger.js";
-import swaggerUi from "swagger-ui-express";
 import { errorHandler, authenticate } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.route.js";
 import rolesRoutes from "./routes/role.route.js";
@@ -23,6 +21,7 @@ import userRoutes from "./routes/user.route.js";
 import medicalRecordRoutes from "./routes/medicalRecord.route.js";
 import feedbackRoutes from "./routes/feedback.route.js";
 import statisticsRoutes from "./routes/statistics.route.js";
+import uploadRoutes from "./routes/upload.route.js";
 
 dotenv.config();
 
@@ -42,8 +41,6 @@ app.get("/", (req, res) => {
   res.json({ ok: true, message: "WDP-ECS API running" });
 });
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes) 
 app.use("/api/roles", rolesRoutes);
@@ -60,12 +57,10 @@ app.use("/api/specializations", specializationRoutes);
 app.use("/api/medical-records", medicalRecordRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/statistics", statisticsRoutes);
-
-
+app.use("/api/upload", uploadRoutes);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`✓ Server running on port ${PORT}`);
   console.log(`✓ API: http://localhost:${PORT}/api`);
-  console.log(`✓ Swagger: http://localhost:${PORT}/api-docs`);
 });

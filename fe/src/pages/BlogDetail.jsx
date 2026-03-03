@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { blogService } from "../services";
+import { blogService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 
 export function BlogDetail() {
@@ -34,9 +34,16 @@ export function BlogDetail() {
     <div className="page blog-detail-page">
       <Link to="/blogs" className="back-link">← Danh sách bài viết</Link>
       <article className="blog-detail-card">
-        <h1 className="blog-detail-title">{blog.title}</h1>
-        <div className="blog-detail-content">{blog.content}</div>
-        <Link to="/blogs" className="btn btn-secondary">Quay lại danh sách</Link>
+        {blog.image && (
+          <div className="blog-detail-image">
+            <img src={getUploadFullUrl(blog.image)} alt={blog.title} />
+          </div>
+        )}
+        <div className="blog-detail-body">
+          <h1 className="blog-detail-title">{blog.title}</h1>
+          <div className="blog-detail-content">{blog.content}</div>
+          <Link to="/blogs" className="btn btn-secondary">Quay lại danh sách</Link>
+        </div>
       </article>
     </div>
   );

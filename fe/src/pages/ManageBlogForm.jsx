@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { manageBlogService } from "../services";
+import { manageBlogService, UploadService, getUploadFullUrl } from "../services";
 import { Input, Button, Loading, Alert } from "../components/UI";
 
 export function ManageBlogForm() {
@@ -10,6 +10,8 @@ export function ManageBlogForm() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [image, setImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(!isCreate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -24,6 +26,7 @@ export function ManageBlogForm() {
           const { data } = await manageBlogService.getById(id);
           setTitle(data.title ?? "");
           setContent(data.content ?? "");
+          setImage(data.image ?? "");
         } catch (err) {
           setError(err.response?.data?.message || "Không tải được bài blog");
         } finally {
@@ -54,6 +57,7 @@ export function ManageBlogForm() {
         title: title.trim(),
         content: content.trim(),
       };
+      if (image) payload.image = image;
       if (isCreate) {
         await manageBlogService.create(payload);
       } else {
@@ -107,6 +111,39 @@ export function ManageBlogForm() {
           />
           {fieldErrors.content && (
             <span className="form-error">{fieldErrors.content}</span>
+          )}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Ảnh bài viết</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploadingImage(true);
+              setError(null);
+              try {
+                const url = await UploadService.uploadImage(file);
+                if (url) setImage(url);
+                else setError("Không lấy được URL ảnh");
+              } catch (err) {
+                setError(err.response?.data?.message || "Upload ảnh thất bại");
+              } finally {
+                setUploadingImage(false);
+              }
+            }}
+            disabled={uploadingImage}
+            className="form-input"
+          />
+          {uploadingImage && <span className="form-hint">Đang tải lên...</span>}
+          {image && (
+            <div className="form-image-preview">
+              <img src={getUploadFullUrl(image)} alt="Preview" />
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setImage("")}>
+                Xóa ảnh
+              </button>
+            </div>
           )}
         </div>
         <div className="form-actions">
