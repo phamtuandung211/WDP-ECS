@@ -109,6 +109,7 @@ router.post("/", authenticate, authorize(ROLE_NAME.SALE_STAFF), create);
  *               name: { type: "string" }
  *               description: { type: "string" }
  *               price: { type: "number", minimum: 0 }
+ *               image: { type: "string", description: "URL ảnh (tùy chọn)" }
  *     responses:
  *       200:
  *         description: OK
