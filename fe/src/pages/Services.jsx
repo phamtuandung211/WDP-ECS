@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { serviceService } from "../services";
+import { serviceService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
@@ -61,18 +61,24 @@ export function Services() {
       <div className="services-grid">
         {services?.length ? (
           services.map((service) => (
-            <div key={service._id} className="service-card">
-              <h3>{service.name}</h3>
-              <p>{service.description}</p>
-              <p className="price">
-                {service.price != null
-                  ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
-                  : "—"}
-              </p>
-              <Link to={`/services/${service._id}`} className="btn">
-                Xem chi tiết
-              </Link>
-            </div>
+            <Link key={service._id} to={`/services/${service._id}`} className="service-card">
+              {service.image ? (
+                <div className="service-card-image">
+                  <img src={getUploadFullUrl(service.image)} alt={service.name} />
+                </div>
+              ) : (
+                <div className="service-card-image service-card-image-placeholder" />
+              )}
+              <div className="service-card-body">
+                <h3 className="service-card-title">{service.name}</h3>
+                <p className="service-card-price">
+                  {service.price != null
+                    ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
+                    : "—"}
+                </p>
+                <span className="service-card-cta">Xem chi tiết</span>
+              </div>
+            </Link>
           ))
         ) : (
           <p className="services-empty">Chưa có gói dịch vụ nào.</p>

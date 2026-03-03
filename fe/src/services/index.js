@@ -1,5 +1,22 @@
 import apiClient from "./apiClient";
 
+/** Base URL BE (bỏ /api) để ghép URL ảnh. Cloudinary URL giữ nguyên. */
+export const getUploadFullUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  const base = (apiClient.defaults.baseURL || "").replace(/\/api\/?$/, "");
+  return base + path;
+};
+
+export const UploadService = {
+  uploadImage: async (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await apiClient.post("/upload", form);
+    return data?.data?.url ?? data?.url ?? null;
+  },
+};
+
 export const authService = {
   register: (payload) => apiClient.post("/auth/register", payload),
 

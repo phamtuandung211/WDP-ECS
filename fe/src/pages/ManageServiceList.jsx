@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { manageServiceService } from "../services";
+import { manageServiceService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
 import { SearchForm } from "../components/SearchForm";
@@ -69,6 +69,7 @@ export function ManageServiceList() {
         <table className="data-table">
           <thead>
             <tr>
+              <th>Ảnh</th>
               <th>Tên</th>
               <th>Mô tả</th>
               <th>Giá (VNĐ)</th>
@@ -79,6 +80,13 @@ export function ManageServiceList() {
             {services?.length ? (
               services.map((sv) => (
                 <tr key={sv._id}>
+                  <td>
+                    {sv.image ? (
+                      <img src={getUploadFullUrl(sv.image)} alt={sv.name} className="table-thumb" />
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
                   <td>{sv.name}</td>
                   <td className="cell-desc">{sv.description}</td>
                   <td>{sv.price != null ? Number(sv.price).toLocaleString("vi-VN") : "—"}</td>
@@ -94,7 +102,7 @@ export function ManageServiceList() {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="cell-empty">
+                <td colSpan={5} className="cell-empty">
                   Chưa có gói dịch vụ nào.
                 </td>
               </tr>
