@@ -17,29 +17,45 @@ export function ManageBlogList() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   const limit = 10;
   const { data: blogs, metadata } = result;
 
+  const fetchList = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await manageBlogService.getList({
+        page,
+        limit,
+        search: search || undefined,
+      });
+      setResult(data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Không tải được danh sách blog");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchList = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = await manageBlogService.getList({
-          page,
-          limit,
-          search: search || undefined,
-        });
-        setResult(data);
-      } catch (err) {
-        setError(err.response?.data?.message || "Không tải được danh sách blog");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchList();
   }, [page, search]);
+
+  const handleDelete = async (id, title) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa bài viết "${title}"?`)) return;
+    setDeletingId(id);
+    setError(null);
+    try {
+      await manageBlogService.delete(id);
+      await fetchList();
+    } catch (err) {
+      setError(err.response?.data?.message || "Xóa thất bại");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const totalPages = metadata?.totalPages ?? 1;
 
@@ -77,7 +93,7 @@ export function ManageBlogList() {
               <th>Ảnh</th>
               <th>Tiêu đề</th>
               <th>Nội dung</th>
-              <th></th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -94,12 +110,22 @@ export function ManageBlogList() {
                   <td>{blog.title}</td>
                   <td className="cell-desc">{truncate(blog.content, 80)}</td>
                   <td>
-                    <Link
-                      to={`/staff/manage-blogs/${blog._id}`}
-                      className="btn-link"
-                    >
-                      Xem / Sửa
-                    </Link>
+                    <div className="table-actions">
+                      <Link
+                        to={`/staff/manage-blogs/${blog._id}`}
+                        className="btn-link"
+                      >
+                        Xem / Sửa
+                      </Link>
+                      <button
+                        type="button"
+                        className="btn-link btn-link-danger"
+                        onClick={() => handleDelete(blog._id, blog.title)}
+                        disabled={deletingId === blog._id}
+                      >
+                        {deletingId === blog._id ? "Đang xóa..." : "Xóa"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
