@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { manageBlogService } from "../services";
+import { manageBlogService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
 import { SearchForm } from "../components/SearchForm";
@@ -74,6 +74,7 @@ export function ManageBlogList() {
         <table className="data-table">
           <thead>
             <tr>
+              <th>Ảnh</th>
               <th>Tiêu đề</th>
               <th>Nội dung</th>
               <th></th>
@@ -83,6 +84,13 @@ export function ManageBlogList() {
             {blogs?.length ? (
               blogs.map((blog) => (
                 <tr key={blog._id}>
+                  <td>
+                    {blog.image ? (
+                      <img src={getUploadFullUrl(blog.image)} alt={blog.title} className="table-thumb" />
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
                   <td>{blog.title}</td>
                   <td className="cell-desc">{truncate(blog.content, 80)}</td>
                   <td>
@@ -97,7 +105,7 @@ export function ManageBlogList() {
               ))
             ) : (
               <tr>
-                <td colSpan={3} className="cell-empty">
+                <td colSpan={4} className="cell-empty">
                   Chưa có bài blog nào.
                 </td>
               </tr>

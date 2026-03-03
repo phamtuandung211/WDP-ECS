@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { blogService } from "../services";
+import { blogService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
-
-function truncate(str, maxLen) {
-  if (!str) return "";
-  return str.length <= maxLen ? str : str.slice(0, maxLen) + "…";
-}
 
 export function Blogs() {
   const [result, setResult] = useState({ data: [], metadata: {} });
@@ -66,13 +61,19 @@ export function Blogs() {
       <div className="blogs-grid">
         {blogs?.length ? (
           blogs.map((blog) => (
-            <article key={blog._id} className="blog-card">
-              <h3 className="blog-card-title">{blog.title}</h3>
-              <p className="blog-card-content">{truncate(blog.content, 120)}</p>
-              <Link to={`/blogs/${blog._id}`} className="btn btn-primary">
-                Xem chi tiết
-              </Link>
-            </article>
+            <Link key={blog._id} to={`/blogs/${blog._id}`} className="blog-card">
+              {blog.image ? (
+                <div className="blog-card-image">
+                  <img src={getUploadFullUrl(blog.image)} alt={blog.title} />
+                </div>
+              ) : (
+                <div className="blog-card-image blog-card-image-placeholder" />
+              )}
+              <div className="blog-card-body">
+                <h3 className="blog-card-title">{blog.title}</h3>
+                <span className="blog-card-cta">Xem chi tiết</span>
+              </div>
+            </Link>
           ))
         ) : (
           <p className="blogs-empty">Chưa có bài viết nào.</p>
