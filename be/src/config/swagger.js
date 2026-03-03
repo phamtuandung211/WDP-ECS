@@ -26,6 +26,7 @@ const options = {
             name: { type: "string" },
             description: { type: "string" },
             price: { type: "number" },
+            image: { type: "string", description: "URL ảnh (Cloudinary hoặc /uploads/...)" },
             createdBy: { type: "string" },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
@@ -38,6 +39,7 @@ const options = {
             name: { type: "string" },
             description: { type: "string" },
             price: { type: "number", minimum: 0 },
+            image: { type: "string", description: "URL ảnh (tùy chọn)" },
           },
         },
         Blog: {
@@ -46,6 +48,7 @@ const options = {
             _id: { type: "string" },
             title: { type: "string" },
             content: { type: "string" },
+            image: { type: "string", description: "URL ảnh (Cloudinary hoặc /uploads/...)" },
             createdBy: { type: "string" },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
@@ -57,6 +60,7 @@ const options = {
           properties: {
             title: { type: "string" },
             content: { type: "string" },
+            image: { type: "string", description: "URL ảnh (tùy chọn)" },
           },
         },
       },

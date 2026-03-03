@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { services as mockServices } from "../mockData";
+import { serviceService, getUploadFullUrl } from "../services";
+import { Loading, Alert } from "../components/UI";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
 
@@ -32,25 +33,34 @@ export function Services() {
         }}
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {paged.length ? (
-          paged.map((service) => (
-            <div
-              key={service.id}
-              className="border border-gray-200 rounded p-4 bg-white"
+      <div className="services-grid">
+        {services?.length ? (
+          services.map((service) => (
+            <Link
+              key={service._id}
+              to={`/services/${service._id}`}
+              className="service-card"
             >
-              <h3 className="text-xl font-semibold mb-1">{service.name}</h3>
-              <p className="mb-2 text-gray-600">{service.description}</p>
-              <p className="font-bold mb-2">
-                {service.price.toLocaleString("vi-VN")} VNĐ
-              </p>
-              <Link
-                to={`/services/${service.id}`}
-                className="inline-block mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Xem chi tiết
-              </Link>
-            </div>
+              {service.image ? (
+                <div className="service-card-image">
+                  <img
+                    src={getUploadFullUrl(service.image)}
+                    alt={service.name}
+                  />
+                </div>
+              ) : (
+                <div className="service-card-image service-card-image-placeholder" />
+              )}
+              <div className="service-card-body">
+                <h3 className="service-card-title">{service.name}</h3>
+                <p className="service-card-price">
+                  {service.price != null
+                    ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
+                    : "—"}
+                </p>
+                <span className="service-card-cta">Xem chi tiết</span>
+              </div>
+            </Link>
           ))
         ) : (
           <p>Chưa có gói dịch vụ nào.</p>

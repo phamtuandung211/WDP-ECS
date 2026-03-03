@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { services as mockServices } from "../mockData";
-import { Card } from "../components/UI";
+import { serviceService, getUploadFullUrl } from "../services";
+import { Loading, Alert } from "../components/UI";
 
 export function ServiceDetail() {
   const { id } = useParams();
@@ -9,20 +9,31 @@ export function ServiceDetail() {
   if (!service) return <p className="p-4">Dịch vụ không tồn tại.</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      <Card className="p-6">
-        <h1 className="text-2xl font-bold mb-2">{service.name}</h1>
-        <p className="mb-4 text-gray-700">{service.description}</p>
-        <p className="font-bold mb-4">
-          Giá: {service.price.toLocaleString("vi-VN")} VNĐ
-        </p>
-        <Link
-          to="/services"
-          className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Quay lại danh sách
-        </Link>
-      </Card>
+    <div className="page service-detail-page">
+      <Link to="/services" className="back-link">
+        ← Danh sách dịch vụ
+      </Link>
+      <div className="service-detail-card">
+        {service.image && (
+          <div className="service-detail-image">
+            <img src={getUploadFullUrl(service.image)} alt={service.name} />
+          </div>
+        )}
+        <div className="service-detail-body">
+          <h1 className="service-detail-title">{service.name}</h1>
+          <p className="service-detail-price">
+            {service.price != null
+              ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
+              : "—"}
+          </p>
+          {service.description && (
+            <p className="service-detail-desc">{service.description}</p>
+          )}
+          <Link to="/services" className="btn btn-secondary">
+            Quay lại danh sách
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

@@ -39,7 +39,7 @@ export const getServiceById = async (id) => {
 };
 
 export const createService = async (payload, createdByStaffId = null) => {
-  const { name, description, price } = payload;
+  const { name, description, price, image } = payload;
 
   if (!name || !name.trim()) {
     const err = new Error("Validation failed");
@@ -64,6 +64,7 @@ export const createService = async (payload, createdByStaffId = null) => {
     name: name.trim(),
     description: description.trim(),
     price: Number(price),
+    image: image || undefined,
     createdBy: createdByStaffId || undefined,
   });
   await service.save();
@@ -78,9 +79,10 @@ export const updateService = async (id, payload) => {
     throw err;
   }
 
-  const { name, description, price } = payload;
+  const { name, description, price, image } = payload;
   if (name !== undefined) service.name = name.trim();
   if (description !== undefined) service.description = description.trim();
+  if (image !== undefined) service.image = image || null;
   if (price !== undefined) {
     const num = Number(price);
     if (Number.isNaN(num) || num < 0) {

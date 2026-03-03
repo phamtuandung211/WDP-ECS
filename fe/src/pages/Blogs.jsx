@@ -1,13 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { blogs as mockBlogs } from "../mockData";
+import { blogService, getUploadFullUrl } from "../services";
+import { Loading, Alert } from "../components/UI";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
-
-function truncate(str, maxLen) {
-  if (!str) return "";
-  return str.length <= maxLen ? str : str.slice(0, maxLen) + "…";
-}
 
 export function Blogs() {
   const [search, setSearch] = useState("");
@@ -37,21 +33,26 @@ export function Blogs() {
         }}
       />
 
-      <div className="grid gap-6">
-        {paged.length ? (
-          paged.map((blog) => (
-            <article key={blog.id} className="border p-4 rounded bg-white">
-              <h3 className="text-xl font-semibold mb-1">{blog.title}</h3>
-              <p className="text-gray-600 mb-2">
-                {truncate(blog.content, 120)}
-              </p>
-              <Link
-                to={`/blogs/${blog.id}`}
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Xem chi tiết
-              </Link>
-            </article>
+      <div className="blogs-grid">
+        {blogs?.length ? (
+          blogs.map((blog) => (
+            <Link
+              key={blog._id}
+              to={`/blogs/${blog._id}`}
+              className="blog-card"
+            >
+              {blog.image ? (
+                <div className="blog-card-image">
+                  <img src={getUploadFullUrl(blog.image)} alt={blog.title} />
+                </div>
+              ) : (
+                <div className="blog-card-image blog-card-image-placeholder" />
+              )}
+              <div className="blog-card-body">
+                <h3 className="blog-card-title">{blog.title}</h3>
+                <span className="blog-card-cta">Xem chi tiết</span>
+              </div>
+            </Link>
           ))
         ) : (
           <p>Chưa có bài viết nào.</p>

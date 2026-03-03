@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { manageServiceService } from "../services";
+import { manageServiceService, UploadService, getUploadFullUrl } from "../services";
 import { Input, Button, Loading, Alert } from "../components/UI";
 
 export function ManageServiceForm() {
@@ -11,6 +11,8 @@ export function ManageServiceForm() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [image, setImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(!isCreate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -26,6 +28,7 @@ export function ManageServiceForm() {
           setName(data.name ?? "");
           setDescription(data.description ?? "");
           setPrice(data.price != null ? String(data.price) : "");
+          setImage(data.image ?? "");
         } catch (err) {
           setError(err.response?.data?.message || "Không tải được thông tin dịch vụ");
         } finally {
@@ -62,6 +65,7 @@ export function ManageServiceForm() {
         description: description.trim(),
         price: priceNum,
       };
+      if (image) payload.image = image;
       if (isCreate) {
         await manageServiceService.create(payload);
       } else {
@@ -127,6 +131,39 @@ export function ManageServiceForm() {
           error={fieldErrors.price}
           placeholder="Ví dụ: 200000"
         />
+        <div className="form-group">
+          <label className="form-label">Ảnh dịch vụ</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploadingImage(true);
+              setError(null);
+              try {
+                const url = await UploadService.uploadImage(file);
+                if (url) setImage(url);
+                else setError("Không lấy được URL ảnh");
+              } catch (err) {
+                setError(err.response?.data?.message || "Upload ảnh thất bại");
+              } finally {
+                setUploadingImage(false);
+              }
+            }}
+            disabled={uploadingImage}
+            className="form-input"
+          />
+          {uploadingImage && <span className="form-hint">Đang tải lên...</span>}
+          {image && (
+            <div className="form-image-preview">
+              <img src={getUploadFullUrl(image)} alt="Preview" />
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setImage("")}>
+                Xóa ảnh
+              </button>
+            </div>
+          )}
+        </div>
         <div className="form-actions">
           <Button type="submit" disabled={submitting}>
             {submitting ? "Đang lưu..." : isCreate ? "Tạo mới" : "Cập nhật"}

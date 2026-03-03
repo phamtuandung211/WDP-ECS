@@ -19,6 +19,7 @@ import slotRoutes from "./routes/slot.route.js";
 import { registerCronJobs } from "./cron/index.js";
 import doctorRoutes from "./routes/doctor.route.js";
 import specializationRoutes from "./routes/specialization.route.js";
+import uploadRoutes from "./routes/upload.route.js";
 
 dotenv.config();
 
@@ -52,7 +53,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/slots", slotRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/specializations", specializationRoutes);
-
+app.use("/api/upload", uploadRoutes);
 
 app.use(errorHandler);
 
