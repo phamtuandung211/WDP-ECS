@@ -39,7 +39,7 @@ export const getBlogById = async (id) => {
 };
 
 export const createBlog = async (payload, createdByStaffId) => {
-  const { title, content } = payload;
+  const { title, content, image } = payload;
 
   if (!title || !title.trim()) {
     const err = new Error("Validation failed");
@@ -57,6 +57,7 @@ export const createBlog = async (payload, createdByStaffId) => {
   const blog = new Blog({
     title: title.trim(),
     content: content.trim(),
+    image: image || undefined,
     createdBy: createdByStaffId,
   });
   await blog.save();
@@ -71,9 +72,10 @@ export const updateBlog = async (id, payload) => {
     throw err;
   }
 
-  const { title, content } = payload;
+  const { title, content, image } = payload;
   if (title !== undefined) blog.title = title.trim();
   if (content !== undefined) blog.content = content.trim();
+  if (image !== undefined) blog.image = image || null;
 
   await blog.save();
   return blog.toObject();

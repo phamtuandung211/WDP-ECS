@@ -48,6 +48,7 @@ const options = {
             _id: { type: "string" },
             title: { type: "string" },
             content: { type: "string" },
+            image: { type: "string", description: "URL ảnh (Cloudinary hoặc /uploads/...)" },
             createdBy: { type: "string" },
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
@@ -59,6 +60,7 @@ const options = {
           properties: {
             title: { type: "string" },
             content: { type: "string" },
+            image: { type: "string", description: "URL ảnh (tùy chọn)" },
           },
         },
       },
