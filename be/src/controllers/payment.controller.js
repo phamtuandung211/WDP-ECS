@@ -1,6 +1,7 @@
 import {
   createPaymentLinkService,
   handlePayosWebhook,
+  handleCancelPayment,
 } from "../services/payment.service.js";
 
 export const createPayment = async (req, res) => {
@@ -23,6 +24,28 @@ export const createPayment = async (req, res) => {
   } catch (err) {
     return res.status(err.status || 500).json({
       message: err.message || "Failed to create payment link",
+    });
+  }
+};
+
+/**
+ * POST /api/payments/payos/cancel
+ * Called by frontend when user is redirected to cancelUrl from PayOS checkout.
+ */
+export const cancelPayment = async (req, res) => {
+  try {
+    const { orderCode } = req.body;
+
+    if (!orderCode) {
+      return res.status(400).json({ message: "orderCode is required" });
+    }
+
+    const result = await handleCancelPayment(Number(orderCode));
+
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || "Failed to cancel payment",
     });
   }
 };

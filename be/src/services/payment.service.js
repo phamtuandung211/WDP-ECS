@@ -8,7 +8,6 @@ import {
   APPOINTMENT_TYPE,
   PAYMENT_TIMEOUT_MINUTES,
   APPOINTMENT_PRICE,
-  APPOINTMENT_DESCRIPTION,
 } from "../constants/Appointment.enum.js";
 import { bookSlotByType } from "./slot.service.js";
 
@@ -60,8 +59,8 @@ export const createPaymentLinkService = async (appointmentId) => {
           : APPOINTMENT_PRICE.ADVANCED,
       description:
         appointment.type === APPOINTMENT_TYPE.BASIC
-          ? APPOINTMENT_DESCRIPTION.BASIC
-          : APPOINTMENT_DESCRIPTION.ADVANCED,
+          ? APPOINTMENT_TYPE.BASIC + " -" + orderCode
+          : APPOINTMENT_TYPE.ADVANCED + " -" + orderCode,
       cancelUrl: process.env.PAYOS_CANCEL_URL,
       returnUrl: process.env.PAYOS_RETURN_URL,
     });
@@ -198,6 +197,61 @@ export const handlePayosWebhook = async (rawBody) => {
       success: true,
       message: isSuccess ? "Payment confirmed" : "Payment failed",
     };
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
+  }
+};
+
+/**
+ * Handle cancel return from PayOS checkout page.
+ * Called by frontend when user is redirected to cancelUrl.
+ */
+export const handleCancelPayment = async (orderCode) => {
+  const payment = await Payment.findOne({ orderCode });
+  if (!payment) {
+    throw Object.assign(new Error("Payment not found"), { status: 404 });
+  }
+
+  if (payment.status !== PAYMENT_STATUS.PENDING) {
+    return { success: true, message: "Already processed" };
+  }
+
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    // Cancel payment link on PayOS
+    try {
+      await payos.paymentRequests.cancel(orderCode);
+    } catch (e) {
+      // Ignore if already cancelled on PayOS side
+      console.warn(
+        `[CancelPayment] PayOS cancel request failed for orderCode ${orderCode}:`,
+        e.message,
+      );
+    }
+
+    payment.status = PAYMENT_STATUS.CANCELED;
+    payment.canceledAt = new Date();
+    await payment.save({ session });
+
+    const appointment = await Appointment.findById(
+      payment.appointmentId,
+    ).session(session);
+    if (
+      appointment &&
+      appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT
+    ) {
+      appointment.status = APPOINTMENT_STATUS.CANCELED;
+      await appointment.save({ session });
+    }
+
+    await session.commitTransaction();
+
+    return { success: true, message: "Payment canceled" };
   } catch (err) {
     await session.abortTransaction();
     throw err;

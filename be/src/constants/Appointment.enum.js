@@ -16,11 +16,6 @@ const APPOINTMENT_PRICE = {
   ADVANCED: 200000,
 };
 
-const APPOINTMENT_DESCRIPTION = {
-  BASIC: "Basic Appointment Payment",
-  ADVANCED: "Advanced Appointment Payment",
-};
-
 const PAYMENT_TIMEOUT_MINUTES = 15;
 
 /** Max days in advance a customer can book */
@@ -32,5 +27,4 @@ export {
   PAYMENT_TIMEOUT_MINUTES,
   MAX_BOOKING_ADVANCE_DAYS,
   APPOINTMENT_PRICE,
-  APPOINTMENT_DESCRIPTION,
 };
