@@ -24,6 +24,8 @@ import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { Forbidden } from "./pages/Forbidden";
 import { ROLE_NAME } from "./constants/role";
 import "./styles.css";
+import DoctorListPage from "./pages/ListDoctors";
+import DoctorDetailPage from "./pages/DoctorDetail";
 
 function ProtectedRoute({ element, allowedRoles }) {
   const { user } = useAuth();
@@ -105,6 +107,10 @@ function App() {
               }
             />
             <Route path="*" element={<Navigate to="/" />} />
+            {/* Route doctor */}
+            <Route path="/doctors" element={<DoctorListPage />} />
+            <Route path="/doctors/:id" element={<DoctorDetailPage />} />
+
           </Routes>
         </main>
         <Footer />

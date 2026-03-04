@@ -141,6 +141,15 @@ export const statisticsService = {
 };
 
 export const doctorService = {
-  getAllDoctor: () => apiClient.get("/doctors"),
+  getAllDoctor: (params = {}) => apiClient.get("/doctors", { params }),
   getDoctorById: (id) => apiClient.get(`/doctors/${id}`),
+  getRelatedDoctor: (id) => apiClient.get(`/doctors/${id}/related`),
+}
+
+export const specializationService = {
+  getAll: () => apiClient.get("/specializations"),
+};
+
+export const degreeService = {
+  getAllNames: () => apiClient.get("/degrees/names"),
 };
