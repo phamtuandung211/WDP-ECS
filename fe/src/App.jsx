@@ -35,7 +35,7 @@ function RoleProtectedRoute({ element, allowedRoles }) {
 }
 
 function App() {
-  const staffRoles = [ROLE_NAME.SALE_STAFF, ROLE_NAME.ADMIN];
+  const staffRoles = [ROLE_NAME.SALE_STAFF];
   return (
     <AuthProvider>
       <div className="app">
