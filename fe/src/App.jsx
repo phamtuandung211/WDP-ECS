@@ -21,6 +21,8 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { MedicalRecordsPage } from "./pages/MedicalRecordsPage";
 import { FeedbacksPage } from "./pages/FeedbacksPage";
 import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
+import { Forbidden } from "./pages/Forbidden";
+import { ROLE_NAME } from "./constants/role";
 import "./styles.css";
 
 function ProtectedRoute({ element, allowedRoles }) {
@@ -30,7 +32,16 @@ function ProtectedRoute({ element, allowedRoles }) {
   return element;
 }
 
+function RoleProtectedRoute({ element, allowedRoles }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" />;
+  if (!Array.isArray(allowedRoles) || allowedRoles.length === 0) return element;
+  const role = user?.role;
+  return allowedRoles.includes(role) ? element : <Navigate to="/403" />;
+}
+
 function App() {
+  const staffRoles = [ROLE_NAME.SALE_STAFF];
   return (
     <AuthProvider>
       <div className="app">
@@ -46,25 +57,26 @@ function App() {
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/403" element={<Forbidden />} />
             <Route
               path="/staff/dashboard"
-              element={<ProtectedRoute element={<SaleStaffDashboard />} />}
+              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<SaleStaffDashboard />} />}
             />
             <Route
               path="/staff/manage-services"
-              element={<ProtectedRoute element={<ManageServiceList />} />}
+              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageServiceList />} />}
             />
             <Route
               path="/staff/manage-services/:id"
-              element={<ProtectedRoute element={<ManageServiceForm />} />}
+              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageServiceForm />} />}
             />
             <Route
               path="/staff/manage-blogs"
-              element={<ProtectedRoute element={<ManageBlogList />} />}
+              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageBlogList />} />}
             />
             <Route
               path="/staff/manage-blogs/:id"
-              element={<ProtectedRoute element={<ManageBlogForm />} />}
+              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageBlogForm />} />}
             />
             <Route
               path="/appointments"

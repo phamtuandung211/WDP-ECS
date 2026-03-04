@@ -3,6 +3,65 @@ import { Link, useParams } from "react-router-dom";
 import { blogService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 
+/** Nhận dạng dòng là tiêu đề mục (số + chấm/ngoặc + nội dung), ví dụ: "1. Tăng nhãn áp là gì?" */
+function isSectionHeading(line) {
+  const t = line.trim();
+  return /^\d+[.)]\s+.+$/.test(t);
+}
+
+/** Nội dung có chứa HTML thật (đã lưu từ trước) thì render HTML; còn lại parse plain text thành đoạn + heading. */
+function renderBlogContent(content) {
+  if (!content || typeof content !== "string") return null;
+  const s = content.trim();
+  if (s.includes("</") && (s.includes("<p>") || s.includes("<h2>") || s.includes("<h3>") || s.includes("<div"))) {
+    return (
+      <div
+        className="blog-detail-content blog-detail-content--html"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+  const lines = content.split(/\r?\n/);
+  const blocks = [];
+  let paragraphLines = [];
+  const flushParagraph = () => {
+    if (paragraphLines.length) {
+      blocks.push({ type: "p", text: paragraphLines.join(" ") });
+      paragraphLines = [];
+    }
+  };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (trimmed === "") {
+      flushParagraph();
+      continue;
+    }
+    if (isSectionHeading(trimmed)) {
+      flushParagraph();
+      blocks.push({ type: "h", text: trimmed });
+    } else {
+      paragraphLines.push(trimmed);
+    }
+  }
+  flushParagraph();
+  return (
+    <div className="blog-detail-content blog-detail-content--parsed">
+      {blocks.map((block, i) =>
+        block.type === "h" ? (
+          <div key={i} className="blog-detail-heading">
+            {block.text}
+          </div>
+        ) : (
+          <p key={i} className="blog-detail-content-p">
+            {block.text}
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
 export function BlogDetail() {
   const { id } = useParams();
   const [blog, setBlog] = useState(null);
@@ -41,7 +100,7 @@ export function BlogDetail() {
         )}
         <div className="blog-detail-body">
           <h1 className="blog-detail-title">{blog.title}</h1>
-          <div className="blog-detail-content">{blog.content}</div>
+          {renderBlogContent(blog.content)}
           <Link to="/blogs" className="btn btn-secondary">Quay lại danh sách</Link>
         </div>
       </article>
