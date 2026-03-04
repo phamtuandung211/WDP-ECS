@@ -108,7 +108,7 @@ export const userService = {
 
 export const profileService = {
   getMyProfile: () => apiClient.get("/user/me"),
-  updateMyProfile: (data) => apiClient.put("/user/me", data),
+  updateMyProfile: (data) => apiClient.patch("/user/me", data),
 };
 
 export const medicalRecordService = {

@@ -19,11 +19,12 @@ export const createFeedbackController = async (req, res) => {
             data: feedback,
         });
     } catch (err) {
-        return res.status(err.status || 500).json({
-            message: err.message || "Failed to submit feedback",
-        });
+        let body;
+        try { body = JSON.parse(err.message); } catch { body = { message: err.message || "Failed to submit feedback" }; }
+        return res.status(err.status || 500).json(body);
     }
 };
+
 
 export const getMyFeedbacksController = async (req, res) => {
     try {

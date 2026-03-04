@@ -32,11 +32,9 @@ export const updateMyProfile = async (req, res) => {
             data: result,
         });
     } catch (err) {
-        if (err.message?.includes("Chỉ chấp nhận")) {
-            return res.status(400).json({ message: err.message });
-        }
-        return res.status(err.status || 500).json({
-            message: err.message || "Failed to update profile",
-        });
+        let body;
+        try { body = JSON.parse(err.message); } catch { body = { message: err.message || "Failed to update profile" }; }
+        return res.status(err.status || 500).json(body);
     }
 };
+

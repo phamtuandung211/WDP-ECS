@@ -13,10 +13,30 @@ function throwErr(status, message) {
 
 
 export const createFeedback = async ({ accountId, appointmentId, point, comment }) => {
-    if (!appointmentId) throwErr(400, "appointmentId is required");
-    if (point === undefined || point === null) throwErr(400, "point is required");
-    if (point < 1 || point > 5) throwErr(400, "point must be between 1 and 5");
+    // --- Validation ---
+    const errors = {};
+    if (!appointmentId)
+        errors.appointmentId = "appointmentId is required";
+    else if (!/^[a-f\d]{24}$/i.test(String(appointmentId)))
+        errors.appointmentId = "appointmentId must be a valid MongoDB ObjectId";
 
+    if (point === undefined || point === null)
+        errors.point = "point is required";
+    else if (typeof point !== "number" || !Number.isInteger(point))
+        errors.point = "point must be an integer";
+    else if (point < 1 || point > 5)
+        errors.point = "point must be between 1 and 5";
+
+    if (comment !== undefined) {
+        if (typeof comment !== "string")
+            errors.comment = "comment must be a string";
+        else if (comment.trim().length > 1000)
+            errors.comment = "comment must not exceed 1000 characters";
+    }
+
+    if (Object.keys(errors).length > 0)
+        throwErr(400, JSON.stringify({ message: "Validation failed", errors }));
+    // --- End Validation ---
     const customer = await Customer.findOne({ accountId }).lean();
     if (!customer) throwErr(404, "Customer profile not found");
 

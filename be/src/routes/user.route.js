@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.get("/me", authenticate, getMyProfile);
 
-router.put("/me", authenticate, updateMyProfile);
+router.patch("/me", authenticate, updateMyProfile);
 
 export default router;
