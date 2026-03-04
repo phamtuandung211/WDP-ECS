@@ -1,27 +1,75 @@
+import mongoose from "mongoose";
 import Doctor from "../models/Doctor.js";
 import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
-
+import Degree from "../models/Degree.js";
+import Certificate from "../models/Certificate.js";
+import { DEGREE_STATUS } from "../constants/Degree.enum.js";
+import { CERTIFICATE_STATUS } from "../constants/Certificate.enum.js";
 
 
 export const getAllDoctorsService = async (query) => {
     try {
-        // Lấy page & limit từ query
-        const { page, limit } = query;
-
-        const { limit: safeLimit, offset, page: safePage } = buildPagination({
+        const {
             page,
             limit,
-        });
+            search,
+            specialization,
+            degree,
+            sortByExperience, // asc | desc
+        } = query;
 
-        // Lấy tổng số doctor
-        const totalItems = await Doctor.countDocuments();
+        const { limit: safeLimit, offset } = buildPagination({ page, limit });
 
-        // Lấy danh sách doctor có phân trang
-        const doctors = await Doctor.find()
+        // =============================
+        // 1️⃣ Build filter object
+        // =============================
+        const filter = {};
+
+        // 🔎 Search doctor by name
+        if (search) {
+            filter.fullName = { $regex: search, $options: "i" }; // không phân biệt hoa thường
+        }
+
+        // 🏥 Filter by specialization
+        if (specialization) {
+            filter.specializations = new mongoose.Types.ObjectId(specialization);
+        }
+
+        // 🎓 Filter by degree
+        if (degree) {
+            const doctorIds = await Degree.find({
+                name: { $regex: degree, $options: "i" },
+            }).distinct("doctorId");
+
+            filter._id = { $in: doctorIds };
+        }
+
+        // =============================
+        // 2️⃣ Sort
+        // =============================
+        let sortOption = {};
+        if (sortByExperience) {
+            sortOption.experienceYears =
+                sortByExperience === "desc" ? -1 : 1;
+        }
+
+        // =============================
+        // 3️⃣ Count total
+        // =============================
+        const totalItems = await Doctor.countDocuments(filter);
+
+        // =============================
+        // 4️⃣ Query doctors
+        // =============================
+        const doctors = await Doctor.find(filter)
+            .populate({
+                path: "specializations",
+                select: "name",
+            })
+            .sort(sortOption)
             .skip(offset)
             .limit(safeLimit);
 
-        // Metadata phân trang
         const pagination = getPaginationMetadata(
             doctors.length,
             totalItems,
@@ -33,28 +81,49 @@ export const getAllDoctorsService = async (query) => {
             data: doctors,
             metadata: pagination,
         };
-
     } catch (error) {
         console.log(error);
         throw error;
     }
 };
 
-export const getDoctorByIdSerivice = async (doctorId) => {
+export const getDoctorByIdService = async (doctorId) => {
     try {
-        const doctor = await Doctor.findById(doctorId);
+        // 1️⃣ Lấy doctor + populate specialization
+        const doctor = await Doctor.findById(doctorId).populate({
+            path: "specializations",
+            select: "name",
+        });
+
         if (!doctor) {
             const error = new Error(`Doctor with id ${doctorId} not found`);
             error.statusCode = 404;
             throw error;
         }
-        return doctor;
 
+        // 2️⃣ Lấy degree đã APPROVED
+        const degrees = await Degree.find({
+            doctorId,
+            status: DEGREE_STATUS.APPROVED,
+        }).select("name fileUrl createdAt");
+
+        // 3️⃣ Lấy certificate đã APPROVED
+        const certificates = await Certificate.find({
+            doctorId,
+            status: CERTIFICATE_STATUS.APPROVED,
+        }).select("name issuedBy issueDate fileUrl");
+
+        // 4️⃣ Trả về object đầy đủ
+        return {
+            ...doctor.toObject(),
+            degrees,
+            certificates,
+        };
     } catch (error) {
         console.log(error);
         throw error;
     }
-}
+};
 
 export const getRelatedDoctorsService = async (doctorId) => {
     try {

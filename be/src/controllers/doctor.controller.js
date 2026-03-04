@@ -1,6 +1,6 @@
 import {
     getAllDoctorsService,
-    getDoctorByIdSerivice,
+    getDoctorByIdService,
     getRelatedDoctorsService
 } from "../services/doctor.service.js";
 
@@ -28,7 +28,7 @@ export const getAllDoctors = async (req, res) => {
  */
 export const getDoctorById = async (req, res) => {
     try {
-        const doctor = await getDoctorByIdSerivice(req.params.id);
+        const doctor = await getDoctorByIdService(req.params.id);
 
         return res.status(200).json({
             message: "Doctor fetched successfully",

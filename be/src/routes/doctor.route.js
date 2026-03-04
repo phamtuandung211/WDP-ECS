@@ -11,4 +11,5 @@ route.get("/", getAllDoctors);
 route.get("/:id", getDoctorById);
 route.get("/:id/related", getRelateDoctors);
 
+
 export default route;
