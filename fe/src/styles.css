@@ -799,9 +799,86 @@ button {
 
 .blog-detail-content {
   color: #475569;
-  line-height: 1.7;
-  white-space: pre-wrap;
+  line-height: 1.65;
   margin: 0 0 1.5rem;
+}
+
+/* Nội dung plain text được parse tự động */
+.blog-detail-content--parsed {
+  white-space: normal;
+}
+
+.blog-detail-content--html {
+  white-space: pre-wrap;
+}
+
+/* Tiêu đề mục (1. ..., 2. ...) — khoảng cách trên/dưới cân bằng */
+.blog-detail-heading {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 1rem 0 0.5rem;
+  line-height: 1.4;
+}
+
+.blog-detail-heading:first-child {
+  margin-top: 0;
+}
+
+/* Đoạn văn — giãn cách đều, không thưa quá */
+.blog-detail-content-p {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.blog-detail-content-p:last-child {
+  margin-bottom: 0;
+}
+
+.blog-detail-content h2 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.blog-detail-content h2:first-child {
+  margin-top: 0;
+}
+
+.blog-detail-content h3 {
+  margin: 0.85rem 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1f2933;
+  line-height: 1.35;
+}
+
+.blog-detail-content strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.blog-detail-content p {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.blog-detail-content p:last-child {
+  margin-bottom: 0;
+}
+
+.blog-detail-content ul,
+.blog-detail-content ol {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+  padding-left: 1rem;
+}
+
+.blog-detail-content li {
+  margin-bottom: 0.35rem;
 }
 
 .blog-detail-card .btn {
