@@ -106,7 +106,41 @@ export const userService = {
   updateProfile: (data) => apiClient.put("/users/profile", data),
 };
 
+export const profileService = {
+  getMyProfile: () => apiClient.get("/user/me"),
+  updateMyProfile: (data) => apiClient.patch("/user/me", data),
+};
+
+export const medicalRecordService = {
+  create: (data) => apiClient.post("/medical-records", data),
+  getMy: (params = {}) => apiClient.get("/medical-records/my", { params }),
+  getAll: (params = {}) => apiClient.get("/medical-records", { params }),
+  getById: (id) => apiClient.get(`/medical-records/${id}`),
+  getByAppointment: (appointmentId) =>
+    apiClient.get(`/medical-records/appointment/${appointmentId}`),
+  update: (id, data) => apiClient.put(`/medical-records/${id}`, data),
+};
+
+export const feedbackService = {
+  create: (data) => apiClient.post("/feedbacks", data),
+  getMy: (params = {}) => apiClient.get("/feedbacks/my", { params }),
+  getAll: (params = {}) => apiClient.get("/feedbacks", { params }),
+  getById: (id) => apiClient.get(`/feedbacks/${id}`),
+  getByAppointment: (appointmentId) =>
+    apiClient.get(`/feedbacks/appointment/${appointmentId}`),
+  review: (id) => apiClient.patch(`/feedbacks/${id}/review`),
+};
+
+export const statisticsService = {
+  getOverview: (params = {}) => apiClient.get("/statistics/overview", { params }),
+  getRevenue: (params = {}) => apiClient.get("/statistics/revenue", { params }),
+  getAppointments: (params = {}) => apiClient.get("/statistics/appointments", { params }),
+  getDoctors: (params = {}) => apiClient.get("/statistics/doctors", { params }),
+  getFeedbacks: (params = {}) => apiClient.get("/statistics/feedbacks", { params }),
+  getAccounts: (params = {}) => apiClient.get("/statistics/accounts", { params }),
+};
+
 export const doctorService = {
   getAllDoctor: () => apiClient.get("/doctors"),
-  getDoctorById: (id) => apiClient.get(`/doctors/${id}`)
-}
+  getDoctorById: (id) => apiClient.get(`/doctors/${id}`),
+};

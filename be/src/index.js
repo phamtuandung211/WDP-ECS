@@ -17,6 +17,10 @@ import slotRoutes from "./routes/slot.route.js";
 import { registerCronJobs } from "./cron/index.js";
 import doctorRoutes from "./routes/doctor.route.js";
 import specializationRoutes from "./routes/specialization.route.js";
+import userRoutes from "./routes/user.route.js";
+import medicalRecordRoutes from "./routes/medicalRecord.route.js";
+import feedbackRoutes from "./routes/feedback.route.js";
+import statisticsRoutes from "./routes/statistics.route.js";
 import uploadRoutes from "./routes/upload.route.js";
 
 dotenv.config();
@@ -38,6 +42,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes) 
 app.use("/api/roles", rolesRoutes);
 app.use("/api/approval", approvalRoutes);
 app.use("/api/manage-services", manageServiceRoutes);
@@ -49,8 +54,10 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/slots", slotRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/specializations", specializationRoutes);
+app.use("/api/medical-records", medicalRecordRoutes);
+app.use("/api/feedbacks", feedbackRoutes);
+app.use("/api/statistics", statisticsRoutes);
 app.use("/api/upload", uploadRoutes);
-
 app.use(errorHandler);
 
 app.listen(PORT, () => {
