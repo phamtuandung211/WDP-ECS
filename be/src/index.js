@@ -22,6 +22,7 @@ import medicalRecordRoutes from "./routes/medicalRecord.route.js";
 import feedbackRoutes from "./routes/feedback.route.js";
 import statisticsRoutes from "./routes/statistics.route.js";
 import uploadRoutes from "./routes/upload.route.js";
+import degreeRoutes from "./routes/degree.route.js";
 
 dotenv.config();
 
@@ -42,7 +43,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes) 
+app.use("/api/user", userRoutes)
 app.use("/api/roles", rolesRoutes);
 app.use("/api/approval", approvalRoutes);
 app.use("/api/manage-services", manageServiceRoutes);
@@ -58,6 +59,8 @@ app.use("/api/medical-records", medicalRecordRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/degrees", degreeRoutes);
+
 app.use(errorHandler);
 
 app.listen(PORT, () => {
