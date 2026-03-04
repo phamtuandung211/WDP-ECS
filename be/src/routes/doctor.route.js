@@ -9,6 +9,7 @@ const route = express.Router();
 
 route.get("/", getAllDoctors);
 route.get("/:id", getDoctorById);
-route.get("/relateddoctors/:id", getRelateDoctors);
+route.get("/:id/related", getRelateDoctors);
+
 
 export default route;

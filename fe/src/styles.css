@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
   margin: 0;
   padding: 0;
@@ -357,7 +361,9 @@ button {
   text-decoration: none;
   color: inherit;
   border: 1px solid #eee;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .dashboard-card:hover {
@@ -534,7 +540,9 @@ button {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .service-card:hover {
@@ -712,7 +720,9 @@ button {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .blog-card:hover {
@@ -1252,7 +1262,9 @@ button {
   font-size: 15px;
   border-radius: 8px;
   background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
-  transition: opacity 0.2s, transform 0.15s;
+  transition:
+    opacity 0.2s,
+    transform 0.15s;
 }
 
 .pv2-save-btn:hover:not(:disabled) {
@@ -1315,7 +1327,7 @@ button {
   background: white;
   border-radius: 8px;
   padding: 28px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
@@ -1344,7 +1356,7 @@ button {
   font-weight: 600;
   text-transform: uppercase;
   color: #888;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
 }
 
 /* ── Filter bar ──────────────────────────────────────────────────── */
@@ -1435,7 +1447,9 @@ button {
   color: #666;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: color .15s, border-color .15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .tab-btn:hover {
@@ -1463,7 +1477,7 @@ button {
   background: white;
   border-radius: 8px;
   padding: 20px 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
 
@@ -1488,7 +1502,7 @@ button {
   background: white;
   border-radius: 8px;
   padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -1540,7 +1554,7 @@ button {
 .rating-bar-fill {
   height: 100%;
   border-radius: 999px;
-  transition: width .4s ease;
+  transition: width 0.4s ease;
 }
 
 .rating-count {
