@@ -24,9 +24,6 @@ export function ChatWidget() {
 
   const isCustomer = user?.role === ROLE_NAME.CUSTOMER;
 
-  // Don't render for non-customers
-  if (!user || !isCustomer) return null;
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -34,6 +31,9 @@ export function ChatWidget() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Don't render for non-customers
+  if (!user || !isCustomer) return null;
 
   const handleOpen = async () => {
     setOpen(true);
