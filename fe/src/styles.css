@@ -393,7 +393,8 @@ button {
 
 /* Manage Service List */
 .manage-service-list-page .page-header,
-.manage-blog-list-page .page-header {
+.manage-blog-list-page .page-header,
+.manage-specialization-page .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
