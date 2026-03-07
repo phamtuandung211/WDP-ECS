@@ -147,7 +147,11 @@ export const doctorService = {
 }
 
 export const specializationService = {
-  getAll: () => apiClient.get("/specializations"),
+  getAllSpecializations: (params = {}) => apiClient.get("/specializations", { params }),
+  getById: (id) => apiClient.get(`/specializations/${id}`),
+  createSpecialization: (data) => apiClient.post("/specializations/create", data),
+  updateSpecialization: (id, data) => apiClient.put(`/specializations/update/${id}`, data),
+  deleteSpecialization: (id) => apiClient.delete(`/specializations/delete/${id}`),
 };
 
 export const degreeService = {

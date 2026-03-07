@@ -22,6 +22,7 @@ import { MedicalRecordsPage } from "./pages/MedicalRecordsPage";
 import { FeedbacksPage } from "./pages/FeedbacksPage";
 import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { Forbidden } from "./pages/Forbidden";
+import { ManageSpecializations } from "./pages/ManageSpecializations";
 import { ROLE_NAME } from "./constants/role";
 import "./styles.css";
 import DoctorListPage from "./pages/ListDoctors";
@@ -79,6 +80,10 @@ function App() {
             <Route
               path="/staff/manage-blogs/:id"
               element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageBlogForm />} />}
+            />
+            <Route
+              path="/staff/manage-specializations"
+              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageSpecializations />} />}
             />
             <Route
               path="/appointments"
