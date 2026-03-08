@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { appointmentService, slotService, doctorService } from "../../services";
 import { APPOINTMENT_TYPE } from "../../constants/appointment";
 import { Alert, Loading } from "../UI";
 
 export function AdvancedAppointmentForm({ onSuccess }) {
+  const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
   const [slots, setSlots] = useState([]);
   const [formData, setFormData] = useState({
@@ -107,24 +109,22 @@ export function AdvancedAppointmentForm({ onSuccess }) {
       };
 
       const response = await appointmentService.create(payload);
+      const appointment = response.data?.data || response.data;
 
-      setSuccess("Advanced appointment booked! Your appointment is confirmed.");
-      setFormData({
-        type: APPOINTMENT_TYPE.ADVANCED,
-        doctorId: "",
-        slotId: "",
-        date: "",
-        note: "",
-      });
+      setSuccess("Appointment created! Redirecting to payment...");
 
       if (onSuccess) {
-        setTimeout(() => onSuccess(response.data), 1000);
+        onSuccess(appointment);
       }
+
+      // Redirect to payment page after 1 second
+      setTimeout(() => {
+        navigate(`/payment?appointmentId=${appointment._id}`);
+      }, 1000);
     } catch (err) {
       const message =
         err.response?.data?.message || "Failed to create appointment";
       setError(message);
-    } finally {
       setLoading(false);
     }
   };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { appointmentService } from "../services";
 import { Loading, Alert } from "../components/UI";
@@ -13,6 +14,7 @@ import {
 } from "../constants/appointment";
 
 export function Appointments() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,9 @@ export function Appointments() {
   };
 
   const handleCancel = async (appointmentId) => {
-    if (!window.confirm("Are you sure you want to cancel this appointment?")) {
+    if (
+      !globalThis.confirm("Are you sure you want to cancel this appointment?")
+    ) {
       return;
     }
 
@@ -186,6 +190,7 @@ export function Appointments() {
                   key={apt._id}
                   appointment={apt}
                   onCancel={() => handleCancel(apt._id)}
+                  onPayNow={() => navigate(`/payment?appointmentId=${apt._id}`)}
                 />
               ))}
             </div>
@@ -212,6 +217,8 @@ export function Appointments() {
 
 // Appointment Card Component
 function AppointmentCard({ appointment, onCancel }) {
+  const [isPayLoading, setIsPayLoading] = useState(false);
+  const navigate = useNavigate();
   const statusLabel = STATUS_LABELS[appointment.status] || appointment.status;
   const statusColor = STATUS_COLORS[appointment.status] || "bg-gray-100";
 
@@ -242,6 +249,15 @@ function AppointmentCard({ appointment, onCancel }) {
     APPOINTMENT_STATUS.PENDING_PAYMENT,
     APPOINTMENT_STATUS.WAITING_ASSIGN,
   ].includes(appointment.status);
+
+  const handlePayNow = async () => {
+    setIsPayLoading(true);
+    try {
+      navigate(`/payment?appointmentId=${appointment._id}`);
+    } finally {
+      setIsPayLoading(false);
+    }
+  };
 
   return (
     <div className="appointment-card border border-gray-200 rounded-lg p-4 hover:shadow-lg transition">
@@ -336,11 +352,21 @@ function AppointmentCard({ appointment, onCancel }) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
+        {appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT && (
+          <button
+            onClick={handlePayNow}
+            disabled={isPayLoading}
+            className="flex-1 min-w-24 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium"
+          >
+            {isPayLoading ? "Loading..." : "Complete Payment"}
+          </button>
+        )}
+
         {canCancel && (
           <button
             onClick={onCancel}
-            className="flex-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+            className="flex-1 min-w-24 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
           >
             Cancel
           </button>
@@ -349,7 +375,7 @@ function AppointmentCard({ appointment, onCancel }) {
         {appointment.status === APPOINTMENT_STATUS.COMPLETED && (
           <button
             onClick={() => {
-              // TODO: Navigate to feedback form
+              navigate(`/feedback?appointmentId=${appointment._id}`);
             }}
             className="flex-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
           >

@@ -20,6 +20,8 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { MedicalRecordsPage } from "./pages/MedicalRecordsPage";
 import { FeedbacksPage } from "./pages/FeedbacksPage";
 import { Forbidden } from "./pages/Forbidden";
+import { PaymentPage } from "./pages/PaymentPage";
+import { PaymentReturnPage } from "./pages/PaymentReturnPage";
 import { ROLE_NAME } from "./constants/role";
 import RoleBasedDashboard from "./components/RoleBasedDashboard";
 import "./styles.css";
@@ -183,6 +185,40 @@ function App() {
               element={
                 <PrivateRoute>
                   <RoleBasedDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ========== Payment Routes ========== */}
+            <Route
+              path="/payment"
+              element={
+                <PrivateRoute>
+                  <PaymentPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/return"
+              element={
+                <PrivateRoute>
+                  <PaymentReturnPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/success"
+              element={
+                <PrivateRoute>
+                  <PaymentReturnPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/cancel"
+              element={
+                <PrivateRoute>
+                  <PaymentReturnPage />
                 </PrivateRoute>
               }
             />

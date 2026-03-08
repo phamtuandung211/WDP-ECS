@@ -165,6 +165,16 @@ export const statisticsService = {
     apiClient.get("/statistics/accounts", { params }),
 };
 
+export const paymentService = {
+  // Create payment link for appointment
+  createPaymentLink: (appointmentId) =>
+    apiClient.post("/payments/payos/create", { appointmentId }),
+
+  // Handle cancel from PayOS checkout
+  cancelPayment: (orderCode) =>
+    apiClient.post("/payments/payos/cancel", { orderCode }),
+};
+
 export const doctorService = {
   getAllDoctor: (params = {}) => apiClient.get("/doctors", { params }),
   getDoctorById: (id) => apiClient.get(`/doctors/${id}`),

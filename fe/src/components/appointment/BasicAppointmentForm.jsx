@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { appointmentService } from "../../services";
 import { APPOINTMENT_TYPE } from "../../constants/appointment";
 import { Alert, Loading } from "../UI";
 
 export function BasicAppointmentForm({ onSuccess }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     type: APPOINTMENT_TYPE.BASIC,
     desiredDate: "",
@@ -50,25 +52,23 @@ export function BasicAppointmentForm({ onSuccess }) {
       };
 
       const response = await appointmentService.create(payload);
+      const appointment = response.data?.data || response.data;
 
-      setSuccess(
-        "Appointment created! Please complete payment within 15 minutes.",
-      );
-      setFormData({
-        type: APPOINTMENT_TYPE.BASIC,
-        desiredDate: "",
-        note: "",
-      });
+      setSuccess("Appointment created! Redirecting to payment...");
 
       // Notify parent component
       if (onSuccess) {
-        setTimeout(() => onSuccess(response.data), 1000);
+        onSuccess(appointment);
       }
+
+      // Redirect to payment page after 1 second
+      setTimeout(() => {
+        navigate(`/payment?appointmentId=${appointment._id}`);
+      }, 1000);
     } catch (err) {
       const message =
         err.response?.data?.message || "Failed to create appointment";
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
