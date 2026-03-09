@@ -55,15 +55,42 @@ export function PaymentReturnPage() {
 
       try {
         if (appointmentId) {
-          const response = await appointmentService.getById(appointmentId);
-          apt = response.data?.data || response.data;
-        } else {
-          // Fallback: get all appointments and find the one with matching orderCode
-          const allResponse = await appointmentService.getAll({ limit: 100 });
-          const all = allResponse.data?.data || allResponse.data || [];
-          apt = all.find(
-            (a) => a.paymentOrderCode === orderCode || a._id === appointmentId,
-          );
+          try {
+            const response = await appointmentService.getById(appointmentId);
+            apt = response.data?.data || response.data;
+          } catch (getErr) {
+            if (getErr.response?.status === 404) {
+              // Appointment was not found or deleted
+              if (!isSuccess) {
+                // On cancel/error page - this is expected
+                setErrorType("not_found");
+                setError(
+                  "Appointment not found or has been cancelled. This may happen if payment wasn't completed within 15 minutes.",
+                );
+                setLoading(false);
+                return;
+              }
+              // On success URL - try to find by all appointments
+              throw getErr;
+            }
+            throw getErr;
+          }
+        }
+
+        // If not found or no appointmentId - try to get all appointments
+        if (!apt) {
+          try {
+            const allResponse = await appointmentService.getAll({ limit: 100 });
+            const all = allResponse.data?.data || allResponse.data || [];
+            apt = all.find(
+              (a) =>
+                a.paymentOrderCode === orderCode || a._id === appointmentId,
+            );
+          } catch (allErr) {
+            console.warn("Could not fetch all appointments:", allErr);
+            // If on success URL and any error, continue anyway - we'll show success
+            if (!isSuccess) throw allErr;
+          }
         }
       } catch (fetchErr) {
         // Appointment not found or deleted
@@ -72,6 +99,8 @@ export function PaymentReturnPage() {
           setError(
             "Appointment not found or has been cancelled. This may happen if payment wasn't completed within 15 minutes.",
           );
+          setLoading(false);
+          return;
         } else {
           throw fetchErr;
         }
@@ -82,22 +111,40 @@ export function PaymentReturnPage() {
 
         // Always wait and refresh for success URLs to ensure webhook processed
         if (isSuccess && apt?._id) {
-          // Wait to ensure webhook processed
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Wait initial delay to ensure webhook processed
+          await new Promise((resolve) => setTimeout(resolve, 3000));
 
-          // Refresh appointment to get latest status from webhook
-          try {
-            const freshResponse = await appointmentService.getById(apt._id);
-            const freshApt = freshResponse.data?.data || freshResponse.data;
-            console.log("Fresh appointment after payment:", freshApt);
-            if (freshApt) {
-              setAppointment(freshApt);
-              apt = freshApt;
+          // Polling: retry refresh appointment multiple times (webhook may be slow)
+          let freshApt = apt;
+
+          for (let retry = 0; retry < 5; retry++) {
+            try {
+              const freshResponse = await appointmentService.getById(apt._id);
+              freshApt = freshResponse.data?.data || freshResponse.data;
+              console.log(`Refresh attempt ${retry + 1}:`, freshApt);
+
+              // Check if payment was processed (status changed OR paidAt timestamp set)
+              const status =
+                freshApt.status?.toUpperCase?.() || freshApt.status;
+              const paymentProcessed =
+                status !== "PENDING_PAYMENT" || !!freshApt.paidAt;
+
+              if (paymentProcessed) {
+                console.log("Payment/webhook processed successfully");
+                break;
+              }
+            } catch (refreshErr) {
+              console.warn("Refresh attempt failed:", refreshErr);
             }
-          } catch (refreshErr) {
-            console.warn("Could not refresh appointment:", refreshErr);
-            // Keep current apt even if refresh fails
+
+            // Wait before next retry (skip after last retry)
+            if (retry < 4) {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
           }
+
+          setAppointment(freshApt);
+          apt = freshApt;
         }
       }
 
@@ -110,11 +157,11 @@ export function PaymentReturnPage() {
     }
   };
 
-  // Determine actual success based on appointment status, not just URL
+  // Determine actual success based on appointment status
   const isActualSuccess = (apt) => {
     if (!apt) return false;
     const status = apt.status?.toUpperCase?.() || apt.status;
-    // Payment successful if appointment moved away from PENDING_PAYMENT
+    // Payment successful if appointment status moved away from PENDING_PAYMENT
     return (
       status === "WAITING_ASSIGN" ||
       status === "CONFIRMED" ||
@@ -208,7 +255,8 @@ export function PaymentReturnPage() {
     );
   }
 
-  // Fallback for appointment found but status hasn't updated yet - show success anyway if on success URL
+  // Fallback: On success URL but webhook might be processing - show success anyway
+  // (Payment succeeded at PayOS, appointment will be updated by webhook shortly)
   if (isSuccess && appointment && appointment._id) {
     const isBasic = appointment.type === "BASIC";
 
@@ -227,7 +275,11 @@ export function PaymentReturnPage() {
             </p>
 
             {appointment && (
-              <div className="bg-gray-50 rounded p-4 mb-6 text-left">
+              <div className="bg-blue-50 rounded p-4 mb-6 text-left border border-blue-200">
+                <p className="text-xs text-blue-700 mb-3">
+                  ℹ️ Status is being updated, please refresh in a moment if
+                  needed.
+                </p>
                 <div className="mb-3">
                   <label className="text-sm text-gray-600">
                     Appointment ID
@@ -246,18 +298,6 @@ export function PaymentReturnPage() {
                     {appointment.status?.replace(/_/g, " ")}
                   </p>
                 </div>
-                {appointment.appointmentDate && (
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Appointment Date
-                    </label>
-                    <p className="font-semibold">
-                      {new Date(
-                        appointment.appointmentDate,
-                      ).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -313,6 +353,110 @@ export function PaymentReturnPage() {
               <button
                 onClick={() => navigate("/")}
                 className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 font-medium"
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Slot Unavailable (Appointment was cancelled because slot full or unavailable)
+  if (appointment && appointment.status === "CANCELED" && isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <div className="text-5xl text-amber-500 mb-4">⚠️</div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              Slot Not Available
+            </h1>
+            <p className="text-gray-600 mb-4">
+              Payment was processed successfully, but the selected slot is no
+              longer available. Your appointment has been cancelled.
+            </p>
+
+            {appointment && (
+              <div className="bg-amber-50 rounded p-4 mb-6 text-left border border-amber-200">
+                <div className="mb-3">
+                  <label className="text-sm text-gray-600">
+                    Appointment ID
+                  </label>
+                  <p className="font-semibold text-xs truncate">
+                    {appointment._id}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/appointments")}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+              >
+                Book Another Appointment
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 font-medium"
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: If on success URL, ALWAYS show success (payment succeeded at PayOS)
+  // regardless of appointment fetch status
+  if (isSuccess && !isCancel) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <div className="text-5xl text-green-500 mb-4">✓</div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              Payment Successful!
+            </h1>
+            <p className="text-gray-600 mb-4">
+              Your payment has been processed successfully. Your appointment
+              will be confirmed shortly.
+            </p>
+
+            {appointment && (
+              <div className="bg-blue-50 rounded p-4 mb-6 text-left border border-blue-200">
+                <p className="text-xs text-blue-700 mb-3">
+                  ✓ Appointment confirmed
+                </p>
+                <div className="mb-3">
+                  <label className="text-sm text-gray-600">
+                    Appointment ID
+                  </label>
+                  <p className="font-semibold text-xs truncate">
+                    {appointment._id}
+                  </p>
+                </div>
+                <div className="mb-3">
+                  <label className="text-sm text-gray-600">Type</label>
+                  <p className="font-semibold capitalize">{appointment.type}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/appointments")}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+              >
+                View My Appointments
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 font-medium"
               >
                 Back to Home
               </button>

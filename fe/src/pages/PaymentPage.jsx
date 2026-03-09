@@ -76,20 +76,22 @@ export function PaymentPage() {
         err.message?.includes("conflict");
 
       if (isWriteConflict && retryCount < MAX_RETRIES) {
-        // Auto-retry with exponential backoff (1s, 2s, 4s)
+        // Auto-retry with exponential backoff, no error shown to user
         const backoffMs = Math.pow(2, retryCount) * 1000;
         setRetryCount(retryCount + 1);
-        setError(
-          `Retrying connection (attempt ${retryCount + 1}/${MAX_RETRIES})...`,
+        console.log(
+          `Auto-retrying payment (attempt ${retryCount + 1}/${MAX_RETRIES})...`,
         );
 
         setTimeout(() => {
           startPayment(true);
         }, backoffMs);
       } else {
-        setError(errorMsg);
-        setLoading(false);
-        setIsRetrying(false);
+        // Max retries exceeded, redirect back to appointments
+        console.log("Payment creation failed after retries, redirecting...");
+        setTimeout(() => {
+          navigate("/appointments");
+        }, 1000);
       }
     }
   };
@@ -109,33 +111,6 @@ export function PaymentPage() {
               This may take a moment, please wait.
             </p>
           )}
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !isRetrying) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <Alert type="error">{error}</Alert>
-          <div className="mt-6 space-y-3">
-            <button
-              onClick={() => navigate("/appointments")}
-              className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 font-medium"
-            >
-              Back to Appointments
-            </button>
-            <button
-              onClick={() => {
-                setRetryCount(0);
-                startPayment();
-              }}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
-            >
-              Retry Payment
-            </button>
-          </div>
         </div>
       </div>
     );

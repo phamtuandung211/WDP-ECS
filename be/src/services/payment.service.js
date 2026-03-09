@@ -148,19 +148,19 @@ export const handlePayosWebhook = async (rawBody) => {
         );
 
         if (!bookedSlot) {
-          // Slot full → fail payment logic
+          // Slot full or unavailable → fail payment and appointment
           payment.status = PAYMENT_STATUS.FAILED;
+          payment.failureReason = "Slot no longer available";
           await payment.save({ session });
 
-          await Appointment.deleteOne({ _id: appointment._id }).session(
-            session,
-          );
+          appointment.status = APPOINTMENT_STATUS.CANCELED;
+          await appointment.save({ session });
 
           await session.commitTransaction();
 
           return {
             success: true,
-            message: "Slot full, payment marked failed",
+            message: "Slot unavailable, payment and appointment cancelled",
           };
         }
       }
@@ -175,7 +175,6 @@ export const handlePayosWebhook = async (rawBody) => {
           ? APPOINTMENT_STATUS.WAITING_ASSIGN
           : APPOINTMENT_STATUS.CONFIRMED;
 
-      appointment.paidAt = new Date();
       await appointment.save({ session });
     } else if (isCanceled) {
       payment.status = PAYMENT_STATUS.CANCELED;
