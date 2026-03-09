@@ -1,0 +1,17 @@
+const CHAT_MODE = {
+  AI_MODE: "AI_MODE",
+  SUPPORT_MODE: "SUPPORT_MODE",
+};
+
+const CHAT_STATUS = {
+  ACTIVE: "ACTIVE",
+  CLOSED: "CLOSED",
+};
+
+const MESSAGE_SENDER = {
+  CUSTOMER: "CUSTOMER",
+  AI: "AI",
+  STAFF: "STAFF",
+};
+
+export { CHAT_MODE, CHAT_STATUS, MESSAGE_SENDER };

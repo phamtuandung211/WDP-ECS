@@ -1,8 +1,10 @@
 import express from "express";
+import http from "http";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
 import connectDB from "./config/db.js";
+import { initSocket } from "./config/socket.js";
 import { errorHandler, authenticate } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.route.js";
 import rolesRoutes from "./routes/role.route.js";
@@ -23,10 +25,12 @@ import feedbackRoutes from "./routes/feedback.route.js";
 import statisticsRoutes from "./routes/statistics.route.js";
 import uploadRoutes from "./routes/upload.route.js";
 import degreeRoutes from "./routes/degree.route.js";
+import chatRoutes from "./routes/chat.route.js";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 app.use(morgan("dev"));
@@ -60,10 +64,15 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/degrees", degreeRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+// Initialise Socket.IO for real-time chat
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log(`✓ Server running on port ${PORT}`);
   console.log(`✓ API: http://localhost:${PORT}/api`);
+  console.log(`✓ Socket.IO ready`);
 });

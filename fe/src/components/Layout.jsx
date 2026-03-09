@@ -10,6 +10,7 @@ export function Header() {
 
   const role = user?.role;
   const isSaleStaff = role === ROLE_NAME.SALE_STAFF;
+  const isCustomerSupport = role === ROLE_NAME.CUSTOMER_SUPPORT;
   const isAdmin = role === "ADMIN";
 
   const handleLogout = () => {
@@ -41,6 +42,17 @@ export function Header() {
                   Manage Specializations
                 </a>
                 <a href="/appointments">📋 My Dashboard</a>
+                <span className="user-info">
+                  Xin chào, {getUserName()} ({user.role})
+                </span>
+                <button onClick={handleLogout} className="btn-logout">
+                  Logout
+                </button>
+              </>
+            ) : isCustomerSupport ? (
+              /* 2. Giao diện dành riêng cho CUSTOMER SUPPORT */
+              <>
+                <a href="/support/chat">Chat Ho Tro</a>
                 <span className="user-info">
                   Xin chào, {getUserName()} ({user.role})
                 </span>
