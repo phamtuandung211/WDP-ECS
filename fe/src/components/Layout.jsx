@@ -37,6 +37,9 @@ export function Header() {
               <>
                 <a href="/staff/manage-services">Manage Services</a>
                 <a href="/staff/manage-blogs">Manage Blogs</a>
+                <a href="/staff/manage-specializations">
+                  Manage Specializations
+                </a>
                 <a href="/appointments">📋 My Dashboard</a>
                 <span className="user-info">
                   Xin chào, {getUserName()} ({user.role})
@@ -56,6 +59,7 @@ export function Header() {
                 <a href="/medical-records">Hồ sơ bệnh án</a>
                 <a href="/feedbacks">Đánh giá</a>
                 <a href="/profile">Hồ sơ cá nhân</a>
+                {isAdmin && <a href="/admin/statistics">📊 Thống kê</a>}
 
                 <span className="user-info">
                   <img

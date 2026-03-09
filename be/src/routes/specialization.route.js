@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     getAllSpecializations,
+    getSpecializationDetail,
     createSpecialization,
     updateSpecialization,
     deleteSpecialization
@@ -12,6 +13,7 @@ import { authenticate, authorize } from '../middleware/auth.middleware.js';
 const route = express.Router();
 
 route.get("/", getAllSpecializations);
+route.get("/:id", getSpecializationDetail);
 route.post("/create", authenticate, authorize(ROLE_NAME.SALE_STAFF), createSpecialization);
 route.put("/update/:id", authenticate, authorize(ROLE_NAME.SALE_STAFF), updateSpecialization);
 route.delete('/delete/:id', authenticate, authorize(ROLE_NAME.SALE_STAFF), deleteSpecialization);
