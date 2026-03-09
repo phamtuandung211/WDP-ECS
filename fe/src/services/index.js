@@ -67,11 +67,32 @@ export const authService = {
 };
 
 export const appointmentService = {
-  getAll: () => apiClient.get("/appointments"),
+  // Get my appointments (Customer)
+  getAll: (params = {}) => apiClient.get("/appointments", { params }),
+
+  // Get appointment by ID
   getById: (id) => apiClient.get(`/appointments/${id}`),
+
+  // Create new appointment (BASIC or ADVANCED)
   create: (data) => apiClient.post("/appointments", data),
+
+  // Approve basic appointment & assign doctor/slot (Sale Staff)
+  approve: (id, data) => apiClient.post(`/appointments/${id}/approve`, data),
+
+  // Cancel appointment (Customer)
+  cancel: (id) => apiClient.post(`/appointments/${id}/cancel`),
+
+  // Get all appointments for staff (Sale Staff/Doctor)
+  getAllForStaff: (params = {}) =>
+    apiClient.get("/appointments/staff", { params }),
+
+  // Update appointment (for future use)
   update: (id, data) => apiClient.put(`/appointments/${id}`, data),
-  delete: (id) => apiClient.delete(`/appointments/${id}`),
+};
+
+export const slotService = {
+  // Get available slots for a specific date
+  getAvailable: (params = {}) => apiClient.get("/slots", { params }),
 };
 
 export const serviceService = {
@@ -132,19 +153,33 @@ export const feedbackService = {
 };
 
 export const statisticsService = {
-  getOverview: (params = {}) => apiClient.get("/statistics/overview", { params }),
+  getOverview: (params = {}) =>
+    apiClient.get("/statistics/overview", { params }),
   getRevenue: (params = {}) => apiClient.get("/statistics/revenue", { params }),
-  getAppointments: (params = {}) => apiClient.get("/statistics/appointments", { params }),
+  getAppointments: (params = {}) =>
+    apiClient.get("/statistics/appointments", { params }),
   getDoctors: (params = {}) => apiClient.get("/statistics/doctors", { params }),
-  getFeedbacks: (params = {}) => apiClient.get("/statistics/feedbacks", { params }),
-  getAccounts: (params = {}) => apiClient.get("/statistics/accounts", { params }),
+  getFeedbacks: (params = {}) =>
+    apiClient.get("/statistics/feedbacks", { params }),
+  getAccounts: (params = {}) =>
+    apiClient.get("/statistics/accounts", { params }),
+};
+
+export const paymentService = {
+  // Create payment link for appointment
+  createPaymentLink: (appointmentId) =>
+    apiClient.post("/payments/payos/create", { appointmentId }),
+
+  // Handle cancel from PayOS checkout
+  cancelPayment: (orderCode) =>
+    apiClient.post("/payments/payos/cancel", { orderCode }),
 };
 
 export const doctorService = {
   getAllDoctor: (params = {}) => apiClient.get("/doctors", { params }),
   getDoctorById: (id) => apiClient.get(`/doctors/${id}`),
   getRelatedDoctor: (id) => apiClient.get(`/doctors/${id}/related`),
-}
+};
 
 export const specializationService = {
   getAllSpecializations: (params = {}) => apiClient.get("/specializations", { params }),

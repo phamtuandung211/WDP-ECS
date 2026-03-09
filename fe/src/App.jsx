@@ -11,7 +11,6 @@ import { LoginPage } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Verify } from "./pages/Verify";
 import { VerifySuccess } from "./pages/VerifySuccess";
-import { Appointments } from "./pages/Appointments";
 import { SaleStaffDashboard } from "./pages/SaleStaffDashboard";
 import { ManageServiceList } from "./pages/ManageServiceList";
 import { ManageServiceForm } from "./pages/ManageServiceForm";
@@ -20,21 +19,61 @@ import { ManageBlogForm } from "./pages/ManageBlogForm";
 import { ProfilePage } from "./pages/ProfilePage";
 import { MedicalRecordsPage } from "./pages/MedicalRecordsPage";
 import { FeedbacksPage } from "./pages/FeedbacksPage";
-import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { Forbidden } from "./pages/Forbidden";
 import { ManageSpecializations } from "./pages/ManageSpecializations";
+import { PaymentPage } from "./pages/PaymentPage";
+import { PaymentReturnPage } from "./pages/PaymentReturnPage";
 import { ROLE_NAME } from "./constants/role";
+import RoleBasedDashboard from "./components/RoleBasedDashboard";
 import "./styles.css";
 import DoctorListPage from "./pages/ListDoctors";
 import DoctorDetailPage from "./pages/DoctorDetail";
 
+/**
+ * PrivateRoute - Bảo vệ route, yêu cầu user đã login
+ * Được sử dụng cho RoleBasedDashboard (Option 3)
+ */
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="p-4 text-center">Đang tải...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // ✅ Kiểm tra role hợp lệ (bảo mật 2 lớp)
+  const validRoles = [
+    "CUSTOMER",
+    ROLE_NAME.SALE_STAFF,
+    ROLE_NAME.DOCTOR,
+    "ADMIN",
+  ];
+  const userRole = user.role || user.roleName;
+
+  if (!validRoles.includes(userRole)) {
+    return <Navigate to="/403" replace />;
+  }
+
+  return children;
+}
+
+/**
+ * ProtectedRoute - Legacy, vẫn dùng cho các route khác
+ */
 function ProtectedRoute({ element, allowedRoles }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" />;
+  if (allowedRoles && !allowedRoles.includes(user.role))
+    return <Navigate to="/" />;
   return element;
 }
 
+/**
+ * RoleProtectedRoute - Bảo vệ route theo role, kiểm tra role hợp lệ
+ */
 function RoleProtectedRoute({ element, allowedRoles }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
@@ -51,6 +90,7 @@ function App() {
         <Header />
         <main className="main-content">
           <Routes>
+            {/* ========== Public Routes ========== */}
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
             <Route path="/register" element={<Register />} />
@@ -60,36 +100,77 @@ function App() {
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/doctors" element={<DoctorListPage />} />
+            <Route path="/doctors/:id" element={<DoctorDetailPage />} />
             <Route path="/403" element={<Forbidden />} />
+
+            {/* ========== Protected Routes - Staff Management ========== */}
             <Route
               path="/staff/dashboard"
-              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<SaleStaffDashboard />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<SaleStaffDashboard />}
+                />
+              }
             />
             <Route
               path="/staff/manage-services"
-              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageServiceList />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<ManageServiceList />}
+                />
+              }
             />
             <Route
               path="/staff/manage-services/:id"
-              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageServiceForm />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<ManageServiceForm />}
+                />
+              }
             />
             <Route
               path="/staff/manage-blogs"
-              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageBlogList />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<ManageBlogList />}
+                />
+              }
             />
             <Route
               path="/staff/manage-blogs/:id"
-              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageBlogForm />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<ManageBlogForm />}
+                />
+              }
             />
             <Route
               path="/staff/manage-specializations"
-              element={<RoleProtectedRoute allowedRoles={staffRoles} element={<ManageSpecializations />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<ManageSpecializations />}
+                />
+              }
             />
             <Route
               path="/appointments"
               element={<ProtectedRoute element={<Appointments />} />}
+              element={
+                <RoleProtectedRoute
+                  allowedRoles={staffRoles}
+                  element={<ManageBlogForm />}
+                />
+              }
             />
-            {/* New API pages */}
+
+            {/* ========== Protected Routes - User Features ========== */}
             <Route
               path="/profile"
               element={<ProtectedRoute element={<ProfilePage />} />}
@@ -102,20 +183,68 @@ function App() {
               path="/feedbacks"
               element={<ProtectedRoute element={<FeedbacksPage />} />}
             />
+
+            {/* ========== Role-Based Dashboard (Option 3) ========== */}
+            {/* 
+              Tất cả 4 roles (CUSTOMER, SALE_STAFF, DOCTOR, ADMIN)
+              dùng chung URL /appointments
+              RoleBasedDashboard sẽ tự detect role và render dashboard phù hợp
+            */}
             <Route
-              path="/admin/statistics"
+              path="/appointments"
               element={
-                <ProtectedRoute
-                  element={<AdminStatisticsPage />}
-                  allowedRoles={["ADMIN"]}
-                />
+                <PrivateRoute>
+                  <RoleBasedDashboard />
+                </PrivateRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/" />} />
-            {/* Route doctor */}
-            <Route path="/doctors" element={<DoctorListPage />} />
-            <Route path="/doctors/:id" element={<DoctorDetailPage />} />
 
+            {/* Alias route để tiện */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <RoleBasedDashboard />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ========== Payment Routes ========== */}
+            <Route
+              path="/payment"
+              element={
+                <PrivateRoute>
+                  <PaymentPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/return"
+              element={
+                <PrivateRoute>
+                  <PaymentReturnPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/success"
+              element={
+                <PrivateRoute>
+                  <PaymentReturnPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/cancel"
+              element={
+                <PrivateRoute>
+                  <PaymentReturnPage />
+                </PrivateRoute>
+              }
+            />
+
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
         <Footer />

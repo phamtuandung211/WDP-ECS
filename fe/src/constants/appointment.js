@@ -1,0 +1,38 @@
+export const APPOINTMENT_TYPE = {
+  BASIC: "BASIC",
+  ADVANCED: "ADVANCED",
+};
+
+export const APPOINTMENT_STATUS = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  WAITING_ASSIGN: "WAITING_ASSIGN",
+  CONFIRMED: "CONFIRMED",
+  COMPLETED: "COMPLETED",
+  CANCELED: "CANCELED",
+};
+
+export const APPOINTMENT_PRICE = {
+  BASIC: 100000,
+  ADVANCED: 200000,
+};
+
+export const PAYMENT_TIMEOUT_MINUTES = 15;
+export const MAX_BOOKING_ADVANCE_DAYS = 7;
+
+// Status display names
+export const STATUS_LABELS = {
+  [APPOINTMENT_STATUS.PENDING_PAYMENT]: "Waiting for Payment",
+  [APPOINTMENT_STATUS.WAITING_ASSIGN]: "Waiting for Assignment",
+  [APPOINTMENT_STATUS.CONFIRMED]: "Confirmed",
+  [APPOINTMENT_STATUS.COMPLETED]: "Completed",
+  [APPOINTMENT_STATUS.CANCELED]: "Canceled",
+};
+
+// Status colors for UI
+export const STATUS_COLORS = {
+  [APPOINTMENT_STATUS.PENDING_PAYMENT]: "bg-yellow-100 text-yellow-800",
+  [APPOINTMENT_STATUS.WAITING_ASSIGN]: "bg-blue-100 text-blue-800",
+  [APPOINTMENT_STATUS.CONFIRMED]: "bg-green-100 text-green-800",
+  [APPOINTMENT_STATUS.COMPLETED]: "bg-gray-100 text-gray-800",
+  [APPOINTMENT_STATUS.CANCELED]: "bg-red-100 text-red-800",
+};
