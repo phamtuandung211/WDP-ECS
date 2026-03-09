@@ -231,6 +231,9 @@ export function AdvancedAppointmentForm({ onSuccess }) {
                 {slots.map((slot) => {
                   const remaining = slot.maxPatients - slot.bookedCount;
                   const isFull = remaining <= 0;
+                  // ADVANCED: Chỉ có thể book khi slot hoàn toàn trống (bookedCount = 0)
+                  const isDisabledForAdvanced = slot.bookedCount >= 1;
+                  const isDisabled = isFull || isDisabledForAdvanced;
 
                   return (
                     <label
@@ -238,7 +241,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
                       className={`flex items-center p-3 border rounded-md cursor-pointer transition ${
                         formData.slotId === slot._id
                           ? "border-blue-500 bg-blue-50"
-                          : isFull
+                          : isDisabled
                             ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
                             : "border-gray-300 hover:border-blue-400"
                       }`}
@@ -249,7 +252,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
                         value={slot._id}
                         checked={formData.slotId === slot._id}
                         onChange={handleChange}
-                        disabled={isFull}
+                        disabled={isDisabled}
                         className="mr-3"
                       />
                       <div>
@@ -258,10 +261,18 @@ export function AdvancedAppointmentForm({ onSuccess }) {
                         </div>
                         <div
                           className={`text-xs ${
-                            isFull ? "text-red-500" : "text-green-600"
+                            isFull
+                              ? "text-red-500"
+                              : isDisabledForAdvanced
+                                ? "text-amber-600"
+                                : "text-green-600"
                           }`}
                         >
-                          {isFull ? "FULL" : `${remaining} spots`}
+                          {isFull
+                            ? "FULL"
+                            : isDisabledForAdvanced
+                              ? `${remaining} spots (unavailable for Advanced)`
+                              : `${remaining} spots`}
                         </div>
                       </div>
                     </label>

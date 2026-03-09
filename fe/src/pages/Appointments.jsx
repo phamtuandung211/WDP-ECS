@@ -245,10 +245,7 @@ function AppointmentCard({ appointment, onCancel }) {
       .padStart(2, "0")}`;
   };
 
-  const canCancel = [
-    APPOINTMENT_STATUS.PENDING_PAYMENT,
-    APPOINTMENT_STATUS.WAITING_ASSIGN,
-  ].includes(appointment.status);
+  const canCancel = appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT;
 
   const handlePayNow = async () => {
     setIsPayLoading(true);

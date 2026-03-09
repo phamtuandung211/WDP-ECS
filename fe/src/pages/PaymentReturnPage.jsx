@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { appointmentService } from "../services";
+import { appointmentService, paymentService } from "../services";
 import { Loading, Alert } from "../components/UI";
 
 /**
@@ -40,6 +40,16 @@ export function PaymentReturnPage() {
       setError(null);
       setErrorType(null);
 
+      // If user cancelled payment at PayOS, call backend to cancel the payment & appointment
+      if (isCancel && orderCode) {
+        try {
+          await paymentService.cancelPayment(orderCode);
+        } catch (cancelErr) {
+          console.warn("Error canceling payment on backend:", cancelErr);
+          // Continue anyway - the appointment may have been canceled
+        }
+      }
+
       // Try to find appointment - first by appointmentId query param, then search in user's appointments
       let apt = null;
 
@@ -69,17 +79,25 @@ export function PaymentReturnPage() {
 
       if (apt) {
         setAppointment(apt);
-      }
 
-      // Small delay to ensure webhook processed
-      if (isSuccess && apt?._id) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        // Refresh appointment to get latest status
-        try {
-          const freshResponse = await appointmentService.getById(apt._id);
-          setAppointment(freshResponse.data?.data || freshResponse.data);
-        } catch (refreshErr) {
-          console.warn("Could not refresh appointment:", refreshErr);
+        // Always wait and refresh for success URLs to ensure webhook processed
+        if (isSuccess && apt?._id) {
+          // Wait to ensure webhook processed
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          // Refresh appointment to get latest status from webhook
+          try {
+            const freshResponse = await appointmentService.getById(apt._id);
+            const freshApt = freshResponse.data?.data || freshResponse.data;
+            console.log("Fresh appointment after payment:", freshApt);
+            if (freshApt) {
+              setAppointment(freshApt);
+              apt = freshApt;
+            }
+          } catch (refreshErr) {
+            console.warn("Could not refresh appointment:", refreshErr);
+            // Keep current apt even if refresh fails
+          }
         }
       }
 
@@ -90,6 +108,18 @@ export function PaymentReturnPage() {
       setError(err.response?.data?.message || "Failed to verify appointment");
       setLoading(false);
     }
+  };
+
+  // Determine actual success based on appointment status, not just URL
+  const isActualSuccess = (apt) => {
+    if (!apt) return false;
+    const status = apt.status?.toUpperCase?.() || apt.status;
+    // Payment successful if appointment moved away from PENDING_PAYMENT
+    return (
+      status === "WAITING_ASSIGN" ||
+      status === "CONFIRMED" ||
+      status === "COMPLETED"
+    );
   };
 
   if (loading) {
@@ -105,8 +135,81 @@ export function PaymentReturnPage() {
     );
   }
 
-  // Payment Successful
-  if (isSuccess && appointment) {
+  // Payment Successful (check actual appointment status)
+  if (isActualSuccess(appointment)) {
+    const isBasic = appointment.type === "BASIC";
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <div className="text-5xl text-green-500 mb-4">✓</div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              Payment Successful!
+            </h1>
+            <p className="text-gray-600 mb-4">
+              {isBasic
+                ? "Your appointment is created. Our staff will review and assign a doctor soon."
+                : "Your appointment is confirmed and ready!"}
+            </p>
+
+            {appointment && (
+              <div className="bg-gray-50 rounded p-4 mb-6 text-left">
+                <div className="mb-3">
+                  <label className="text-sm text-gray-600">
+                    Appointment ID
+                  </label>
+                  <p className="font-semibold text-xs truncate">
+                    {appointment._id}
+                  </p>
+                </div>
+                <div className="mb-3">
+                  <label className="text-sm text-gray-600">Type</label>
+                  <p className="font-semibold capitalize">{appointment.type}</p>
+                </div>
+                <div className="mb-3">
+                  <label className="text-sm text-gray-600">Status</label>
+                  <p className="font-semibold text-blue-600 capitalize">
+                    {appointment.status?.replace(/_/g, " ")}
+                  </p>
+                </div>
+                {appointment.appointmentDate && (
+                  <div>
+                    <label className="text-sm text-gray-600">
+                      Appointment Date
+                    </label>
+                    <p className="font-semibold">
+                      {new Date(
+                        appointment.appointmentDate,
+                      ).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/appointments")}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+              >
+                View My Appointments
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 font-medium"
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for appointment found but status hasn't updated yet - show success anyway if on success URL
+  if (isSuccess && appointment && appointment._id) {
     const isBasic = appointment.type === "BASIC";
 
     return (
@@ -227,10 +330,12 @@ export function PaymentReturnPage() {
         <div className="text-center">
           <div className="text-5xl text-red-500 mb-4">✕</div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            {isCancel ? "Payment Cancelled" : "Payment Failed"}
+            {isCancel || appointment?.status === "CANCELED"
+              ? "Payment Cancelled"
+              : "Payment Failed"}
           </h1>
           <p className="text-gray-600 mb-6">
-            {isCancel
+            {isCancel || appointment?.status === "CANCELED"
               ? "You cancelled the payment. Your appointment has been cancelled."
               : "Your payment could not be processed. Please try again."}
           </p>
@@ -242,7 +347,7 @@ export function PaymentReturnPage() {
           )}
 
           <div className="space-y-3">
-            {isCancel ? (
+            {isCancel || appointment?.status === "CANCELED" ? (
               <>
                 <button
                   onClick={() => navigate("/appointments?tab=basic")}
