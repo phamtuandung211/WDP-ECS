@@ -12,6 +12,10 @@ import {
   APPOINTMENT_TYPE,
   PAYMENT_TIMEOUT_MINUTES,
   MAX_BOOKING_ADVANCE_DAYS,
+  BUSINESS_HOURS_START_HOUR,
+  BUSINESS_HOURS_START_MINUTE,
+  BUSINESS_HOURS_END_HOUR,
+  BUSINESS_HOURS_END_MINUTE,
 } from "../constants/Appointment.enum.js";
 import { SLOT_STATUS } from "../constants/Slot.enum.js";
 import { PAYMENT_STATUS } from "../constants/Payment.enum.js";
@@ -53,6 +57,54 @@ function validateDesiredDate(desiredDate) {
   return d;
 }
 
+/**
+ * Validate BASIC appointment date with business hours logic
+ * - During business hours (7:30 AM - 5:30 PM): can book from tomorrow onwards
+ * - After business hours: can only book from day after tomorrow onwards
+ */
+function validateBasicAppointmentDate(desiredDate) {
+  const validDate = validateDesiredDate(desiredDate);
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  
+  // Convert to minutes for comparison
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+  const businessStartInMinutes = BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
+  const businessEndInMinutes = BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
+  
+  const isWithinBusinessHours = currentTimeInMinutes >= businessStartInMinutes && currentTimeInMinutes < businessEndInMinutes;
+
+  // Get tomorrow's start and day after tomorrow's start
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  const dayAfterTomorrow = new Date(now);
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+  dayAfterTomorrow.setHours(0, 0, 0, 0);
+
+  // During business hours: min is tomorrow
+  if (isWithinBusinessHours) {
+    if (validDate < tomorrow) {
+      throwErr(400, "Must book at least 1 day in advance during business hours");
+    }
+  } else {
+    // After business hours: min is day after tomorrow
+    if (validDate < dayAfterTomorrow) {
+      const tomorrow_str = new Date(tomorrow).toLocaleDateString("vi-VN");
+      const dayAfterTomorrow_str = new Date(dayAfterTomorrow).toLocaleDateString("vi-VN");
+      const endTimeStr = `${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, '0')}`;
+      throwErr(
+        400,
+        `Booking after business hours (${endTimeStr}). Can only book from ${dayAfterTomorrow_str} (today's booking available until ${endTimeStr} for ${tomorrow_str})`,
+      );
+    }
+  }
+
+  return validDate;
+}
+
 export const createBasicAppointment = async ({
   customerId,
   desiredDate,
@@ -63,7 +115,7 @@ export const createBasicAppointment = async ({
   try {
     session.startTransaction();
 
-    const validDate = validateDesiredDate(desiredDate);
+    const validDate = validateBasicAppointmentDate(desiredDate);
 
     // Check customer tồn tại
     const customer = await Customer.findById(customerId)
