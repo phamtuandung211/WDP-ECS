@@ -33,6 +33,12 @@ export function ChatProvider({ children }) {
   const [staffMessages, setStaffMessages] = useState([]);
   const [pendingAlert, setPendingAlert] = useState(null);
 
+  // Typing indicators from the other side
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [staffOtherTyping, setStaffOtherTyping] = useState(false);
+  const otherTypingTimeoutRef = useRef(null);
+  const staffOtherTypingTimeoutRef = useRef(null);
+
   // Ref to track activeStaffSession for socket handlers (avoids stale closure)
   const activeStaffSessionRef = useRef(null);
 
@@ -62,15 +68,21 @@ export function ChatProvider({ children }) {
     // ── Incoming message ──────────────────────────────────────────
     socket.on("new_message", ({ sessionId, message }) => {
       if (isCustomer) {
+        if (message.sender !== "CUSTOMER") setOtherTyping(false);
         setMessages((prev) => {
-          if (prev.some((m) => m._id === message._id)) return prev;
+          const msgId = message._id?.toString();
+          if (msgId && prev.some((m) => m._id?.toString() === msgId))
+            return prev;
           return [...prev, message];
         });
       }
       if (isStaff) {
         if (activeStaffSessionRef.current === sessionId) {
+          if (message.sender === "CUSTOMER") setStaffOtherTyping(false);
           setStaffMessages((prev) => {
-            if (prev.some((m) => m._id === message._id)) return prev;
+            const msgId = message._id?.toString();
+            if (msgId && prev.some((m) => m._id?.toString() === msgId))
+              return prev;
             return [...prev, message];
           });
         }
@@ -78,7 +90,18 @@ export function ChatProvider({ children }) {
     });
 
     socket.on("mode_changed", ({ sessionId, mode: newMode }) => {
-      setMode(newMode);
+      if (isCustomer) {
+        setMode(newMode);
+      }
+      if (isStaff && newMode === "AI_MODE") {
+        // Customer switched back to AI — clear staff's active chat for this session
+        if (activeStaffSessionRef.current === sessionId) {
+          setActiveStaffSession(null);
+          setStaffMessages([]);
+        }
+        // Remove from staff session list since it's no longer in SUPPORT_MODE
+        setStaffSessions((prev) => prev.filter((s) => s._id !== sessionId));
+      }
     });
 
     socket.on("session_needs_support", ({ sessionId, customerId }) => {
@@ -103,11 +126,41 @@ export function ChatProvider({ children }) {
     });
 
     socket.on("user_typing", ({ sessionId, userId, role }) => {
-      // Can be used for typing indicator
+      if (isCustomer && role !== ROLE_NAME.CUSTOMER) {
+        setOtherTyping(true);
+        clearTimeout(otherTypingTimeoutRef.current);
+        otherTypingTimeoutRef.current = setTimeout(
+          () => setOtherTyping(false),
+          3000,
+        );
+      }
+      if (
+        isStaff &&
+        role === ROLE_NAME.CUSTOMER &&
+        activeStaffSessionRef.current === sessionId
+      ) {
+        setStaffOtherTyping(true);
+        clearTimeout(staffOtherTypingTimeoutRef.current);
+        staffOtherTypingTimeoutRef.current = setTimeout(
+          () => setStaffOtherTyping(false),
+          3000,
+        );
+      }
     });
 
     socket.on("user_stop_typing", ({ sessionId, userId, role }) => {
-      // Can be used for typing indicator
+      if (isCustomer && role !== ROLE_NAME.CUSTOMER) {
+        clearTimeout(otherTypingTimeoutRef.current);
+        setOtherTyping(false);
+      }
+      if (
+        isStaff &&
+        role === ROLE_NAME.CUSTOMER &&
+        activeStaffSessionRef.current === sessionId
+      ) {
+        clearTimeout(staffOtherTypingTimeoutRef.current);
+        setStaffOtherTyping(false);
+      }
     });
 
     socketRef.current = socket;
@@ -188,7 +241,19 @@ export function ChatProvider({ children }) {
       );
     });
   }, [session]);
+  // ── Customer: transfer back to AI ────────────────────────────
+  const transferToAI = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      const socket = socketRef.current;
+      if (!socket || !session) return reject(new Error("No active session"));
 
+      socket.emit("transfer_to_ai", { sessionId: session._id }, (response) => {
+        if (response.error) return reject(new Error(response.error));
+        setMode("AI_MODE");
+        resolve(response.data);
+      });
+    });
+  }, [session]);
   // ── Customer: close session ──────────────────────────────────────
   const closeChat = useCallback(() => {
     return new Promise((resolve, reject) => {
@@ -318,6 +383,7 @@ export function ChatProvider({ children }) {
     startSession,
     sendMessage,
     transferToStaff,
+    transferToAI,
     closeChat,
     // Staff
     staffSessions,
@@ -330,6 +396,8 @@ export function ChatProvider({ children }) {
     sendStaffMessage,
     closeStaffSession,
     // Typing
+    otherTyping,
+    staffOtherTyping,
     sendTyping,
     sendStopTyping,
   };

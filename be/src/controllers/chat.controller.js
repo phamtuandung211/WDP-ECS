@@ -7,6 +7,7 @@ import {
   sendCustomerMessage,
   sendStaffMessage,
   transferToStaff,
+  transferToAI,
   closeSession,
   getSessionById,
   getCustomerSessions,
@@ -171,6 +172,34 @@ export const transferSessionToStaff = async (req, res) => {
       io.to("staff:all").emit("session_needs_support", {
         sessionId,
         customerId: session.customerId.toString(),
+      });
+    } catch (_) {}
+
+    res.status(200).json({ data: session });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+/**
+ * POST /api/chat/session/:sessionId/transfer-to-ai
+ * Transfer session from staff back to AI.
+ */
+export const transferSessionToAI = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await transferToAI(sessionId);
+
+    try {
+      const io = getIO();
+      const lastMsg = session.messages[session.messages.length - 1];
+      io.to(`session:${sessionId}`).emit("new_message", {
+        sessionId,
+        message: lastMsg,
+      });
+      io.to(`session:${sessionId}`).emit("mode_changed", {
+        sessionId,
+        mode: CHAT_MODE.AI_MODE,
       });
     } catch (_) {}
 

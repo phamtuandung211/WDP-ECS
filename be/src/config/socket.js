@@ -7,6 +7,7 @@ import {
   sendCustomerMessage,
   sendStaffMessage,
   transferToStaff,
+  transferToAI,
   closeSession,
   assignStaffToSession,
   startOrResumeSession,
@@ -202,6 +203,28 @@ export function initSocket(httpServer) {
         io.to("staff:all").emit("session_needs_support", {
           sessionId,
           customerId: session.customerId.toString(),
+        });
+
+        callback?.({ data: { mode: session.mode } });
+      } catch (err) {
+        callback?.({ error: err.message });
+      }
+    });
+
+    // ── Transfer session back to AI ─────────────────────────────
+    socket.on("transfer_to_ai", async ({ sessionId }, callback) => {
+      try {
+        const session = await transferToAI(sessionId);
+        const lastMsg = session.messages[session.messages.length - 1];
+
+        io.to(`session:${sessionId}`).emit("new_message", {
+          sessionId,
+          message: lastMsg,
+        });
+
+        io.to(`session:${sessionId}`).emit("mode_changed", {
+          sessionId,
+          mode: CHAT_MODE.AI_MODE,
         });
 
         callback?.({ data: { mode: session.mode } });

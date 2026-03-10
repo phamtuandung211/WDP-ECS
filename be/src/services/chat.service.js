@@ -345,6 +345,33 @@ export async function transferToStaff(sessionId) {
 }
 
 /**
+ * Transfer a session from SUPPORT_MODE back to AI_MODE.
+ */
+export async function transferToAI(sessionId) {
+  const session = await ChatSession.findOne({
+    _id: sessionId,
+    status: CHAT_STATUS.ACTIVE,
+  });
+
+  if (!session) throwErr(404, "Chat session not found or already closed");
+
+  if (session.mode === CHAT_MODE.AI_MODE) {
+    return session; // Already in AI mode
+  }
+
+  session.mode = CHAT_MODE.AI_MODE;
+  session.assignedStaffId = null;
+  session.messages.push({
+    sender: MESSAGE_SENDER.AI,
+    content:
+      "Bạn đã được chuyển về trò chuyện với trợ lý AI. Tôi có thể giúp gì cho bạn?",
+  });
+
+  await session.save();
+  return session;
+}
+
+/**
  * Close a chat session.
  */
 export async function closeSession(sessionId) {

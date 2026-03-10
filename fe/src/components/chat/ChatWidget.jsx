@@ -14,12 +14,17 @@ export function ChatWidget() {
     startSession,
     sendMessage,
     transferToStaff,
+    transferToAI,
     closeChat,
+    otherTyping,
+    sendTyping,
+    sendStopTyping,
   } = useChat();
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [showTyping, setShowTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
   const isCustomer = user?.role === ROLE_NAME.CUSTOMER;
@@ -30,7 +35,7 @@ export function ChatWidget() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, showTyping, otherTyping]);
 
   // Don't render for non-customers
   if (!user || !isCustomer) return null;
@@ -46,11 +51,27 @@ export function ChatWidget() {
     }
   };
 
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInput(val);
+    if (session && mode === "SUPPORT_MODE") {
+      if (val.trim()) {
+        sendTyping();
+      } else {
+        sendStopTyping();
+      }
+    }
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || sending) return;
 
+    sendStopTyping();
+
     setSending(true);
+    setShowTyping(true);
+    const typingStart = Date.now();
     try {
       await sendMessage(input.trim());
       setInput("");
@@ -58,6 +79,13 @@ export function ChatWidget() {
       console.error("Failed to send:", err);
     } finally {
       setSending(false);
+      const elapsed = Date.now() - typingStart;
+      const minDisplay = 1000;
+      if (elapsed >= minDisplay) {
+        setShowTyping(false);
+      } else {
+        setTimeout(() => setShowTyping(false), minDisplay - elapsed);
+      }
     }
   };
 
@@ -66,6 +94,14 @@ export function ChatWidget() {
       await transferToStaff();
     } catch (err) {
       console.error("Failed to transfer:", err);
+    }
+  };
+
+  const handleBackToAI = async () => {
+    try {
+      await transferToAI();
+    } catch (err) {
+      console.error("Failed to transfer to AI:", err);
     }
   };
 
@@ -117,6 +153,26 @@ export function ChatWidget() {
           </span>
         </div>
         <div className="chat-widget-header-actions">
+          {mode === "SUPPORT_MODE" && session && (
+            <button
+              className="chat-widget-btn-small"
+              onClick={handleBackToAI}
+              title="Chuyen ve AI"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.07A7 7 0 0 1 14 23h-4a7 7 0 0 1-6.93-4H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+                <circle cx="9" cy="15" r="1" />
+                <circle cx="15" cy="15" r="1" />
+              </svg>
+            </button>
+          )}
           {mode === "AI_MODE" && session && (
             <button
               className="chat-widget-btn-small"
@@ -203,6 +259,18 @@ export function ChatWidget() {
             )}
           </div>
         ))}
+        {(showTyping || otherTyping) && (
+          <div className="chat-msg chat-msg-other">
+            <div className="chat-msg-label">
+              {mode === "AI_MODE" ? "AI" : "Nhan vien"}
+            </div>
+            <div className="chat-msg-bubble chat-typing-indicator">
+              <span className="chat-typing-dot" />
+              <span className="chat-typing-dot" />
+              <span className="chat-typing-dot" />
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -211,7 +279,7 @@ export function ChatWidget() {
         <input
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           placeholder={
             mode === "SUPPORT_MODE" && !sending
               ? "Nhan tin cho nhan vien..."

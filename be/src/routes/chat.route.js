@@ -6,6 +6,7 @@ import {
   customerSendMessage,
   staffSendMessage,
   transferSessionToStaff,
+  transferSessionToAI,
   closeSessionController,
   getSession,
   getMySessions,
@@ -39,6 +40,14 @@ router.post(
   authenticate,
   authorize(ROLE_NAME.CUSTOMER),
   transferSessionToStaff,
+);
+
+// POST /api/chat/session/:sessionId/transfer-to-ai – Customer switches back to AI
+router.post(
+  "/session/:sessionId/transfer-to-ai",
+  authenticate,
+  authorize(ROLE_NAME.CUSTOMER),
+  transferSessionToAI,
 );
 
 // GET /api/chat/sessions – Customer gets their sessions
