@@ -28,6 +28,8 @@ export const authService = {
   login: (email, password) =>
     apiClient.post("/auth/login", { email, password }),
 
+  googleAuth: (idToken) => apiClient.post("/auth/google", { idToken }),
+
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

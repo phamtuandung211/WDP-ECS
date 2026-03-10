@@ -4,7 +4,7 @@ import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
 const accountSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true },
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String },
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
@@ -23,6 +23,12 @@ const accountSchema = new mongoose.Schema(
     otpResendBlockedUntil: Date, // Thời gian cho đến khi có thể gửi lại OTP
     otpResendLastResetAt: Date, // Thời gian lần cuối reset bộ đếm gửi lại OTP
     rejectionReason: String,
+    googleId: { type: String, unique: true, sparse: true },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
   },
   { timestamps: true },
 );

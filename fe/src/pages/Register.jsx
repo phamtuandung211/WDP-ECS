@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { Input, Button, Alert } from "./UI";
 
@@ -16,7 +17,7 @@ export function Register() {
   const [generalError, setGeneralError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const { register, loading } = useAuth();
+  const { register, googleLogin, loading } = useAuth();
   const navigate = useNavigate();
 
   const validateEmail = (v) => /^\S+@\S+\.\S+$/.test(v);
@@ -149,6 +150,31 @@ export function Register() {
             {loading ? "Registering..." : "Register"}
           </Button>
         </form>
+
+        <div
+          style={{ display: "flex", alignItems: "center", margin: "16px 0" }}
+        >
+          <hr style={{ flex: 1 }} />
+          <span style={{ padding: "0 8px", color: "#888" }}>or</span>
+          <hr style={{ flex: 1 }} />
+        </div>
+
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              await googleLogin(credentialResponse.credential);
+              navigate("/");
+            } catch (err) {
+              setGeneralError(
+                err.response?.data?.message || "Google registration failed",
+              );
+            }
+          }}
+          onError={() => setGeneralError("Google sign-up failed")}
+          text="signup_with"
+          width="100%"
+        />
+
         <p>
           Already have an account? <a href="/login">Login</a>
         </p>

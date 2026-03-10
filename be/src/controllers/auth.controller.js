@@ -4,6 +4,7 @@ import {
   resendOtp,
   loginService,
   registerStaffByRole,
+  googleAuthService,
 } from "../services/auth.service.js";
 
 export const register = async (req, res) => {
@@ -98,6 +99,20 @@ export const login = async (req, res) => {
   } catch (err) {
     return res.status(err.status || 500).json({
       message: err.message || "Login failed",
+      errors: err.data,
+    });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    const result = await googleAuthService({ idToken });
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || "Google authentication failed",
       errors: err.data,
     });
   }

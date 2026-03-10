@@ -5,6 +5,7 @@ import {
   resendOtpController,
   login,
   registerStaff,
+  googleAuth,
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -19,5 +20,8 @@ router.post("/register", register);
 router.post("/verify-otp", verifyOtpController);
 router.post("/resend-otp", resendOtpController);
 router.post("/login", login);
+
+// Google OAuth (Customer only)
+router.post("/google", googleAuth);
 
 export default router;
