@@ -15,15 +15,54 @@ export function BasicAppointmentForm({ onSuccess }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Business hours: 7:30 AM - 5:30 PM
+  const BUSINESS_HOURS_START_HOUR = 7;
+  const BUSINESS_HOURS_START_MINUTE = 30;
+  const BUSINESS_HOURS_END_HOUR = 17;
+  const BUSINESS_HOURS_END_MINUTE = 30;
+
   // Calculate min and max dates
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  // Convert to minutes for comparison
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+  const businessStartInMinutes =
+    BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
+  const businessEndInMinutes =
+    BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
+
+  const isWithinBusinessHours =
+    currentTimeInMinutes >= businessStartInMinutes &&
+    currentTimeInMinutes < businessEndInMinutes;
+
+  // Determine minimum booking date
+  let minDate = new Date(today);
+  if (isWithinBusinessHours) {
+    // During business hours: can book from tomorrow
+    minDate.setDate(minDate.getDate() + 1);
+  } else {
+    // After business hours: can only book from day after tomorrow
+    minDate.setDate(minDate.getDate() + 2);
+  }
+
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7); // Max 7 days advance
 
-  const minDateString = today.toISOString().split("T")[0];
-  const maxDateString = maxDate.toISOString().split("T")[0];
+  // Format dates using local timezone (not UTC)
+  const formatDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const minDateString = formatDateString(minDate);
+  const maxDateString = formatDateString(maxDate);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -75,6 +114,30 @@ export function BasicAppointmentForm({ onSuccess }) {
 
   if (loading) return <Loading />;
 
+  const getBookingRules = () => {
+    const endTimeStr = `${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, "0")}`;
+
+    if (isWithinBusinessHours) {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toLocaleDateString("vi-VN", {
+        weekday: "short",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      return `(Booking available until ${endTimeStr} today for ${tomorrowStr})`;
+    } else {
+      const dayAfterTomorrow = new Date(today);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+      const dateStr = dayAfterTomorrow.toLocaleDateString("vi-VN", {
+        weekday: "short",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      return `(After business hours - earliest available: ${dateStr})`;
+    }
+  };
+
   return (
     <div className="basic-appointment-form">
       <h3>Book Basic Appointment</h3>
@@ -106,7 +169,12 @@ export function BasicAppointmentForm({ onSuccess }) {
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            You can book up to 7 days in advance
+            Must book at least 1 day in advance {getBookingRules()}
+          </p>
+          <p className="text-xs text-amber-600 mt-1 font-medium">
+            {isWithinBusinessHours
+              ? `✓ Currently within business hours (${BUSINESS_HOURS_START_HOUR}:${String(BUSINESS_HOURS_START_MINUTE).padStart(2, "0")} - ${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, "0")})`
+              : `⚠ Currently outside business hours. Earliest booking: ${new Date(minDate).toLocaleDateString("vi-VN")}`}
           </p>
         </div>
 
@@ -135,8 +203,17 @@ export function BasicAppointmentForm({ onSuccess }) {
       </form>
 
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
+        <h4 className="font-medium text-blue-900 mb-2">Booking Rules</h4>
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+          <li>
+            <strong>During business hours (7:30 - 17:30):</strong> Book from
+            tomorrow onwards
+          </li>
+          <li>
+            <strong>After business hours:</strong> Book from day after tomorrow
+            onwards
+          </li>
+          <li>Maximum booking window: 7 days in advance</li>
           <li>
             You'll be redirected to payment (must complete within 15 minutes)
           </li>
@@ -144,7 +221,6 @@ export function BasicAppointmentForm({ onSuccess }) {
           <li>
             You'll receive a notification once your appointment is confirmed
           </li>
-          <li>Status will change from "Waiting Assign" to "Confirmed"</li>
         </ul>
       </div>
     </div>

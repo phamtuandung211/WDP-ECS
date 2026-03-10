@@ -4,6 +4,7 @@ import { ROLE_NAME } from "../constants/Role.enum.js";
 import {
   createAppointment,
   cancelAppointmentController,
+  completeAppointmentController,
   getMyAppointments,
   approveBasicAppointmentController,
   getAppointmentByIdController,
@@ -53,6 +54,14 @@ router.post(
   authenticate,
   authorize(ROLE_NAME.CUSTOMER),
   cancelAppointmentController,
+);
+
+// POST /api/appointments/:id/complete – Complete an appointment (Doctor only)
+router.post(
+  "/:id/complete",
+  authenticate,
+  authorize(ROLE_NAME.DOCTOR),
+  completeAppointmentController,
 );
 
 export default router;
