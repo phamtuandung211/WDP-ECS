@@ -21,6 +21,7 @@ import { sendMail } from "../config/mail.js";
 import { buildVerifyOtpMail } from "../utils/mailTemplates.js";
 import { getAccountsWithProfiles } from "./account.service.js";
 import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
+import { OAuth2Client } from "google-auth-library";
 
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_MAX_RESEND = 3;
@@ -480,6 +481,14 @@ export const loginService = async ({ email, password }) => {
     throw err;
   }
 
+  if (!account.passwordHash) {
+    const err = new Error(
+      "This account uses Google login. Please sign in with Google.",
+    );
+    err.status = 400;
+    throw err;
+  }
+
   const passwordValid = await comparePassword(password, account.passwordHash);
   if (!passwordValid) {
     const err = new Error("Invalid email or password");
@@ -736,4 +745,132 @@ export const resubmitForApproval = async ({ accountId }) => {
     accountId: account._id,
     status: account.status,
   };
+};
+
+export const googleAuthService = async ({ idToken }) => {
+  if (!idToken) {
+    const err = new Error("Google idToken is required");
+    err.status = 400;
+    throw err;
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    const err = new Error("Google OAuth is not configured");
+    err.status = 500;
+    throw err;
+  }
+
+  const client = new OAuth2Client(clientId);
+  let payload;
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: clientId,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    const err = new Error("Invalid Google token");
+    err.status = 401;
+    throw err;
+  }
+
+  const { sub: googleId, email, name, picture } = payload;
+
+  if (!email) {
+    const err = new Error("Google account does not have an email");
+    err.status = 400;
+    throw err;
+  }
+
+  // Check if account already exists by googleId or email
+  let account = await Account.findOne({
+    $or: [{ googleId }, { email: email.toLowerCase() }],
+  }).populate("role");
+
+  if (account) {
+    // Existing account — check if it's a customer role
+    const roleName = account.role?.name;
+    if (roleName !== ROLE_NAME.CUSTOMER) {
+      const err = new Error("Google login is only available for customers");
+      err.status = 403;
+      throw err;
+    }
+
+    if (account.status === ACCOUNT_STATUS.SUSPENDED) {
+      const err = new Error("Account is suspended");
+      err.status = 403;
+      throw err;
+    }
+
+    // Link googleId if account was created via email but not yet linked
+    if (!account.googleId) {
+      account.googleId = googleId;
+      account.authProvider = "google";
+    }
+
+    // Auto-verify if not yet verified (Google already verified the email)
+    if (!account.isVerified) {
+      account.isVerified = true;
+      account.otpCodeHash = undefined;
+      account.otpExpiredAt = undefined;
+      account.otpAttempts = 0;
+      account.otpResendCount = 0;
+      account.otpResendBlockedUntil = undefined;
+      account.otpResendLastResetAt = undefined;
+    }
+
+    await account.save();
+
+    const accessToken = signAccessToken({
+      accountId: account._id,
+      status: account.status,
+      role: roleName,
+    });
+
+    return { accessToken, isNewUser: false };
+  }
+
+  // New user — register as Customer
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    const role = await Role.findOne({ name: ROLE_NAME.CUSTOMER }, null, {
+      session,
+    });
+
+    account = new Account({
+      email: email.toLowerCase(),
+      googleId,
+      authProvider: "google",
+      role: role._id,
+      isVerified: true,
+      status: ACCOUNT_STATUS.ACTIVE,
+    });
+    await account.save({ session });
+
+    const customer = new Customer({
+      accountId: account._id,
+      fullName: name || "Google User",
+      phone: "N/A",
+      avatar: picture || undefined,
+    });
+    await customer.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    const accessToken = signAccessToken({
+      accountId: account._id,
+      status: account.status,
+      role: ROLE_NAME.CUSTOMER,
+    });
+
+    return { accessToken, isNewUser: true };
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
 };
