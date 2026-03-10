@@ -5,6 +5,7 @@ import { Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
 import { SearchForm } from "../components/SearchForm";
 import { Pagination } from "../components/Pagination";
+import { EmptyState } from "../components/EmptyState";
 
 function truncate(str, maxLen) {
   if (!str) return "";
@@ -19,7 +20,7 @@ export function ManageBlogList() {
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState(null);
 
-  const limit = 10;
+  const limit = 9;
   const { data: blogs, metadata } = result;
 
   const fetchList = async () => {
@@ -68,7 +69,8 @@ export function ManageBlogList() {
         backLabel="← Dashboard"
         title="Quản lý bài blog"
         action={
-          <Link to="/staff/manage-blogs/new" className="btn btn-primary">
+          <Link to="/staff/manage-blogs/new" className="btn btn-primary manage-blog-add-btn">
+            <span className="manage-blog-add-icon">+</span>
             Thêm bài blog
           </Link>
         }
@@ -76,77 +78,75 @@ export function ManageBlogList() {
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <SearchForm
-        placeholder="Tìm theo tiêu đề hoặc nội dung..."
-        defaultValue={search}
-        onSubmit={(e) => {
-          e.preventDefault();
-          setPage(1);
-          setSearch(e.target.search?.value?.trim() ?? "");
-        }}
-      />
-
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Ảnh</th>
-              <th>Tiêu đề</th>
-              <th>Nội dung</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {blogs?.length ? (
-              blogs.map((blog) => (
-                <tr key={blog._id}>
-                  <td>
-                    {blog.image ? (
-                      <img src={getUploadFullUrl(blog.image)} alt={blog.title} className="table-thumb" />
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td>{blog.title}</td>
-                  <td className="cell-desc">{truncate(blog.content, 80)}</td>
-                  <td>
-                    <div className="table-actions">
-                      <Link
-                        to={`/staff/manage-blogs/${blog._id}`}
-                        className="btn-link"
-                      >
-                        Xem / Sửa
-                      </Link>
-                      <button
-                        type="button"
-                        className="btn-link btn-link-danger"
-                        onClick={() => handleDelete(blog._id, blog.title)}
-                        disabled={deletingId === blog._id}
-                      >
-                        {deletingId === blog._id ? "Đang xóa..." : "Xóa"}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="cell-empty">
-                  Chưa có bài blog nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="manage-blog-toolbar">
+        <SearchForm
+          placeholder="Tìm theo tiêu đề hoặc nội dung..."
+          defaultValue={search}
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPage(1);
+            setSearch(e.target.search?.value?.trim() ?? "");
+          }}
+        />
       </div>
 
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={metadata?.total}
-        onPrev={() => setPage((p) => p - 1)}
-        onNext={() => setPage((p) => p + 1)}
-      />
+      <div className="manage-blog-grid">
+        {blogs?.length ? (
+          blogs.map((blog) => (
+            <article key={blog._id} className="manage-blog-card">
+              <Link to={`/staff/manage-blogs/${blog._id}`} className="manage-blog-card-link">
+                {blog.image ? (
+                  <div className="manage-blog-card-image">
+                    <img src={getUploadFullUrl(blog.image)} alt={blog.title} />
+                  </div>
+                ) : (
+                  <div className="manage-blog-card-image manage-blog-card-image-placeholder" />
+                )}
+                <div className="manage-blog-card-body">
+                  <h3 className="manage-blog-card-title">{blog.title}</h3>
+                  <p className="manage-blog-card-content">
+                    {blog.content
+                      ? truncate(blog.content, 120)
+                      : "—"}
+                  </p>
+                </div>
+              </Link>
+              <div className="manage-blog-card-actions">
+                <Link
+                  to={`/staff/manage-blogs/${blog._id}`}
+                  className="btn btn-outline manage-blog-btn-edit"
+                >
+                  Xem / Sửa
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger"
+                  onClick={() => handleDelete(blog._id, blog.title)}
+                  disabled={deletingId === blog._id}
+                  title="Xóa bài viết"
+                >
+                  {deletingId === blog._id ? "Đang xóa..." : "Xóa"}
+                </button>
+              </div>
+            </article>
+          ))
+        ) : (
+          <EmptyState
+            message="Chưa có bài blog nào. Hãy thêm bài viết mới."
+            className="manage-blog-empty"
+          />
+        )}
+      </div>
+
+      {blogs?.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={metadata?.total}
+          onPrev={() => setPage((p) => p - 1)}
+          onNext={() => setPage((p) => p + 1)}
+        />
+      )}
     </div>
   );
 }
