@@ -23,6 +23,8 @@ import { Forbidden } from "./pages/Forbidden";
 import { ManageSpecializations } from "./pages/ManageSpecializations";
 import { PaymentPage } from "./pages/PaymentPage";
 import { PaymentReturnPage } from "./pages/PaymentReturnPage";
+import { Appointments } from "./pages/Appointments";
+import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { ROLE_NAME } from "./constants/role";
 import RoleBasedDashboard from "./components/RoleBasedDashboard";
 import { ChatProvider } from "./context/ChatContext";
