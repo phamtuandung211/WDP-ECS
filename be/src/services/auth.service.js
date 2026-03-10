@@ -481,6 +481,14 @@ export const loginService = async ({ email, password }) => {
     throw err;
   }
 
+  if (!account.passwordHash) {
+    const err = new Error(
+      "This account uses Google login. Please sign in with Google.",
+    );
+    err.status = 400;
+    throw err;
+  }
+
   const passwordValid = await comparePassword(password, account.passwordHash);
   if (!passwordValid) {
     const err = new Error("Invalid email or password");
