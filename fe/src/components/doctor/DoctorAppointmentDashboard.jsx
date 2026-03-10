@@ -93,6 +93,18 @@ export function DoctorAppointmentDashboard() {
       return;
     }
 
+    // Check appointment time - must be at or after start time
+    const now = new Date();
+    const appointmentStart = new Date(selectedAppointment.slotId?.startTime);
+
+    if (now < appointmentStart) {
+      const timeLeft = Math.ceil((appointmentStart - now) / 60000);
+      alert(
+        `Appointment starts in ${timeLeft} minutes. Cannot create medical record yet.`,
+      );
+      return;
+    }
+
     try {
       setSavingRecord(true);
       const payload = {
@@ -120,20 +132,37 @@ export function DoctorAppointmentDashboard() {
   };
 
   const handleCompleteAppointment = async (appointmentId) => {
+    if (!medicalRecord) {
+      alert(
+        "Cannot complete appointment without a medical record. Please add one first.",
+      );
+      return;
+    }
+
+    // Check appointment time - must be at or after start time
+    const now = new Date();
+    const appointmentStart = new Date(selectedAppointment.slotId?.startTime);
+
+    if (now < appointmentStart) {
+      const timeLeft = Math.ceil((appointmentStart - now) / 60000);
+      alert(`Appointment starts in ${timeLeft} minutes. Cannot complete yet.`);
+      return;
+    }
+
     if (!window.confirm("Mark this appointment as completed?")) {
       return;
     }
 
     try {
-      // TODO: Add API endpoint for marking appointment as completed
-      // For now, just update locally
+      await appointmentService.complete(appointmentId);
       setAppointments((prev) =>
         prev.filter((apt) => apt._id !== appointmentId),
       );
       setSelectedAppointment(null);
+      setMedicalRecord(null);
       alert("Appointment marked as completed");
     } catch (err) {
-      alert("Failed to mark appointment as completed");
+      alert(err.response?.data?.message || "Failed to complete appointment");
     }
   };
 
@@ -158,6 +187,22 @@ export function DoctorAppointmentDashboard() {
       .getMinutes()
       .toString()
       .padStart(2, "0")}`;
+  };
+
+  const isAppointmentTimeArrived = () => {
+    if (!selectedAppointment?.slotId?.startTime) return false;
+    const now = new Date();
+    const appointmentStart = new Date(selectedAppointment.slotId.startTime);
+    return now >= appointmentStart;
+  };
+
+  const getTimeLeftMessage = () => {
+    if (!selectedAppointment?.slotId?.startTime) return "";
+    const now = new Date();
+    const appointmentStart = new Date(selectedAppointment.slotId.startTime);
+    if (now >= appointmentStart) return "Ready to proceed";
+    const timeLeft = Math.ceil((appointmentStart - now) / 60000);
+    return `Appointment starts in ${timeLeft} minutes`;
   };
 
   if (loading && appointments.length === 0) return <Loading />;
@@ -284,7 +329,17 @@ export function DoctorAppointmentDashboard() {
                   {!showMedicalForm && (
                     <button
                       onClick={() => setShowMedicalForm(true)}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                      disabled={!isAppointmentTimeArrived()}
+                      className={`px-3 py-1 text-sm rounded transition ${
+                        !isAppointmentTimeArrived()
+                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                      title={
+                        !isAppointmentTimeArrived()
+                          ? `Cannot add medical record yet. ${getTimeLeftMessage()}`
+                          : ""
+                      }
                     >
                       {medicalRecord ? "Edit" : "Add"} Record
                     </button>
@@ -421,15 +476,42 @@ export function DoctorAppointmentDashboard() {
                 )}
               </div>
 
+              {/* Time Status */}
+              {!showMedicalForm && selectedAppointment && (
+                <div
+                  className={`p-3 rounded-md text-sm font-medium ${
+                    isAppointmentTimeArrived()
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                  }`}
+                >
+                  {getTimeLeftMessage()}
+                </div>
+              )}
+
               {/* Complete Button */}
               {!showMedicalForm && (
                 <button
                   onClick={() =>
                     handleCompleteAppointment(selectedAppointment._id)
                   }
-                  className="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 font-medium"
+                  disabled={!isAppointmentTimeArrived() || !medicalRecord}
+                  className={`w-full py-3 rounded-md font-medium transition ${
+                    !isAppointmentTimeArrived() || !medicalRecord
+                      ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  }`}
+                  title={
+                    !medicalRecord
+                      ? "Medical record required"
+                      : !isAppointmentTimeArrived()
+                        ? "Appointment time not reached"
+                        : "Click to complete appointment"
+                  }
                 >
-                  Mark as Completed
+                  {!medicalRecord
+                    ? "Add Medical Record to Complete"
+                    : "Mark as Completed"}
                 </button>
               )}
             </div>

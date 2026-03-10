@@ -19,6 +19,7 @@ import { bookSlotByType } from "./slot.service.js";
 import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
 import { PROFILE_MODEL_BY_ROLE } from "../constants/ProfileModel.enum.js";
 import payos from "../config/payos.js";
+import MedicalRecord from "../models/MedicalRecord.js";
 
 /**
  * Helper: throw a structured error.
@@ -448,6 +449,48 @@ export const getAppointmentByIdService = async ({
   } catch (error) {
     throw error;
   }
+};
+
+export const completeAppointment = async (appointmentId, doctorAccountId) => {
+  const appointment = await Appointment.findById(appointmentId).populate('doctorId').populate('slotId').lean();
+
+  if (!appointment) throwErr(404, "Appointment not found");
+
+  // Verify doctor owns this appointment
+  const doctor = await Doctor.findOne({ accountId: doctorAccountId }).lean();
+  if (!doctor || appointment.doctorId._id.toString() !== doctor._id.toString()) {
+    throwErr(403, "You are not the doctor for this appointment");
+  }
+
+  // Only CONFIRMED appointments can be completed
+  if (appointment.status !== APPOINTMENT_STATUS.CONFIRMED) {
+    throwErr(400, `Cannot complete appointment with status: ${appointment.status}`);
+  }
+
+  // Check appointment time - must be at or after start time
+  const now = new Date();
+  const appointmentStart = new Date(appointment.slotId.startTime);
+  
+  if (now < appointmentStart) {
+    const timeLeft = Math.ceil((appointmentStart - now) / 60000);
+    throwErr(400, `Appointment starts in ${timeLeft} minutes. Cannot complete yet.`);
+  }
+
+  // Check medical record exists
+  const medicalRecord = await MedicalRecord.findOne({ appointmentId }).lean();
+  
+  if (!medicalRecord) {
+    throwErr(400, "Cannot complete appointment without a medical record");
+  }
+
+  // Update appointment status
+  const updated = await Appointment.findByIdAndUpdate(
+    appointmentId,
+    { status: APPOINTMENT_STATUS.COMPLETED, completedAt: new Date() },
+    { new: true }
+  ).populate('customerId').populate('doctorId').populate('slotId');
+
+  return updated.toObject();
 };
 
 export const cancelAppointment = async (appointmentId, customerId) => {

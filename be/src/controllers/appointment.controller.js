@@ -2,6 +2,7 @@ import {
   createBasicAppointment,
   createAdvancedAppointment,
   cancelAppointment,
+  completeAppointment,
   getCustomerAppointments,
   approveBasicAppointment,
   getAppointmentByIdService,
@@ -177,6 +178,23 @@ export const cancelAppointmentController = async (req, res) => {
   } catch (err) {
     return res.status(err.status || 500).json({
       message: err.message || "Failed to cancel appointment",
+    });
+  }
+};
+
+export const completeAppointmentController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const accountId = req.user.accountId;
+
+    const appointment = await completeAppointment(id, accountId);
+    return res.status(200).json({
+      message: "Appointment completed successfully",
+      data: appointment,
+    });
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || "Failed to complete appointment",
     });
   }
 };
