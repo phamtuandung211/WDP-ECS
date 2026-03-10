@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { manageServiceService, UploadService, getUploadFullUrl } from "../services";
 import { Input, Button, Loading, Alert } from "../components/UI";
+import { PageHeader } from "../components/PageHeader";
 
 export function ManageServiceForm() {
   const { id } = useParams();
@@ -83,96 +84,130 @@ export function ManageServiceForm() {
     }
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setError(null);
+    try {
+      const url = await UploadService.uploadImage(file);
+      if (url) setImage(url);
+      else setError("Không lấy được URL ảnh");
+    } catch (err) {
+      setError(err.response?.data?.message || "Upload ảnh thất bại");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   if (loading) return <Loading />;
 
   return (
     <div className="page manage-service-form-page">
-      <div className="page-header">
-        <div>
-          <Link to="/staff/manage-services" className="back-link">
-            ← Quay lại danh sách
-          </Link>
-          <h1 className="page-title">
-            {isCreate ? "Thêm gói dịch vụ" : "Sửa gói dịch vụ"}
-          </h1>
-        </div>
-      </div>
+      <PageHeader
+        backTo="/staff/manage-services"
+        backLabel="← Quay lại danh sách"
+        title={isCreate ? "Thêm gói dịch vụ" : "Xem / Sửa gói dịch vụ"}
+      />
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <form onSubmit={handleSubmit} className="form-container form-narrow">
-        <Input
-          label="Tên dịch vụ"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={fieldErrors.name}
-          required
-        />
-        <div className="form-group">
-          <label className="form-label">Mô tả</label>
-          <textarea
-            className="form-input form-textarea"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            required
-          />
-          {fieldErrors.description && (
-            <span className="form-error">{fieldErrors.description}</span>
-          )}
-        </div>
-        <Input
-          label="Giá (VNĐ)"
-          type="number"
-          min={0}
-          step={1000}
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          error={fieldErrors.price}
-          placeholder="Ví dụ: 200000"
-        />
-        <div className="form-group">
-          <label className="form-label">Ảnh dịch vụ</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploadingImage(true);
-              setError(null);
-              try {
-                const url = await UploadService.uploadImage(file);
-                if (url) setImage(url);
-                else setError("Không lấy được URL ảnh");
-              } catch (err) {
-                setError(err.response?.data?.message || "Upload ảnh thất bại");
-              } finally {
-                setUploadingImage(false);
-              }
-            }}
-            disabled={uploadingImage}
-            className="form-input"
-          />
-          {uploadingImage && <span className="form-hint">Đang tải lên...</span>}
-          {image && (
-            <div className="form-image-preview">
-              <img src={getUploadFullUrl(image)} alt="Preview" />
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setImage("")}>
-                Xóa ảnh
-              </button>
+      <div className="manage-service-form-wrap">
+        <form onSubmit={handleSubmit} className="manage-service-form">
+          <div className="manage-service-form-main">
+            <div className="manage-service-form-fields">
+              <Input
+                label="Tên dịch vụ"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                error={fieldErrors.name}
+                required
+              />
+              <div className="form-group">
+                <label className="form-label">Mô tả</label>
+                <textarea
+                  className="form-input form-textarea manage-service-textarea"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={5}
+                  required
+                  placeholder="Mô tả chi tiết gói dịch vụ..."
+                />
+                {fieldErrors.description && (
+                  <span className="form-error">{fieldErrors.description}</span>
+                )}
+              </div>
+              <Input
+                label="Giá (VNĐ)"
+                type="number"
+                min={0}
+                step={1000}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                error={fieldErrors.price}
+                placeholder="Ví dụ: 200000"
+              />
             </div>
-          )}
-        </div>
-        <div className="form-actions">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? "Đang lưu..." : isCreate ? "Tạo mới" : "Cập nhật"}
-          </Button>
-          <Link to="/staff/manage-services" className="btn btn-secondary">
-            Hủy
-          </Link>
-        </div>
-      </form>
+
+            <div className="manage-service-form-image-section">
+              <label className="form-label">Ảnh dịch vụ</label>
+              <div
+                className={`manage-service-image-zone ${image ? "has-image" : ""} ${uploadingImage ? "uploading" : ""}`}
+              >
+                {image ? (
+                  <>
+                    <div className="manage-service-image-preview">
+                      <img src={getUploadFullUrl(image)} alt="Preview" />
+                    </div>
+                    <div className="manage-service-image-actions">
+                      <label className="btn btn-outline btn-sm">
+                        Đổi ảnh
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          disabled={uploadingImage}
+                          className="manage-service-file-input"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={() => setImage("")}
+                      >
+                        Xóa ảnh
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <label className="manage-service-image-upload-label">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={uploadingImage}
+                      className="manage-service-file-input"
+                    />
+                    <span className="manage-service-image-upload-icon">📷</span>
+                    <span className="manage-service-image-upload-text">
+                      {uploadingImage ? "Đang tải lên..." : "Chọn ảnh hoặc kéo thả vào đây"}
+                    </span>
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="manage-service-form-actions">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Đang lưu..." : isCreate ? "Tạo gói dịch vụ" : "Cập nhật"}
+            </Button>
+            <Link to="/staff/manage-services" className="btn btn-secondary">
+              Hủy
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
