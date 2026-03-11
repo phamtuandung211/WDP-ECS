@@ -1,7 +1,9 @@
 import {
     getAllDoctorsService,
     getDoctorByIdService,
-    getRelatedDoctorsService
+    getRelatedDoctorsService,
+    getDoctorProfileService,
+    updateDoctorProfileService
 } from "../services/doctor.service.js";
 
 /**
@@ -52,6 +54,48 @@ export const getRelateDoctors = async (req, res) => {
         return res.status(200).json({
             message: "Related doctors fetched successfully",
             data: relatedDoctors
+        });
+
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message
+        });
+    }
+};
+
+/**
+ * GET /api/doctors/profile/me
+ */
+export const getDoctorProfile = async (req, res) => {
+    try {
+        const doctor = await getDoctorProfileService(req.user.accountId);
+
+        return res.status(200).json({
+            message: "Doctor profile fetched successfully",
+            data: doctor
+        });
+
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message
+        });
+    }
+};
+
+/**
+ * PUT /api/doctors/profile/me
+ */
+export const updateDoctorProfile = async (req, res) => {
+    try {
+        const doctor = await updateDoctorProfileService(
+            req.user.accountId,
+            req.body,
+            req.file
+        );
+
+        return res.status(200).json({
+            message: "Doctor profile updated successfully",
+            data: doctor
         });
 
     } catch (error) {
