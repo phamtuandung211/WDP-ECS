@@ -1,8 +1,10 @@
 // services/degree.service.js
 import Degree from "../models/Degree.js";
 import Doctor from "../models/Doctor.js";
+import SaleStaff from "../models/SaleStaff.js";
 import { DEGREE_STATUS } from "../constants/Degree.enum.js";
 import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
+
 
 /**
  * Get all unique degree names
@@ -52,6 +54,7 @@ export const getDoctorDegreesService = async (accountId, query) => {
     const totalItems = await Degree.countDocuments(filter);
 
     const degrees = await Degree.find(filter)
+        .populate("reviewedBy", "fullName")
         .sort(sortOption)
         .skip(offset)
         .limit(safeLimit);
@@ -163,8 +166,10 @@ export const softDeleteDegreeService = async (accountId, degreeId) => {
  * On approve: new degree -> APPROVED, if it replaced an old one -> old becomes OUTOFDATE
  * On reject: degree -> REJECTED + note
  */
-export const reviewDegreeService = async (degreeId, { action, note }, reviewerId) => {
+export const reviewDegreeService = async (degreeId, { action, note }, accountId) => {
     const degree = await Degree.findById(degreeId);
+    const saleStaffId = await SaleStaff.findOne({ accountId }).select("_id");
+
     if (!degree) {
         const error = new Error("Degree not found");
         error.statusCode = 404;
@@ -179,7 +184,7 @@ export const reviewDegreeService = async (degreeId, { action, note }, reviewerId
 
     if (action === DEGREE_STATUS.APPROVED) {
         degree.status = DEGREE_STATUS.APPROVED;
-        degree.reviewedBy = reviewerId;
+        degree.reviewedBy = saleStaffId._id;
         degree.reviewedAt = new Date();
         if (note) degree.note = note;
         await degree.save();
