@@ -25,6 +25,7 @@ import feedbackRoutes from "./routes/feedback.route.js";
 import statisticsRoutes from "./routes/statistics.route.js";
 import uploadRoutes from "./routes/upload.route.js";
 import degreeRoutes from "./routes/degree.route.js";
+import certificateRoutes from "./routes/certificate.route.js";
 import chatRoutes from "./routes/chat.route.js";
 
 dotenv.config();
@@ -64,6 +65,7 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/degrees", degreeRoutes);
+app.use("/api/certificates", certificateRoutes);
 app.use("/api/chat", chatRoutes);
 
 app.use(errorHandler);
