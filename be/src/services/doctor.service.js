@@ -197,6 +197,14 @@ export const updateDoctorProfileService = async (accountId, updateData, file) =>
         }
     }
 
+    // Update specializations
+    if (updateData.specializations) {
+        const specs = Array.isArray(updateData.specializations)
+            ? updateData.specializations
+            : [updateData.specializations];
+        doctor.specializations = specs;
+    }
+
     // Update image via Cloudinary if file is uploaded
     if (file) {
         doctor.img = file.path;
