@@ -10,11 +10,7 @@ const doctorSchema = new mongoose.Schema(
     experienceYears: { type: Number, default: 1 },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CustomerSupport",
-    },
-    rejectedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CustomerSupport",
+      ref: "Admin",
     },
   },
   { timestamps: true, _id: true },

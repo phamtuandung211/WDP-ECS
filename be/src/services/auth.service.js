@@ -1,6 +1,7 @@
 import validator from "validator";
 import mongoose from "mongoose";
 import Account from "../models/Account.js";
+import Admin from "../models/Admin.js";
 import Customer from "../models/Customer.js";
 import Role from "../models/Role.js";
 import SaleStaff from "../models/SaleStaff.js";
@@ -8,7 +9,6 @@ import CustomerSupport from "../models/CustomerSupport.js";
 import Doctor from "../models/Doctor.js";
 import { ROLE_NAME } from "../constants/Role.enum.js";
 import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
-import { PROFILE_MODEL_BY_ROLE } from "../constants/ProfileModel.enum.js";
 import {
   hashPassword,
   comparePassword,
@@ -19,8 +19,6 @@ import { generateOtpCode, getOtpExpiry } from "../utils/otp.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { sendMail } from "../config/mail.js";
 import { buildVerifyOtpMail } from "../utils/mailTemplates.js";
-import { getAccountsWithProfiles } from "./account.service.js";
-import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
 import { OAuth2Client } from "google-auth-library";
 
 const OTP_MAX_ATTEMPTS = 5;
@@ -149,10 +147,7 @@ export const registerStaffByRole = async (
   password,
   staffRole,
   fullName,
-  phone,
-  gender,
-  dateOfBirth,
-  address,
+  createdByAccountId,
 ) => {
   const session = await mongoose.startSession();
 
@@ -166,11 +161,8 @@ export const registerStaffByRole = async (
       errors.password = "Password must be at least 6 characters";
     if (!fullName || fullName.trim().length < 2)
       errors.fullName = "Invalid full name";
-    if (!phone || phone.trim().length < 8) errors.phone = "Invalid phone";
-
-    const normalizedGender = gender ? gender.toUpperCase() : undefined;
-    if (normalizedGender && !["MALE", "FEMALE"].includes(normalizedGender)) {
-      errors.gender = "Gender must be MALE or FEMALE";
+    if (!createdByAccountId) {
+      errors.createdByAccountId = "Missing creator account id";
     }
 
     // validate staffRole
@@ -213,14 +205,25 @@ export const registerStaffByRole = async (
       throw err;
     }
 
+    const adminProfile = await Admin.findOne(
+      { accountId: createdByAccountId },
+      "_id",
+      { session },
+    );
+    if (!adminProfile) {
+      const err = new Error("Admin profile not found");
+      err.status = 404;
+      throw err;
+    }
+
     // create account
     const passwordHash = await hashPassword(password);
     const account = new Account({
       email: email.toLowerCase(),
       passwordHash,
       role: roleObj._id,
-      isVerified: false,
-      status: ACCOUNT_STATUS.PENDING,
+      isVerified: true,
+      status: ACCOUNT_STATUS.ACTIVE,
     });
 
     await account.save({ session });
@@ -229,53 +232,29 @@ export const registerStaffByRole = async (
     const profileData = {
       accountId: account._id,
       fullName,
-      phone,
-      gender: gender?.toUpperCase(),
-      dateOfBirth,
-      address,
+      approvedBy: adminProfile._id,
     };
 
-    if (roleUpper === ROLE_NAME.DOCTOR) {
+    if (roleUpper === ROLE_NAME.SALE_STAFF) {
+      const saleStaff = new SaleStaff(profileData);
+      await saleStaff.save({ session });
+    } else if (roleUpper === ROLE_NAME.CUSTOMER_SUPPORT) {
+      const customerSupport = new CustomerSupport(profileData);
+      await customerSupport.save({ session });
+    } else {
       const doctor = new Doctor({
         ...profileData,
         experienceYears: 0,
         specializations: [],
       });
       await doctor.save({ session });
-    } else if (roleUpper === ROLE_NAME.SALE_STAFF) {
-      const saleStaff = new SaleStaff(profileData);
-      await saleStaff.save({ session });
-    } else if (roleUpper === ROLE_NAME.CUSTOMER_SUPPORT) {
-      const customerSupport = new CustomerSupport(profileData);
-      await customerSupport.save({ session });
     }
-
-    // generate OTP
-    const otpCode = generateOtpCode();
-    const otpCodeHash = await hashOtp(otpCode);
-    const otpExpiredAt = getOtpExpiry(5);
-
-    await Account.updateOne(
-      { _id: account._id },
-      { otpCodeHash, otpExpiredAt, otpAttempts: 0 },
-      { session },
-    );
 
     // commit DB
     await session.commitTransaction();
     session.endSession();
 
-    // send mail AFTER commit
-    const mail = buildVerifyOtpMail({ otpCode, expiresAt: otpExpiredAt });
-
-    await sendMail({
-      to: email,
-      subject: mail.subject,
-      text: mail.text,
-      html: mail.html,
-    });
-
-    return { message: "Register success. Please verify OTP" };
+    return { message: "Staff account created successfully" };
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
@@ -469,13 +448,11 @@ export const loginService = async ({ email, password }) => {
     throw err;
   }
 
-  if (
-    ![ACCOUNT_STATUS.ACTIVE, ACCOUNT_STATUS.REJECTED].includes(account.status)
-  ) {
+  if (account.status !== ACCOUNT_STATUS.ACTIVE) {
     const err = new Error(
       account.status === ACCOUNT_STATUS.SUSPENDED
         ? "Account is suspended"
-        : "Account is pending approval",
+        : "Account is inactive",
     );
     err.status = 403;
     throw err;
@@ -504,247 +481,6 @@ export const loginService = async ({ email, password }) => {
   });
 
   return { accessToken };
-};
-
-//Get pending accounts by filter
-export const getPendingAccountsByFilter = async ({
-  roles,
-  status,
-  page,
-  limit,
-}) => {
-  // Normalize roles to array
-  const rolesArray = roles ? (Array.isArray(roles) ? roles : [roles]) : null;
-
-  // ===== validate =====
-  if (rolesArray) {
-    for (const role of rolesArray) {
-      if (!Object.values(ROLE_NAME).includes(role)) {
-        const err = new Error(
-          `Role must be one of: ${ROLE_NAME.SALE_STAFF}, ${ROLE_NAME.CUSTOMER_SUPPORT},${ROLE_NAME.DOCTOR}`,
-        );
-        err.status = 400;
-        throw err;
-      }
-    }
-  }
-
-  if (status && !Object.values(ACCOUNT_STATUS).includes(status)) {
-    const err = new Error("Invalid account status filter");
-    err.status = 400;
-    throw err;
-  }
-
-  // ===== build query =====
-  const query = {};
-  if (status) query.status = status;
-
-  if (rolesArray && rolesArray.length > 0) {
-    const roleDocs = await Role.find({ name: { $in: rolesArray } }).select(
-      "_id name",
-    );
-    const { limit: safeLimit, offset } = buildPagination({ page, limit });
-
-    if (roleDocs.length === 0) {
-      return {
-        data: [],
-        metadata: getPaginationMetadata(0, 0, safeLimit, offset),
-      };
-    }
-
-    const roleIds = roleDocs.map((r) => r._id);
-    query.role = rolesArray.length === 1 ? roleIds[0] : { $in: roleIds };
-  }
-
-  // ===== use generic function =====
-  const result = await getAccountsWithProfiles({
-    query,
-    roleNames: rolesArray,
-    page,
-    limit,
-  });
-
-  // Transform data to match expected format
-  const data = result.data.map((acc) => ({
-    _id: acc._id,
-    email: acc.email,
-    role: acc.role?.name,
-    status: acc.status,
-    isVerified: acc.isVerified,
-    createdAt: acc.createdAt,
-    profile: acc.profile,
-  }));
-
-  return {
-    data,
-    metadata: result.metadata,
-  };
-};
-
-export const approveAccount = async ({ accountId, actorId, actorRole }) => {
-  const account = await Account.findById(accountId).populate("role");
-  if (!account) {
-    const err = new Error("Account not found");
-    err.status = 404;
-    throw err;
-  }
-
-  if (account.status !== ACCOUNT_STATUS.PENDING) {
-    const err = new Error("Account is not in pending state");
-    err.status = 400;
-    throw err;
-  }
-
-  const targetRole = account.role?.name;
-
-  // ===== RULE CHECK =====
-  if (
-    actorRole === ROLE_NAME.ADMIN &&
-    ![ROLE_NAME.SALE_STAFF, ROLE_NAME.CUSTOMER_SUPPORT].includes(targetRole)
-  ) {
-    const err = new Error("Admin cannot approve this role");
-    err.status = 403;
-    throw err;
-  }
-
-  if (
-    actorRole === ROLE_NAME.CUSTOMER_SUPPORT &&
-    targetRole !== ROLE_NAME.DOCTOR
-  ) {
-    const err = new Error("Customer Support can only approve doctor");
-    err.status = 403;
-    throw err;
-  }
-
-  // ===== UPDATE ACCOUNT =====
-  account.status = ACCOUNT_STATUS.ACTIVE;
-  account.updatedAt = new Date();
-  account.rejectionReason = undefined;
-  await account.save();
-
-  // ===== UPDATE PROFILE =====
-  const ProfileModel = PROFILE_MODEL_BY_ROLE[targetRole];
-  if (ProfileModel) {
-    await ProfileModel.findOneAndUpdate(
-      { accountId },
-      { approvedBy: actorId, rejectedBy: null },
-    );
-  }
-};
-
-export const rejectAccount = async ({
-  accountId,
-  actorId,
-  actorRole,
-  rejectionReason,
-}) => {
-  const account = await Account.findById(accountId).populate("role");
-  if (!account) {
-    const err = new Error("Account not found");
-    err.status = 404;
-    throw err;
-  }
-
-  if (account.status !== ACCOUNT_STATUS.PENDING) {
-    const err = new Error("Account is not in pending state");
-    err.status = 400;
-    throw err;
-  }
-
-  const targetRole = account.role?.name;
-
-  // ===== RULE CHECK =====
-  if (
-    actorRole === ROLE_NAME.ADMIN &&
-    ![ROLE_NAME.SALE_STAFF, ROLE_NAME.CUSTOMER_SUPPORT].includes(targetRole)
-  ) {
-    const err = new Error("Admin cannot reject this role");
-    err.status = 403;
-    throw err;
-  }
-
-  if (
-    actorRole === ROLE_NAME.CUSTOMER_SUPPORT &&
-    targetRole !== ROLE_NAME.DOCTOR
-  ) {
-    const err = new Error("Customer Support can only reject doctor");
-    err.status = 403;
-    throw err;
-  }
-
-  // ===== UPDATE ACCOUNT =====
-  account.status = ACCOUNT_STATUS.REJECTED;
-  account.rejectionReason = rejectionReason || null;
-  account.updatedAt = new Date();
-  await account.save();
-
-  // ===== UPDATE PROFILE =====
-  const ProfileModel = PROFILE_MODEL_BY_ROLE[targetRole];
-  if (ProfileModel) {
-    await ProfileModel.findOneAndUpdate({ accountId }, { rejectedBy: actorId });
-  }
-
-  return { message: "Account rejected successfully" };
-};
-
-export const updateProfileAfterRejection = async ({ accountId, payload }) => {
-  const account = await Account.findById(accountId).populate("role");
-  if (!account) {
-    const err = new Error("Account not found");
-    err.status = 404;
-    throw err;
-  }
-
-  if (account.status !== ACCOUNT_STATUS.REJECTED) {
-    const err = new Error("Only rejected accounts can update profile");
-    err.status = 400;
-    throw err;
-  }
-
-  if (!payload || Object.keys(payload).length === 0) {
-    const err = new Error("No data to update");
-    err.status = 400;
-    throw err;
-  }
-
-  const roleName = account.role?.name;
-  const ProfileModel = PROFILE_MODEL_BY_ROLE[roleName];
-
-  if (!ProfileModel) {
-    const err = new Error("Profile model not found");
-    err.status = 500;
-    throw err;
-  }
-
-  await ProfileModel.findOneAndUpdate({ accountId }, payload);
-
-  return payload;
-};
-
-export const resubmitForApproval = async ({ accountId }) => {
-  const account = await Account.findById(accountId);
-  if (!account) {
-    const err = new Error("Account not found");
-    err.status = 404;
-    throw err;
-  }
-
-  if (account.status !== ACCOUNT_STATUS.REJECTED) {
-    const err = new Error("Only rejected accounts can resubmit");
-    err.status = 400;
-    throw err;
-  }
-
-  account.status = ACCOUNT_STATUS.PENDING;
-  account.rejectionReason = null;
-  account.updatedAt = new Date();
-
-  await account.save();
-
-  return {
-    accountId: account._id,
-    status: account.status,
-  };
 };
 
 export const googleAuthService = async ({ idToken }) => {
