@@ -12,6 +12,7 @@ export function Header() {
   const isSaleStaff = role === ROLE_NAME.SALE_STAFF;
   const isCustomerSupport = role === ROLE_NAME.CUSTOMER_SUPPORT;
   const isAdmin = role === "ADMIN";
+  const isDoctor = role === ROLE_NAME.DOCTOR;
 
   const handleLogout = () => {
     logout();
@@ -41,6 +42,7 @@ export function Header() {
                 <a href="/staff/manage-specializations">
                   Manage Specializations
                 </a>
+                <a href="/staff/review-approvals">✅ Duyệt hồ sơ</a>
                 <a href="/appointments">📋 My Dashboard</a>
                 <span className="user-info">
                   Xin chào, {getUserName()} ({user.role})
