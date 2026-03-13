@@ -33,6 +33,9 @@ import { StaffChatPage } from "./pages/StaffChatPage";
 import "./styles.css";
 import DoctorListPage from "./pages/ListDoctors";
 import DoctorDetailPage from "./pages/DoctorDetail";
+import ManageCertificatesDoctor from "./pages/ManageCertificatesDoctor";
+import ManageDegreesDoctor from "./pages/ManageDegreesDoctor";
+import StaffReviewApprovals from "./pages/StaffReviewApprovals";
 
 /**
  * PrivateRoute - Bảo vệ route, yêu cầu user đã login
@@ -258,6 +261,36 @@ function App() {
                   <RoleProtectedRoute
                     allowedRoles={supportRoles}
                     element={<StaffChatPage />}
+                  />
+                }
+              />
+
+              <Route
+                path="/doctor/certificates"
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={[ROLE_NAME.DOCTOR]}
+                    element={<ManageCertificatesDoctor />}
+                  />
+                }
+              />
+              <Route
+                path="/doctor/degrees"
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={[ROLE_NAME.DOCTOR]}
+                    element={<ManageDegreesDoctor />}
+                  />
+                }
+              />
+
+              {/* ========== Staff: Review Certificates & Degrees ========== */}
+              <Route
+                path="/staff/review-approvals"
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={staffRoles}
+                    element={<StaffReviewApprovals />}
                   />
                 }
               />
