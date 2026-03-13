@@ -7,6 +7,7 @@ import {
     updateDegreeService,
     softDeleteDegreeService,
     reviewDegreeService,
+    getAllDegreesForStaffService,
 } from "../services/degree.service.js";
 
 /**
@@ -137,6 +138,24 @@ export const reviewDegree = async (req, res) => {
         return res.status(200).json({
             message: `Degree ${degree.status.toLowerCase()} successfully`,
             data: degree,
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message,
+        });
+    }
+};
+
+/**
+ * @route GET /api/degrees (staff: get all degrees with filter)
+ */
+export const getAllDegreesForStaff = async (req, res) => {
+    try {
+        const result = await getAllDegreesForStaffService(req.query);
+
+        return res.status(200).json({
+            message: "All degrees fetched successfully",
+            ...result,
         });
     } catch (error) {
         return res.status(error.statusCode || 500).json({

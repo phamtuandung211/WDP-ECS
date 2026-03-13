@@ -153,6 +153,33 @@ export const softDeleteCertificateService = async (accountId, certificateId) => 
 };
 
 /**
+ * Get all certificates for staff review (with pagination, filter, search)
+ */
+export const getAllCertificatesForStaffService = async (query) => {
+    const { page, limit, status, search, sortBy, order } = query;
+    const { limit: safeLimit, offset } = buildPagination({ page, limit });
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (search) filter.name = { $regex: search, $options: "i" };
+
+    let sortOption = { createdAt: -1 };
+    if (sortBy) sortOption = { [sortBy]: order === "asc" ? 1 : -1 };
+
+    const totalItems = await Certificate.countDocuments(filter);
+
+    const certificates = await Certificate.find(filter)
+        .populate("doctorId", "fullName")
+        .populate("reviewedBy", "fullName")
+        .sort(sortOption)
+        .skip(offset)
+        .limit(safeLimit);
+
+    const pagination = getPaginationMetadata(certificates.length, totalItems, safeLimit, offset);
+    return { data: certificates, metadata: pagination };
+};
+
+/**
  * Sale staff review certificate: approve or reject
  */
 export const reviewCertificateService = async (certificateId, { action, note }, accountId) => {

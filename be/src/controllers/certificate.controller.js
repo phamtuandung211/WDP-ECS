@@ -5,6 +5,7 @@ import {
     updateCertificateService,
     softDeleteCertificateService,
     reviewCertificateService,
+    getAllCertificatesForStaffService,
 } from "../services/certificate.service.js";
 
 /**
@@ -116,6 +117,23 @@ export const reviewCertificate = async (req, res) => {
         return res.status(200).json({
             message: `Certificate ${certificate.status.toLowerCase()} successfully`,
             data: certificate,
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            message: error.message,
+        });
+    }
+};
+
+/**
+ * @route GET /api/certificates (staff: get all certificates with filter)
+ */
+export const getAllCertificatesForStaff = async (req, res) => {
+    try {
+        const result = await getAllCertificatesForStaffService(req.query);
+        return res.status(200).json({
+            message: "All certificates fetched successfully",
+            ...result,
         });
     } catch (error) {
         return res.status(error.statusCode || 500).json({

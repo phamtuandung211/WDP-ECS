@@ -6,12 +6,16 @@ import {
     updateCertificate,
     softDeleteCertificate,
     reviewCertificate,
+    getAllCertificatesForStaff,
 } from "../controllers/certificate.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 import upload from "../utils/multer.js";
 import { ROLE_NAME } from "../constants/Role.enum.js";
 
 const router = express.Router();
+
+// Staff: get all certificates for review
+router.get("/", authenticate, authorize(ROLE_NAME.SALE_STAFF), getAllCertificatesForStaff);
 
 // Doctor certificate management routes
 router.get("/my-certificates", authenticate, authorize(ROLE_NAME.DOCTOR), getDoctorCertificates);

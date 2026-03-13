@@ -162,6 +162,33 @@ export const softDeleteDegreeService = async (accountId, degreeId) => {
 };
 
 /**
+ * Get all degrees for staff review (with pagination, filter, search)
+ */
+export const getAllDegreesForStaffService = async (query) => {
+    const { page, limit, status, search, sortBy, order } = query;
+    const { limit: safeLimit, offset } = buildPagination({ page, limit });
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (search) filter.name = { $regex: search, $options: "i" };
+
+    let sortOption = { createdAt: -1 };
+    if (sortBy) sortOption = { [sortBy]: order === "asc" ? 1 : -1 };
+
+    const totalItems = await Degree.countDocuments(filter);
+
+    const degrees = await Degree.find(filter)
+        .populate("doctorId", "fullName")
+        .populate("reviewedBy", "fullName")
+        .sort(sortOption)
+        .skip(offset)
+        .limit(safeLimit);
+
+    const pagination = getPaginationMetadata(degrees.length, totalItems, safeLimit, offset);
+    return { data: degrees, metadata: pagination };
+};
+
+/**
  * Sale staff review degree: approve or reject
  * On approve: new degree -> APPROVED, if it replaced an old one -> old becomes OUTOFDATE
  * On reject: degree -> REJECTED + note
@@ -197,7 +224,7 @@ export const reviewDegreeService = async (degreeId, { action, note }, accountId)
         }
     } else if (action === DEGREE_STATUS.REJECTED) {
         degree.status = DEGREE_STATUS.REJECTED;
-        degree.reviewedBy = reviewerId;
+        degree.reviewedBy = saleStaffId._id;
         degree.reviewedAt = new Date();
         if (note) degree.note = note;
         await degree.save();
