@@ -7,11 +7,18 @@ import {
   registerStaff,
   googleAuth,
 } from "../controllers/auth.controller.js";
+import { authenticate, authorize } from "../middleware/auth.middleware.js";
+import { ROLE_NAME } from "../constants/Role.enum.js";
 
 const router = express.Router();
 
 //Register Staff
-router.post("/register-staff", registerStaff);
+router.post(
+  "/register-staff",
+  authenticate,
+  authorize(ROLE_NAME.ADMIN),
+  registerStaff,
+);
 
 // Register Customer
 router.post("/register", register);

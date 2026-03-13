@@ -32,31 +32,18 @@ export const register = async (req, res) => {
 
 export const registerStaff = async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      staffRole,
-      fullName,
-      phone,
-      gender,
-      dateOfBirth,
-      address,
-    } = req.body;
+    const { email, password, staffRole, fullName } = req.body;
 
     const result = await registerStaffByRole(
       email,
       password,
       staffRole,
       fullName,
-      phone,
-      gender,
-      dateOfBirth,
-      address,
     );
     return res.status(201).json(result);
   } catch (err) {
     return res.status(err.status || 500).json({
-      message: err.message || `Register ${role} failed`,
+      message: err.message || "Create staff account failed",
       errors: err.data,
     });
   }
