@@ -1,6 +1,7 @@
 import validator from "validator";
 import mongoose from "mongoose";
 import Account from "../models/Account.js";
+import Admin from "../models/Admin.js";
 import Customer from "../models/Customer.js";
 import Role from "../models/Role.js";
 import SaleStaff from "../models/SaleStaff.js";
@@ -146,6 +147,7 @@ export const registerStaffByRole = async (
   password,
   staffRole,
   fullName,
+  createdByAccountId,
 ) => {
   const session = await mongoose.startSession();
 
@@ -159,6 +161,9 @@ export const registerStaffByRole = async (
       errors.password = "Password must be at least 6 characters";
     if (!fullName || fullName.trim().length < 2)
       errors.fullName = "Invalid full name";
+    if (!createdByAccountId) {
+      errors.createdByAccountId = "Missing creator account id";
+    }
 
     // validate staffRole
     const roleUpper = staffRole?.toUpperCase();
@@ -200,6 +205,17 @@ export const registerStaffByRole = async (
       throw err;
     }
 
+    const adminProfile = await Admin.findOne(
+      { accountId: createdByAccountId },
+      "_id",
+      { session },
+    );
+    if (!adminProfile) {
+      const err = new Error("Admin profile not found");
+      err.status = 404;
+      throw err;
+    }
+
     // create account
     const passwordHash = await hashPassword(password);
     const account = new Account({
@@ -216,6 +232,7 @@ export const registerStaffByRole = async (
     const profileData = {
       accountId: account._id,
       fullName,
+      approvedBy: adminProfile._id,
     };
 
     if (roleUpper === ROLE_NAME.SALE_STAFF) {

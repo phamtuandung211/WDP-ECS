@@ -39,6 +39,7 @@ export const registerStaff = async (req, res) => {
       password,
       staffRole,
       fullName,
+      req.user?.accountId,
     );
     return res.status(201).json(result);
   } catch (err) {
