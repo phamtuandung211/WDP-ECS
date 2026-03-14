@@ -3,63 +3,20 @@ import { Link, useParams } from "react-router-dom";
 import { blogService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 
-/** Nhận dạng dòng là tiêu đề mục (số + chấm/ngoặc + nội dung), ví dụ: "1. Tăng nhãn áp là gì?" */
-function isSectionHeading(line) {
-  const t = line.trim();
-  return /^\d+[.)]\s+.+$/.test(t);
+/** Chuẩn hóa nội dung: đã là HTML (từ CKEditor) thì dùng nguyên, plain text cũ thì bọc thành HTML. */
+function toHtml(content) {
+  if (!content || typeof content !== "string") return "";
+  const s = content.trim();
+  if (!s) return "";
+  if (s.includes("</") && (s.includes("<p>") || s.includes("<h") || s.includes("<div"))) return s;
+  return "<p>" + s.replace(/\n/g, "</p><p>") + "</p>";
 }
 
-/** Nội dung có chứa HTML thật (đã lưu từ trước) thì render HTML; còn lại parse plain text thành đoạn + heading. */
+/** Render nội dung blog (luôn HTML, style h2/h3/strong/p/list trong CSS). */
 function renderBlogContent(content) {
-  if (!content || typeof content !== "string") return null;
-  const s = content.trim();
-  if (s.includes("</") && (s.includes("<p>") || s.includes("<h2>") || s.includes("<h3>") || s.includes("<div"))) {
-    return (
-      <div
-        className="blog-detail-content blog-detail-content--html"
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-    );
-  }
-  const lines = content.split(/\r?\n/);
-  const blocks = [];
-  let paragraphLines = [];
-  const flushParagraph = () => {
-    if (paragraphLines.length) {
-      blocks.push({ type: "p", text: paragraphLines.join(" ") });
-      paragraphLines = [];
-    }
-  };
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    if (trimmed === "") {
-      flushParagraph();
-      continue;
-    }
-    if (isSectionHeading(trimmed)) {
-      flushParagraph();
-      blocks.push({ type: "h", text: trimmed });
-    } else {
-      paragraphLines.push(trimmed);
-    }
-  }
-  flushParagraph();
-  return (
-    <div className="blog-detail-content blog-detail-content--parsed">
-      {blocks.map((block, i) =>
-        block.type === "h" ? (
-          <div key={i} className="blog-detail-heading">
-            {block.text}
-          </div>
-        ) : (
-          <p key={i} className="blog-detail-content-p">
-            {block.text}
-          </p>
-        )
-      )}
-    </div>
-  );
+  const html = toHtml(content);
+  if (!html) return null;
+  return <div className="blog-detail-content" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 export function BlogDetail() {

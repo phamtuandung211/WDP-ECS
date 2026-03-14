@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { manageBlogService, UploadService, getUploadFullUrl } from "../services";
 import { Input, Button, Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
+import { BlogRichEditor } from "../components/BlogRichEditor";
 
 export function ManageBlogForm() {
   const { id } = useParams();
@@ -47,7 +48,8 @@ export function ManageBlogForm() {
       setFieldErrors((prev) => ({ ...prev, title: "Nhập tiêu đề" }));
       return;
     }
-    if (!content.trim()) {
+    const contentText = content.replace(/<[^>]+>/g, "").trim();
+    if (!contentText) {
       setFieldErrors((prev) => ({ ...prev, content: "Nhập nội dung" }));
       return;
     }
@@ -117,12 +119,10 @@ export function ManageBlogForm() {
               />
               <div className="form-group">
                 <label className="form-label">Nội dung</label>
-                <textarea
-                  className="form-input form-textarea manage-blog-textarea"
+                <BlogRichEditor
+                  key={loading ? "loading" : isCreate ? "new" : id}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  rows={12}
-                  required
                   placeholder="Nội dung bài viết..."
                 />
                 {fieldErrors.content && (
