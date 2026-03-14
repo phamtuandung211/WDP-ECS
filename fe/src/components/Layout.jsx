@@ -166,8 +166,18 @@ export function Header() {
                 <a href="/staff/review-approvals">✅ Duyệt hồ sơ</a>
 
                 <a href="/appointments">📋 My Dashboard</a>
+                <a href="/profile">Hồ sơ cá nhân</a>
+
                 <NotificationIcon />
                 <span className="user-info">
+                  <img
+                    src={avatarSrc}
+                    alt="avatar"
+                    className="header-avatar"
+                    onError={(e) => {
+                      e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                    }}
+                  />
                   Xin chào, {getUserName()} ({user.role})
                 </span>
                 <button onClick={handleLogout} className="btn-logout">
@@ -178,7 +188,16 @@ export function Header() {
               /* 2. Giao diện dành riêng cho CUSTOMER SUPPORT */
               <>
                 <a href="/support/chat">Chat Ho Tro</a>
+                <a href="/profile">Hồ sơ cá nhân</a>
                 <span className="user-info">
+                  <img
+                    src={avatarSrc}
+                    alt="avatar"
+                    className="header-avatar"
+                    onError={(e) => {
+                      e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                    }}
+                  />
                   Xin chào, {getUserName()} ({user.role})
                 </span>
                 <button onClick={handleLogout} className="btn-logout">
