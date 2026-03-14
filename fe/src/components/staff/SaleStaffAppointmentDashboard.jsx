@@ -6,6 +6,7 @@ import {
   STATUS_LABELS,
 } from "../../constants/appointment";
 import { Loading, Alert } from "../UI";
+import { useAppointmentNotificationRefresh } from "../../context/AppointmentNotificationContext";
 
 export function SaleStaffAppointmentDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -51,6 +52,10 @@ export function SaleStaffAppointmentDashboard() {
       setLoading(false);
     }
   };
+
+  useAppointmentNotificationRefresh({
+    onWaitingAssign: () => fetchAppointments().catch((err) => console.warn("Refresh failed:", err)),
+  });
 
   // Load slots when date and doctor are selected
   useEffect(() => {

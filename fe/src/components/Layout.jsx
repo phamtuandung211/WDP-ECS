@@ -1,9 +1,130 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useAppointmentNotification } from "../context/AppointmentNotificationContext";
 import { ROLE_NAME } from "../constants/role";
 
 const DEFAULT_AVATAR =
   "https://ui-avatars.com/api/?background=4361ee&color=fff&size=64";
+
+function NotificationIcon() {
+  const {
+    unreadCount = 0,
+    notifications = [],
+    markAllAsRead,
+    markAsRead,
+    clearAll,
+  } = useAppointmentNotification() || {};
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const onOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    if (open) document.addEventListener("click", onOutside);
+    return () => document.removeEventListener("click", onOutside);
+  }, [open]);
+
+  return (
+    <div className="header-notification-wrap" ref={ref}>
+      <button
+        type="button"
+        className="header-notification-icon"
+        title="Thông báo lịch hẹn"
+        aria-label={`Thông báo${unreadCount > 0 ? `, ${unreadCount} chưa đọc` : ""}`}
+        aria-expanded={open}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {unreadCount > 0 && (
+          <span className="header-notification-badge">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="header-notification-dropdown">
+          <div className="header-notification-dropdown-header">
+            <span>Thông báo</span>
+            {notifications.length > 0 && (
+              <div className="header-notification-dropdown-actions">
+                <button
+                  type="button"
+                  className="header-notification-btn"
+                  onClick={() => {
+                    markAllAsRead?.();
+                    setOpen(false);
+                  }}
+                >
+                  Đã đọc
+                </button>
+                <button
+                  type="button"
+                  className="header-notification-btn"
+                  onClick={() => {
+                    clearAll?.();
+                    setOpen(false);
+                  }}
+                >
+                  Xóa hết
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="header-notification-dropdown-list">
+            {notifications.length === 0 ? (
+              <div className="header-notification-empty">
+                Không có thông báo
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <a
+                  key={n.id}
+                  href="/appointments"
+                  className={`header-notification-item ${n.read ? "is-read" : ""}`}
+                  onClick={() => {
+                    if (!n.read) markAsRead?.(n.id);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="header-notification-item-icon">
+                    {n.type === "waiting_assign" ? "📋" : "✅"}
+                  </span>
+                  <div className="header-notification-item-content">
+                    <span className="header-notification-item-text">
+                      {n.message}
+                    </span>
+                    {n.appointmentInfo && (
+                      <span className="header-notification-item-info">
+                        {n.appointmentInfo}
+                      </span>
+                    )}
+                  </div>
+                </a>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -43,7 +164,9 @@ export function Header() {
                   Manage Specializations
                 </a>
                 <a href="/staff/review-approvals">✅ Duyệt hồ sơ</a>
+
                 <a href="/appointments">📋 My Dashboard</a>
+                <NotificationIcon />
                 <span className="user-info">
                   Xin chào, {getUserName()} ({user.role})
                 </span>
@@ -74,7 +197,7 @@ export function Header() {
                 <a href="/feedbacks">Đánh giá</a>
                 <a href="/profile">Hồ sơ cá nhân</a>
                 {isAdmin && <a href="/admin/statistics">📊 Thống kê</a>}
-
+                <NotificationIcon />
                 <span className="user-info">
                   <img
                     src={avatarSrc}

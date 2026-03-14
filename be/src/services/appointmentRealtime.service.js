@@ -68,7 +68,9 @@ export async function replayNotificationsForSocket(socket) {
   if (!role || !profileId) return;
 
   if (role === ROLE_NAME.SALE_STAFF) {
-    const waiting = await Appointment.find({ status: APPOINTMENT_STATUS.WAITING_ASSIGN })
+    const waiting = await Appointment.find({
+      status: APPOINTMENT_STATUS.WAITING_ASSIGN,
+    })
       .select("_id customerId desiredDate type status updatedAt createdAt")
       .sort({ createdAt: -1 })
       .limit(50)
@@ -77,7 +79,8 @@ export async function replayNotificationsForSocket(socket) {
     waiting.forEach((appointment) => {
       socket.emit("appointment_waiting_assign", {
         appointmentId: appointment._id.toString(),
-        customerId: appointment.customerId?.toString?.() || appointment.customerId,
+        customerId:
+          appointment.customerId?.toString?.() || appointment.customerId,
         desiredDate: appointment.desiredDate || null,
         type: appointment.type,
         replay: true,
