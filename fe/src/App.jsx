@@ -28,6 +28,7 @@ import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { ROLE_NAME } from "./constants/role";
 import RoleBasedDashboard from "./components/RoleBasedDashboard";
 import { ChatProvider } from "./context/ChatContext";
+import { AppointmentNotificationProvider } from "./context/AppointmentNotificationContext";
 import { ChatWidget } from "./components/chat/ChatWidget";
 import { StaffChatPage } from "./pages/StaffChatPage";
 import "./styles.css";
@@ -96,6 +97,7 @@ function App() {
   return (
     <AuthProvider>
       <ChatProvider>
+        <AppointmentNotificationProvider>
         <div className="app">
           <Header />
           <main className="main-content">
@@ -302,6 +304,7 @@ function App() {
           <Footer />
           <ChatWidget />
         </div>
+        </AppointmentNotificationProvider>
       </ChatProvider>
     </AuthProvider>
   );

@@ -6,6 +6,7 @@ import {
   STATUS_COLORS,
 } from "../../constants/appointment";
 import { Loading, Alert } from "../UI";
+import { useAppointmentNotificationRefresh } from "../../context/AppointmentNotificationContext";
 
 export function DoctorAppointmentDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -53,6 +54,11 @@ export function DoctorAppointmentDashboard() {
       setLoading(false);
     }
   };
+
+  useAppointmentNotificationRefresh({
+    onAssigned: () =>
+      fetchAppointments().catch((err) => console.warn("Refresh failed:", err)),
+  });
 
   const handleSelectAppointment = async (appointment) => {
     setSelectedAppointment(appointment);
