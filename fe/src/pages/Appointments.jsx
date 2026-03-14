@@ -53,7 +53,11 @@ export function Appointments() {
   }, [user, filterStatus, filterType]);
 
   useAppointmentNotificationRefresh({
-    onAssigned: () => user && refreshAppointments().catch((err) => console.warn("Refresh failed:", err)),
+    onAssigned: () =>
+      user &&
+      refreshAppointments().catch((err) =>
+        console.warn("Refresh failed:", err),
+      ),
   });
 
   const handleBookingSuccess = (newAppointment) => {
@@ -83,6 +87,13 @@ export function Appointments() {
     }
   };
 
+  const handlePaymentExpired = (expiredAppointment) => {
+    // Remove appointment from list automatically when payment expires
+    setAppointments((prev) =>
+      prev.filter((apt) => apt._id !== expiredAppointment._id),
+    );
+  };
+
   if (!user) {
     return (
       <Alert type="warning">
@@ -95,7 +106,6 @@ export function Appointments() {
 
   return (
     <div className="page appointments-page max-w-6xl mx-auto">
-
       <h2 className="text-3xl font-bold mb-6">Appointments</h2>
 
       {/* Tab Navigation */}
@@ -201,6 +211,7 @@ export function Appointments() {
                   appointment={apt}
                   onCancel={() => handleCancel(apt._id)}
                   onPayNow={() => navigate(`/payment?appointmentId=${apt._id}`)}
+                  onPaymentExpired={handlePaymentExpired}
                 />
               ))}
             </div>
@@ -226,8 +237,9 @@ export function Appointments() {
 }
 
 // Appointment Card Component
-function AppointmentCard({ appointment, onCancel }) {
+function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
   const [isPayLoading, setIsPayLoading] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const navigate = useNavigate();
   const statusLabel = STATUS_LABELS[appointment.status] || appointment.status;
   const statusColor = STATUS_COLORS[appointment.status] || "bg-gray-100";
@@ -292,6 +304,12 @@ function AppointmentCard({ appointment, onCancel }) {
           <AppointmentPaymentCountdown
             appointment={appointment}
             showCountdown={true}
+            onExpire={(expiredApt) => {
+              setIsExpired(true);
+              if (onPaymentExpired) {
+                onPaymentExpired(expiredApt);
+              }
+            }}
           />
         </div>
       )}
@@ -363,7 +381,7 @@ function AppointmentCard({ appointment, onCancel }) {
         {appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT && (
           <button
             onClick={handlePayNow}
-            disabled={isPayLoading}
+            disabled={isPayLoading || isExpired}
             className="flex-1 min-w-24 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium"
           >
             {isPayLoading ? "Loading..." : "Complete Payment"}
@@ -373,7 +391,8 @@ function AppointmentCard({ appointment, onCancel }) {
         {canCancel && (
           <button
             onClick={onCancel}
-            className="flex-1 min-w-24 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+            disabled={isExpired}
+            className="flex-1 min-w-24 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed transition"
           >
             Cancel
           </button>
