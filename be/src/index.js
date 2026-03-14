@@ -16,6 +16,7 @@ import appointmentRoutes from "./routes/appointment.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import slotRoutes from "./routes/slot.route.js";
 import { registerCronJobs } from "./cron/index.js";
+import { startAppointmentChangeStreamWatcher } from "./services/appointmentChangeStream.service.js";
 import doctorRoutes from "./routes/doctor.route.js";
 import specializationRoutes from "./routes/specialization.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -71,8 +72,12 @@ app.use(errorHandler);
 // Initialise Socket.IO for real-time chat
 initSocket(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`✓ Server running on port ${PORT}`);
   console.log(`✓ API: http://localhost:${PORT}/api`);
   console.log(`✓ Socket.IO ready`);
+
+  startAppointmentChangeStreamWatcher().catch((err) =>
+    console.warn("[ChangeStream] Start failed:", err?.message),
+  );
 });

@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import Customer from "../models/Customer.js";
 import CustomerSupport from "../models/CustomerSupport.js";
+import SaleStaff from "../models/SaleStaff.js";
+import Doctor from "../models/Doctor.js";
 import { ROLE_NAME } from "../constants/Role.enum.js";
 import {
   sendCustomerMessage,
@@ -13,6 +15,7 @@ import {
   startOrResumeSession,
 } from "../services/chat.service.js";
 import { CHAT_MODE } from "../constants/Chat.enum.js";
+import { replayNotificationsForSocket } from "../services/appointmentRealtime.service.js";
 
 let io;
 
@@ -41,6 +44,20 @@ export function initSocket(httpServer) {
         if (!customer) return next(new Error("Customer profile not found"));
         socket.profileId = customer._id.toString();
         socket.profileModel = "Customer";
+      } else if (decoded.role === ROLE_NAME.SALE_STAFF) {
+        const saleStaff = await SaleStaff.findOne({
+          accountId: decoded.accountId,
+        });
+        if (!saleStaff) return next(new Error("Sale staff profile not found"));
+        socket.profileId = saleStaff._id.toString();
+        socket.profileModel = "SaleStaff";
+      } else if (decoded.role === ROLE_NAME.DOCTOR) {
+        const doctor = await Doctor.findOne({
+          accountId: decoded.accountId,
+        });
+        if (!doctor) return next(new Error("Doctor profile not found"));
+        socket.profileId = doctor._id.toString();
+        socket.profileModel = "Doctor";
       } else if (decoded.role === ROLE_NAME.CUSTOMER_SUPPORT) {
         const staff = await CustomerSupport.findOne({
           accountId: decoded.accountId,
@@ -49,7 +66,7 @@ export function initSocket(httpServer) {
         socket.profileId = staff._id.toString();
         socket.profileModel = "CustomerSupport";
       } else {
-        return next(new Error("Role not allowed for chat"));
+        return next(new Error("Role not allowed for realtime"));
       }
 
       next();
@@ -71,7 +88,27 @@ export function initSocket(httpServer) {
       socket.join("staff:all");
     }
 
+    if (role === ROLE_NAME.SALE_STAFF) {
+      socket.join("sale_staff:all");
+    }
+
     console.log(`Socket connected: ${role} (${profileId})`);
+
+    replayNotificationsForSocket(socket).catch((err) => {
+      console.warn(
+        "[Socket] replayNotificationsForSocket failed:",
+        err.message,
+      );
+    });
+
+    socket.on("sync_appointment_notifications", async (callback) => {
+      try {
+        await replayNotificationsForSocket(socket);
+        callback?.({ success: true });
+      } catch (err) {
+        callback?.({ success: false, message: err.message });
+      }
+    });
 
     // ── Join a chat session room ────────────────────────────────
     socket.on("join_session", (sessionId) => {
