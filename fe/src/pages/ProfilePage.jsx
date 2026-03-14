@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { profileService, UploadService } from "../services";
-import { Loading, Alert, Input, Button } from "../components/UI";
+import {
+  profileService,
+  UploadService,
+  doctorProfileService,
+  specializationService,
+  getUploadFullUrl,
+} from "../services";
+import { Loading, Alert, Button } from "../components/UI";
 
 const DEFAULT_AVATAR = "https://ui-avatars.com/api/?background=4361ee&color=fff&size=200";
 
@@ -14,14 +21,50 @@ const ROLE_LABEL = {
 };
 
 const STATUS_CONFIG = {
-  ACTIVE:   { label: "Hoạt động",    color: "#22863a", bg: "#dafbe1" },
+  ACTIVE: { label: "Hoạt động", color: "#22863a", bg: "#dafbe1" },
   INACTIVE: { label: "Không hoạt động", color: "#e36209", bg: "#fffbdd" },
-  PENDING:  { label: "Chờ duyệt",    color: "#0366d6", bg: "#dbeafe" },
-  BANNED:   { label: "Bị khoá",      color: "#d73a49", bg: "#ffeef0" },
+  PENDING: { label: "Chờ duyệt", color: "#0366d6", bg: "#dbeafe" },
+  BANNED: { label: "Bị khoá", color: "#d73a49", bg: "#ffeef0" },
 };
 
+function Modal({ open, onClose, title, children }) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 relative max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl leading-none"
+          onClick={onClose}
+        >
+          &times;
+        </button>
+        <h2 className="text-xl font-semibold mb-4">{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 last:border-0">
+      <span className="text-gray-500 text-sm w-48 shrink-0">{label}</span>
+      <span className="text-gray-900 font-medium">{value ?? "—"}</span>
+    </div>
+  );
+}
+
 export function ProfilePage() {
+  const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+  const isDoctor = user?.role === "DOCTOR";
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,25 +76,51 @@ export function ProfilePage() {
     gender: "",
     dateOfBirth: "",
     address: "",
+    experienceYears: "",
+    specializations: [],
   });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [allSpecializations, setAllSpecializations] = useState([]);
+  const [updateOpen, setUpdateOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
-        const { data } = await profileService.getMyProfile();
-        const d = data.data;
-        setProfile(d);
-        setForm({
-          fullName: d.fullName || "",
-          phone: d.phone || "",
-          gender: d.gender || "",
-          dateOfBirth: d.dateOfBirth ? d.dateOfBirth.slice(0, 10) : "",
-          address: d.address || "",
-        });
-        if (d.avatar) setAvatarPreview(d.avatar);
+        if (isDoctor) {
+          const { data } = await doctorProfileService.getMyProfile();
+          const d = data.data ?? data;
+          setProfile(d);
+          setForm({
+            fullName: d.fullName || "",
+            phone: d.phone || "",
+            gender: d.gender || "",
+            dateOfBirth: d.dateOfBirth ? d.dateOfBirth.slice(0, 10) : "",
+            address: d.address || "",
+            experienceYears: d.experienceYears ?? 1,
+            specializations: (d.specializations || []).map((item) =>
+              typeof item === "object" ? item._id : item,
+            ),
+          });
+          const nextAvatar = getUploadFullUrl(d.avatar || d.img);
+          if (nextAvatar) setAvatarPreview(nextAvatar);
+        } else {
+          const { data } = await profileService.getMyProfile();
+          const d = data.data;
+          setProfile(d);
+          setForm({
+            fullName: d.fullName || "",
+            phone: d.phone || "",
+            gender: d.gender || "",
+            dateOfBirth: d.dateOfBirth ? d.dateOfBirth.slice(0, 10) : "",
+            address: d.address || "",
+            experienceYears: "",
+            specializations: [],
+          });
+          if (d.avatar) setAvatarPreview(d.avatar);
+        }
       } catch (err) {
         setError(err.response?.data?.message || "Không tải được thông tin");
       } finally {
@@ -59,7 +128,7 @@ export function ProfilePage() {
       }
     };
     load();
-  }, []);
+  }, [isDoctor]);
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -79,6 +148,30 @@ export function ProfilePage() {
     setError(null);
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const toggleSpecialization = (id) => {
+    setForm((current) => {
+      const selected = current.specializations || [];
+      return {
+        ...current,
+        specializations: selected.includes(id)
+          ? selected.filter((item) => item !== id)
+          : [...selected, id],
+      };
+    });
+  };
+
+  const openDoctorUpdate = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      const { data } = await specializationService.getAllSpecializations({ limit: 100 });
+      setAllSpecializations(data.data ?? []);
+    } catch {
+      setAllSpecializations([]);
+    }
+    setUpdateOpen(true);
   };
 
   const handleSubmit = async (e) => {
@@ -120,6 +213,45 @@ export function ProfilePage() {
     }
   };
 
+  const handleDoctorUpdate = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const payload = new FormData();
+      payload.append("fullName", form.fullName || "");
+      payload.append("phone", form.phone || "");
+      payload.append("gender", form.gender || "");
+      payload.append("dateOfBirth", form.dateOfBirth || "");
+      payload.append("address", form.address || "");
+      payload.append("experienceYears", String(form.experienceYears ?? ""));
+      (form.specializations || []).forEach((id) => {
+        payload.append("specializations", id);
+      });
+      if (avatarFile) {
+        payload.append("file", avatarFile);
+      }
+
+      const { data } = await doctorProfileService.updateMyProfile(payload);
+      const updatedDoctor = data.data ?? data;
+      const nextAvatar = getUploadFullUrl(updatedDoctor.avatar || updatedDoctor.img);
+
+      setProfile(updatedDoctor);
+      setAvatarFile(null);
+      setAvatarPreview(nextAvatar || null);
+      updateUser({
+        fullName: updatedDoctor.fullName,
+        ...(nextAvatar && { avatar: nextAvatar }),
+      });
+      setSuccess("Cập nhật hồ sơ bác sĩ thành công!");
+      setUpdateOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Cập nhật thất bại");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <Loading />;
 
   const displayAvatar =
@@ -128,6 +260,321 @@ export function ProfilePage() {
 
   const statusCfg = STATUS_CONFIG[profile?.account?.status] || {};
   const roleLabel = ROLE_LABEL[user?.role] || user?.role;
+
+  if (isDoctor) {
+    const specsText = (profile?.specializations || [])
+      .map((item) => (typeof item === "object" ? item.name : item))
+      .join(", ");
+
+    return (
+      <div className="page profile-page-v2">
+        <div className="pv2-title-row">
+          <div>
+            <h1 className="pv2-heading">Hồ sơ bác sĩ</h1>
+            <p className="pv2-subheading">Quản lý thông tin cá nhân và hồ sơ chuyên môn của bạn</p>
+          </div>
+        </div>
+
+        {error && <Alert type="error">{error}</Alert>}
+        {success && <Alert type="success">{success}</Alert>}
+
+        <div className="pv2-layout">
+          <aside className="pv2-sidebar">
+            <div className="pv2-card pv2-avatar-card">
+              <div className="pv2-avatar-wrap">
+                <img
+                  src={displayAvatar}
+                  alt="Avatar"
+                  className="pv2-avatar-img"
+                  onError={(e) => {
+                    e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
+                      form.fullName || "Doctor",
+                    )}`;
+                  }}
+                />
+              </div>
+              <div className="pv2-avatar-info">
+                <p className="pv2-avatar-name">{profile?.fullName || "—"}</p>
+                <span className={`badge badge-${user?.role?.toLowerCase()}`}>
+                  {roleLabel}
+                </span>
+              </div>
+              <div className="pv2-avatar-hint">
+                <span className="pv2-avatar-hint-icon">🩺</span>
+                <span>{specsText || "Chưa có chuyên khoa"}</span>
+              </div>
+              <div className="pv2-avatar-hint">
+                <span className="pv2-avatar-hint-icon">⏳</span>
+                <span>{profile?.experienceYears ?? 0} năm kinh nghiệm</span>
+              </div>
+            </div>
+
+            <div className="pv2-card pv2-info-card">
+              <h3 className="pv2-info-card-title">Thông tin nhanh</h3>
+              <ul className="pv2-info-list">
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">📞</span>
+                  <div>
+                    <p className="pv2-info-label">Số điện thoại</p>
+                    <p className="pv2-info-value">{profile?.phone || "—"}</p>
+                  </div>
+                </li>
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">⚧</span>
+                  <div>
+                    <p className="pv2-info-label">Giới tính</p>
+                    <p className="pv2-info-value">
+                      {profile?.gender === "MALE"
+                        ? "Nam"
+                        : profile?.gender === "FEMALE"
+                          ? "Nữ"
+                          : "—"}
+                    </p>
+                  </div>
+                </li>
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">🎂</span>
+                  <div>
+                    <p className="pv2-info-label">Ngày sinh</p>
+                    <p className="pv2-info-value">
+                      {profile?.dateOfBirth
+                        ? new Date(profile.dateOfBirth).toLocaleDateString("vi-VN")
+                        : "—"}
+                    </p>
+                  </div>
+                </li>
+                <li className="pv2-info-item">
+                  <span className="pv2-info-icon">📍</span>
+                  <div>
+                    <p className="pv2-info-label">Địa chỉ</p>
+                    <p className="pv2-info-value">{profile?.address || "—"}</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </aside>
+
+          <main className="pv2-main">
+            <div className="pv2-card">
+              <div className="pv2-form-header">
+                <h2 className="pv2-form-title">Thông tin hồ sơ</h2>
+                <p className="pv2-form-desc">
+                  Hồ sơ chuyên môn, bằng cấp và chứng chỉ của bạn đã được gộp vào cùng một màn hình.
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <InfoRow label="Họ và tên" value={profile?.fullName} />
+                <InfoRow label="Số điện thoại" value={profile?.phone} />
+                <InfoRow
+                  label="Giới tính"
+                  value={
+                    profile?.gender === "MALE"
+                      ? "Nam"
+                      : profile?.gender === "FEMALE"
+                        ? "Nữ"
+                        : "—"
+                  }
+                />
+                <InfoRow
+                  label="Ngày sinh"
+                  value={
+                    profile?.dateOfBirth
+                      ? new Date(profile.dateOfBirth).toLocaleDateString("vi-VN")
+                      : "—"
+                  }
+                />
+                <InfoRow label="Địa chỉ" value={profile?.address} />
+                <InfoRow
+                  label="Kinh nghiệm"
+                  value={
+                    profile?.experienceYears != null
+                      ? `${profile.experienceYears} năm`
+                      : "—"
+                  }
+                />
+                <InfoRow label="Chuyên khoa" value={specsText || "—"} />
+              </div>
+
+              {profile?.degrees?.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Bằng cấp đã duyệt</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.degrees.map((degree) => (
+                      <span
+                        key={degree._id}
+                        className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium"
+                      >
+                        {degree.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {profile?.certificates?.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Chứng chỉ đã duyệt</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.certificates.map((certificate) => (
+                      <span
+                        key={certificate._id}
+                        className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs font-medium"
+                      >
+                        {certificate.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" className="btn-primary" onClick={openDoctorUpdate}>
+                  ✏️ Cập nhật thông tin
+                </Button>
+                <button
+                  type="button"
+                  className="btn btn-secondary px-5 py-2"
+                  onClick={() => navigate("/doctor/certificates")}
+                >
+                  📜 Quản lý chứng chỉ
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary px-5 py-2"
+                  onClick={() => navigate("/doctor/degrees")}
+                >
+                  🎓 Quản lý bằng cấp
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        <Modal open={updateOpen} onClose={() => setUpdateOpen(false)} title="Cập nhật hồ sơ bác sĩ">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                <img src={displayAvatar} alt="avatar preview" className="w-full h-full object-cover" />
+              </div>
+              <label className="cursor-pointer text-sm text-blue-600 hover:underline">
+                Thay đổi ảnh đại diện
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Họ và tên *</label>
+              <input
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Số điện thoại *</label>
+              <input
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Giới tính</label>
+              <select
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                name="gender"
+                value={form.gender}
+                onChange={handleChange}
+              >
+                <option value="">-- chọn --</option>
+                <option value="MALE">Nam</option>
+                <option value="FEMALE">Nữ</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Ngày sinh</label>
+              <input
+                type="date"
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                name="dateOfBirth"
+                value={form.dateOfBirth}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Địa chỉ</label>
+              <input
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Số năm kinh nghiệm</label>
+              <input
+                type="number"
+                min="0"
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                name="experienceYears"
+                value={form.experienceYears}
+                onChange={handleChange}
+              />
+            </div>
+            {allSpecializations.length > 0 && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Chuyên khoa</label>
+                <div className="flex flex-wrap gap-2 border rounded p-2 max-h-36 overflow-y-auto">
+                  {allSpecializations.map((item) => {
+                    const selected = (form.specializations || []).includes(item._id);
+                    return (
+                      <button
+                        key={item._id}
+                        type="button"
+                        onClick={() => toggleSpecialization(item._id)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${selected
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                          }`}
+                      >
+                        {item.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="btn btn-secondary px-4 py-2 text-sm"
+                onClick={() => setUpdateOpen(false)}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary px-4 py-2 text-sm"
+                onClick={handleDoctorUpdate}
+                disabled={saving}
+              >
+                {saving ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+    );
+  }
 
   return (
     <div className="page profile-page-v2">

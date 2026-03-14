@@ -19,6 +19,12 @@ export function SaleStaffDashboard() {
           <h2 className="dashboard-card-title">Quản lý bài blog</h2>
           <p className="dashboard-card-desc">Xem, thêm, sửa, xóa bài viết</p>
         </Link>
+
+        <Link to="/staff/review-approvals" className="dashboard-card">
+          <span className="dashboard-card-icon">✅</span>
+          <h2 className="dashboard-card-title">Duyệt chứng chỉ &amp; bằng cấp</h2>
+          <p className="dashboard-card-desc">Xem và duyệt chứng chỉ, bằng cấp của bác sĩ</p>
+        </Link>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   STATUS_LABELS,
   STATUS_COLORS,
 } from "../constants/appointment";
+import { useAppointmentNotificationRefresh } from "../context/AppointmentNotificationContext";
 
 export function Appointments() {
   const navigate = useNavigate();
@@ -23,6 +24,15 @@ export function Appointments() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
 
+  const refreshAppointments = async () => {
+    const params = {};
+    if (filterStatus !== "all") params.status = filterStatus;
+    if (filterType !== "all") params.type = filterType;
+
+    const response = await appointmentService.getAll(params);
+    setAppointments(response.data?.data || response.data || []);
+  };
+
   // Fetch appointments
   useEffect(() => {
     if (!user) return;
@@ -30,12 +40,7 @@ export function Appointments() {
     const fetchAppointments = async () => {
       try {
         setLoading(true);
-        const params = {};
-        if (filterStatus !== "all") params.status = filterStatus;
-        if (filterType !== "all") params.type = filterType;
-
-        const response = await appointmentService.getAll(params);
-        setAppointments(response.data?.data || response.data || []);
+        await refreshAppointments();
       } catch (err) {
         console.error("Failed to load appointments:", err);
         setError("Failed to load appointments");
@@ -46,6 +51,10 @@ export function Appointments() {
 
     fetchAppointments();
   }, [user, filterStatus, filterType]);
+
+  useAppointmentNotificationRefresh({
+    onAssigned: () => user && refreshAppointments().catch((err) => console.warn("Refresh failed:", err)),
+  });
 
   const handleBookingSuccess = (newAppointment) => {
     setAppointments((prev) => [newAppointment, ...prev]);
@@ -86,6 +95,7 @@ export function Appointments() {
 
   return (
     <div className="page appointments-page max-w-6xl mx-auto">
+
       <h2 className="text-3xl font-bold mb-6">Appointments</h2>
 
       {/* Tab Navigation */}

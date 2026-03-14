@@ -28,11 +28,15 @@ import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { ROLE_NAME } from "./constants/role";
 import RoleBasedDashboard from "./components/RoleBasedDashboard";
 import { ChatProvider } from "./context/ChatContext";
+import { AppointmentNotificationProvider } from "./context/AppointmentNotificationContext";
 import { ChatWidget } from "./components/chat/ChatWidget";
 import { StaffChatPage } from "./pages/StaffChatPage";
 import "./styles.css";
 import DoctorListPage from "./pages/ListDoctors";
 import DoctorDetailPage from "./pages/DoctorDetail";
+import ManageCertificatesDoctor from "./pages/ManageCertificatesDoctor";
+import ManageDegreesDoctor from "./pages/ManageDegreesDoctor";
+import StaffReviewApprovals from "./pages/StaffReviewApprovals";
 
 /**
  * PrivateRoute - Bảo vệ route, yêu cầu user đã login
@@ -93,6 +97,7 @@ function App() {
   return (
     <AuthProvider>
       <ChatProvider>
+        <AppointmentNotificationProvider>
         <div className="app">
           <Header />
           <main className="main-content">
@@ -262,6 +267,36 @@ function App() {
                 }
               />
 
+              <Route
+                path="/doctor/certificates"
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={[ROLE_NAME.DOCTOR]}
+                    element={<ManageCertificatesDoctor />}
+                  />
+                }
+              />
+              <Route
+                path="/doctor/degrees"
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={[ROLE_NAME.DOCTOR]}
+                    element={<ManageDegreesDoctor />}
+                  />
+                }
+              />
+
+              {/* ========== Staff: Review Certificates & Degrees ========== */}
+              <Route
+                path="/staff/review-approvals"
+                element={
+                  <RoleProtectedRoute
+                    allowedRoles={staffRoles}
+                    element={<StaffReviewApprovals />}
+                  />
+                }
+              />
+
               {/* 404 */}
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
@@ -269,6 +304,7 @@ function App() {
           <Footer />
           <ChatWidget />
         </div>
+        </AppointmentNotificationProvider>
       </ChatProvider>
     </AuthProvider>
   );

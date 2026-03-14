@@ -12,6 +12,10 @@ export const chatService = {
   transferToStaff: (sessionId) =>
     apiClient.post(`/chat/session/${sessionId}/transfer`),
 
+  // Customer: transfer back to AI
+  transferToAI: (sessionId) =>
+    apiClient.post(`/chat/session/${sessionId}/transfer-to-ai`),
+
   // Customer: get my sessions
   getMySessions: (params = {}) => apiClient.get("/chat/sessions", { params }),
 

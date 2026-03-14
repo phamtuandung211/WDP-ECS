@@ -13,6 +13,9 @@ export function StaffChatPage() {
     openStaffSession,
     sendStaffMessage,
     closeStaffSession,
+    staffOtherTyping,
+    sendTyping,
+    sendStopTyping,
   } = useChat();
 
   const [input, setInput] = useState("");
@@ -33,11 +36,25 @@ export function StaffChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [staffMessages]);
+  }, [staffMessages, staffOtherTyping]);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInput(val);
+    if (activeStaffSession) {
+      if (val.trim()) {
+        sendTyping(activeStaffSession);
+      } else {
+        sendStopTyping(activeStaffSession);
+      }
+    }
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || sending) return;
+
+    sendStopTyping(activeStaffSession);
 
     setSending(true);
     try {
@@ -172,6 +189,16 @@ export function StaffChatPage() {
                     )}
                   </div>
                 ))}
+                {staffOtherTyping && (
+                  <div className="chat-msg chat-msg-other">
+                    <div className="chat-msg-label">Khach hang</div>
+                    <div className="chat-msg-bubble chat-typing-indicator">
+                      <span className="chat-typing-dot" />
+                      <span className="chat-typing-dot" />
+                      <span className="chat-typing-dot" />
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -179,7 +206,7 @@ export function StaffChatPage() {
                 <input
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={handleInputChange}
                   placeholder="Nhap tin nhan phan hoi..."
                   disabled={sending}
                 />

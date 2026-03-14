@@ -4,6 +4,7 @@ import {
   resendOtp,
   loginService,
   registerStaffByRole,
+  googleAuthService,
 } from "../services/auth.service.js";
 
 export const register = async (req, res) => {
@@ -31,31 +32,19 @@ export const register = async (req, res) => {
 
 export const registerStaff = async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      staffRole,
-      fullName,
-      phone,
-      gender,
-      dateOfBirth,
-      address,
-    } = req.body;
+    const { email, password, staffRole, fullName } = req.body;
 
     const result = await registerStaffByRole(
       email,
       password,
       staffRole,
       fullName,
-      phone,
-      gender,
-      dateOfBirth,
-      address,
+      req.user?.accountId,
     );
     return res.status(201).json(result);
   } catch (err) {
     return res.status(err.status || 500).json({
-      message: err.message || `Register ${role} failed`,
+      message: err.message || "Create staff account failed",
       errors: err.data,
     });
   }
@@ -98,6 +87,20 @@ export const login = async (req, res) => {
   } catch (err) {
     return res.status(err.status || 500).json({
       message: err.message || "Login failed",
+      errors: err.data,
+    });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    const result = await googleAuthService({ idToken });
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || "Google authentication failed",
       errors: err.data,
     });
   }

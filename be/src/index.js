@@ -5,10 +5,9 @@ import morgan from "morgan";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import { initSocket } from "./config/socket.js";
-import { errorHandler, authenticate } from "./middleware/auth.middleware.js";
+import { errorHandler } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.route.js";
 import rolesRoutes from "./routes/role.route.js";
-import approvalRoutes from "./routes/approval.route.js";
 import manageServiceRoutes from "./routes/manageService.route.js";
 import serviceRoutes from "./routes/service.route.js";
 import manageBlogRoutes from "./routes/manageBlog.route.js";
@@ -17,6 +16,7 @@ import appointmentRoutes from "./routes/appointment.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import slotRoutes from "./routes/slot.route.js";
 import { registerCronJobs } from "./cron/index.js";
+import { startAppointmentChangeStreamWatcher } from "./services/appointmentChangeStream.service.js";
 import doctorRoutes from "./routes/doctor.route.js";
 import specializationRoutes from "./routes/specialization.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -25,6 +25,7 @@ import feedbackRoutes from "./routes/feedback.route.js";
 import statisticsRoutes from "./routes/statistics.route.js";
 import uploadRoutes from "./routes/upload.route.js";
 import degreeRoutes from "./routes/degree.route.js";
+import certificateRoutes from "./routes/certificate.route.js";
 import chatRoutes from "./routes/chat.route.js";
 
 dotenv.config();
@@ -49,7 +50,6 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/roles", rolesRoutes);
-app.use("/api/approval", approvalRoutes);
 app.use("/api/manage-services", manageServiceRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/manage-blogs", manageBlogRoutes);
@@ -64,6 +64,7 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/degrees", degreeRoutes);
+app.use("/api/certificates", certificateRoutes);
 app.use("/api/chat", chatRoutes);
 
 app.use(errorHandler);
@@ -71,8 +72,12 @@ app.use(errorHandler);
 // Initialise Socket.IO for real-time chat
 initSocket(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`✓ Server running on port ${PORT}`);
   console.log(`✓ API: http://localhost:${PORT}/api`);
   console.log(`✓ Socket.IO ready`);
+
+  startAppointmentChangeStreamWatcher().catch((err) =>
+    console.warn("[ChangeStream] Start failed:", err?.message),
+  );
 });

@@ -33,7 +33,7 @@ const DoctorListPage = () => {
     const fetchFilterData = async () => {
         try {
             const [specRes, degRes] = await Promise.all([
-                specializationService.getAll(),
+                specializationService.getAllSpecializations(),
                 degreeService.getAllNames(),
             ]);
 

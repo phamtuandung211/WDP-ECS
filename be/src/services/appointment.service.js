@@ -67,13 +67,17 @@ function validateBasicAppointmentDate(desiredDate) {
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
-  
+
   // Convert to minutes for comparison
   const currentTimeInMinutes = currentHour * 60 + currentMinute;
-  const businessStartInMinutes = BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
-  const businessEndInMinutes = BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
-  
-  const isWithinBusinessHours = currentTimeInMinutes >= businessStartInMinutes && currentTimeInMinutes < businessEndInMinutes;
+  const businessStartInMinutes =
+    BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
+  const businessEndInMinutes =
+    BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
+
+  const isWithinBusinessHours =
+    currentTimeInMinutes >= businessStartInMinutes &&
+    currentTimeInMinutes < businessEndInMinutes;
 
   // Get tomorrow's start and day after tomorrow's start
   const tomorrow = new Date(now);
@@ -87,14 +91,19 @@ function validateBasicAppointmentDate(desiredDate) {
   // During business hours: min is tomorrow
   if (isWithinBusinessHours) {
     if (validDate < tomorrow) {
-      throwErr(400, "Must book at least 1 day in advance during business hours");
+      throwErr(
+        400,
+        "Must book at least 1 day in advance during business hours",
+      );
     }
   } else {
     // After business hours: min is day after tomorrow
     if (validDate < dayAfterTomorrow) {
       const tomorrow_str = new Date(tomorrow).toLocaleDateString("vi-VN");
-      const dayAfterTomorrow_str = new Date(dayAfterTomorrow).toLocaleDateString("vi-VN");
-      const endTimeStr = `${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, '0')}`;
+      const dayAfterTomorrow_str = new Date(
+        dayAfterTomorrow,
+      ).toLocaleDateString("vi-VN");
+      const endTimeStr = `${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, "0")}`;
       throwErr(
         400,
         `Booking after business hours (${endTimeStr}). Can only book from ${dayAfterTomorrow_str} (today's booking available until ${endTimeStr} for ${tomorrow_str})`,
@@ -136,7 +145,7 @@ export const createBasicAppointment = async ({
       customerId,
       type: APPOINTMENT_TYPE.BASIC,
       status: {
-        $in: [APPOINTMENT_STATUS.PENDING_PAYMENT, APPOINTMENT_STATUS.CONFIRMED],
+        $in: [APPOINTMENT_STATUS.PENDING_PAYMENT],
       },
       desiredDate: { $gte: dayStart, $lte: dayEnd },
     }).session(session);
@@ -504,33 +513,45 @@ export const getAppointmentByIdService = async ({
 };
 
 export const completeAppointment = async (appointmentId, doctorAccountId) => {
-  const appointment = await Appointment.findById(appointmentId).populate('doctorId').populate('slotId').lean();
+  const appointment = await Appointment.findById(appointmentId)
+    .populate("doctorId")
+    .populate("slotId")
+    .lean();
 
   if (!appointment) throwErr(404, "Appointment not found");
 
   // Verify doctor owns this appointment
   const doctor = await Doctor.findOne({ accountId: doctorAccountId }).lean();
-  if (!doctor || appointment.doctorId._id.toString() !== doctor._id.toString()) {
+  if (
+    !doctor ||
+    appointment.doctorId._id.toString() !== doctor._id.toString()
+  ) {
     throwErr(403, "You are not the doctor for this appointment");
   }
 
   // Only CONFIRMED appointments can be completed
   if (appointment.status !== APPOINTMENT_STATUS.CONFIRMED) {
-    throwErr(400, `Cannot complete appointment with status: ${appointment.status}`);
+    throwErr(
+      400,
+      `Cannot complete appointment with status: ${appointment.status}`,
+    );
   }
 
   // Check appointment time - must be at or after start time
   const now = new Date();
   const appointmentStart = new Date(appointment.slotId.startTime);
-  
+
   if (now < appointmentStart) {
     const timeLeft = Math.ceil((appointmentStart - now) / 60000);
-    throwErr(400, `Appointment starts in ${timeLeft} minutes. Cannot complete yet.`);
+    throwErr(
+      400,
+      `Appointment starts in ${timeLeft} minutes. Cannot complete yet.`,
+    );
   }
 
   // Check medical record exists
   const medicalRecord = await MedicalRecord.findOne({ appointmentId }).lean();
-  
+
   if (!medicalRecord) {
     throwErr(400, "Cannot complete appointment without a medical record");
   }
@@ -539,8 +560,11 @@ export const completeAppointment = async (appointmentId, doctorAccountId) => {
   const updated = await Appointment.findByIdAndUpdate(
     appointmentId,
     { status: APPOINTMENT_STATUS.COMPLETED, completedAt: new Date() },
-    { new: true }
-  ).populate('customerId').populate('doctorId').populate('slotId');
+    { new: true },
+  )
+    .populate("customerId")
+    .populate("doctorId")
+    .populate("slotId");
 
   return updated.toObject();
 };

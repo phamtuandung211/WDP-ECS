@@ -150,3 +150,70 @@ export const getRelatedDoctorsService = async (doctorId) => {
         throw error;
     }
 }
+
+export const getDoctorProfileService = async (accountId) => {
+    const doctor = await Doctor.findOne({ accountId }).populate({
+        path: "specializations",
+        select: "name",
+    });
+
+    if (!doctor) {
+        const error = new Error("Doctor profile not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const degrees = await Degree.find({
+        doctorId: doctor._id,
+        status: DEGREE_STATUS.APPROVED,
+    }).select("name fileUrl createdAt");
+
+    const certificates = await Certificate.find({
+        doctorId: doctor._id,
+        status: CERTIFICATE_STATUS.APPROVED,
+    }).select("name issuedBy issueDate fileUrl");
+
+    return {
+        ...doctor.toObject(),
+        degrees,
+        certificates,
+    };
+};
+
+export const updateDoctorProfileService = async (accountId, updateData, file) => {
+    const doctor = await Doctor.findOne({ accountId });
+
+    if (!doctor) {
+        const error = new Error("Doctor profile not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const allowedFields = ["fullName", "phone", "gender", "dateOfBirth", "address", "experienceYears"];
+
+    for (const field of allowedFields) {
+        if (updateData[field] !== undefined) {
+            doctor[field] = updateData[field];
+        }
+    }
+
+    // Update specializations
+    if (updateData.specializations) {
+        const specs = Array.isArray(updateData.specializations)
+            ? updateData.specializations
+            : [updateData.specializations];
+        doctor.specializations = specs;
+    }
+
+    // Update image via Cloudinary if file is uploaded
+    if (file) {
+        doctor.img = file.path;
+    }
+
+    await doctor.save();
+
+    return doctor.populate({
+        path: "specializations",
+        select: "name",
+    });
+};
