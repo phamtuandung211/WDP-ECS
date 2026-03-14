@@ -85,27 +85,27 @@ function OverviewTab() {
         <>
           <SectionTitle>Tài khoản</SectionTitle>
           <div className="stat-grid">
-            <StatCard label="Tổng tài khoản" value={data.accounts.total} color="#4361ee" />
-            <StatCard label="Đang hoạt động" value={data.accounts.active} color="#2ecc71" />
-            <StatCard label="Bác sĩ" value={data.accounts.doctors} color="#9b59b6" />
-            <StatCard label="Khách hàng" value={data.accounts.customers} color="#3498db" />
+            <StatCard label="Tổng tài khoản" value={data.totalAccounts.total} color="#4361ee" />
+            <StatCard label="Đang hoạt động" value={data.totalAccounts.active} color="#2ecc71" />
+            <StatCard label="Bác sĩ" value={data.totalDoctors} color="#9b59b6" />
+            <StatCard label="Khách hàng" value={data.totalCustomers} color="#3498db" />
           </div>
 
           <SectionTitle>Cuộc hẹn</SectionTitle>
           <div className="stat-grid">
-            <StatCard label="Tổng cuộc hẹn" value={data.appointments.total} color="#4361ee" />
-            <StatCard label="Đã xác nhận" value={data.appointments.byStatus?.CONFIRMED ?? 0} color="#27ae60" />
-            <StatCard label="Đã hủy" value={data.appointments.byStatus?.CANCELED ?? 0} color="#e74c3c" />
-            <StatCard label="Chờ thanh toán" value={data.appointments.byStatus?.PENDING_PAYMENT ?? 0} color="#e67e22" />
-            <StatCard label="BASIC" value={data.appointments.byType?.BASIC ?? 0} color="#3498db" />
-            <StatCard label="ADVANCED" value={data.appointments.byType?.ADVANCED ?? 0} color="#9b59b6" />
+            <StatCard label="Tổng cuộc hẹn" value={data.totalAppointments} color="#4361ee" />
+            <StatCard label="Đã xác nhận" value={data.confirmedAppointments} color="#27ae60" />
+            <StatCard label="Đã hủy" value={data.canceledCount} color="#e74c3c" />
+            <StatCard label="Chờ thanh toán" value={data.pendingPaymentCount} color="#e67e22" />
+            <StatCard label="BASIC" value={data.basicRevenue} color="#3498db" />
+            <StatCard label="ADVANCED" value={data.advancedRevenue} color="#9b59b6" />
           </div>
 
           <SectionTitle>Doanh thu & Hồ sơ</SectionTitle>
           <div className="stat-grid">
             <StatCard
               label="Tổng doanh thu"
-              value={Number(data.revenue.total).toLocaleString("vi-VN") + " ₫"}
+              value={Number(data.totalRevenue).toLocaleString("vi-VN") + " ₫"}
               color="#27ae60"
             />
             <StatCard label="Hồ sơ bệnh án" value={data.medicalRecords.total} color="#16a085" />
