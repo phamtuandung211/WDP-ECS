@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { manageServiceService, UploadService, getUploadFullUrl } from "../services";
 import { Input, Button, Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
+import { BlogRichEditor } from "../components/BlogRichEditor";
 
 export function ManageServiceForm() {
   const { id } = useParams();
@@ -50,7 +51,8 @@ export function ManageServiceForm() {
       setFieldErrors((prev) => ({ ...prev, name: "Nhập tên dịch vụ" }));
       return;
     }
-    if (!description.trim()) {
+    const descText = description.replace(/<[^>]+>/g, "").trim();
+    if (!descText) {
       setFieldErrors((prev) => ({ ...prev, description: "Nhập mô tả" }));
       return;
     }
@@ -125,12 +127,10 @@ export function ManageServiceForm() {
               />
               <div className="form-group">
                 <label className="form-label">Mô tả</label>
-                <textarea
-                  className="form-input form-textarea manage-service-textarea"
+                <BlogRichEditor
+                  key={loading ? "loading" : isCreate ? "new" : id}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={5}
-                  required
                   placeholder="Mô tả chi tiết gói dịch vụ..."
                 />
                 {fieldErrors.description && (

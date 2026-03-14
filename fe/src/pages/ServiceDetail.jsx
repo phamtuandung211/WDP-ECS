@@ -3,6 +3,15 @@ import { Link, useParams } from "react-router-dom";
 import { serviceService, getUploadFullUrl } from "../services";
 import { Loading, Alert } from "../components/UI";
 
+/** Chuẩn hóa mô tả: đã là HTML thì dùng nguyên, plain text cũ thì bọc thành HTML. */
+function toHtml(content) {
+  if (!content || typeof content !== "string") return "";
+  const s = content.trim();
+  if (!s) return "";
+  if (s.includes("</") && (s.includes("<p>") || s.includes("<h") || s.includes("<div"))) return s;
+  return "<p>" + s.replace(/\n/g, "</p><p>") + "</p>";
+}
+
 export function ServiceDetail() {
   const { id } = useParams();
   const [service, setService] = useState(null);
@@ -46,9 +55,15 @@ export function ServiceDetail() {
               ? Number(service.price).toLocaleString("vi-VN") + " VNĐ"
               : "—"}
           </p>
-          {service.description && (
-            <p className="service-detail-desc">{service.description}</p>
-          )}
+          {service.description && (() => {
+            const html = toHtml(service.description);
+            return html ? (
+              <div
+                className="service-detail-desc service-detail-desc--html"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            ) : null;
+          })()}
           <Link to="/services" className="btn btn-secondary">Quay lại danh sách</Link>
         </div>
       </div>
