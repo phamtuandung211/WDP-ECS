@@ -133,6 +133,7 @@ export const userService = {
 };
 
 export const profileService = {
+  changePassword: (data) => apiClient.post("/user/change-password", data),
   getMyProfile: () => apiClient.get("/user/me"),
   updateMyProfile: (data) => apiClient.patch("/user/me", data),
 };
