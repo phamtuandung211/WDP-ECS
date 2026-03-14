@@ -21,15 +21,54 @@ export function AdvancedAppointmentForm({ onSuccess }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Business hours: 7:30 AM - 5:30 PM
+  const BUSINESS_HOURS_START_HOUR = 7;
+  const BUSINESS_HOURS_START_MINUTE = 30;
+  const BUSINESS_HOURS_END_HOUR = 17;
+  const BUSINESS_HOURS_END_MINUTE = 30;
+
   // Calculate min and max dates
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  // Convert to minutes for comparison
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+  const businessStartInMinutes =
+    BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
+  const businessEndInMinutes =
+    BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
+
+  const isWithinBusinessHours =
+    currentTimeInMinutes >= businessStartInMinutes &&
+    currentTimeInMinutes < businessEndInMinutes;
+
+  // Determine minimum booking date
+  let minDate = new Date(today);
+  if (isWithinBusinessHours) {
+    // During business hours: can book from tomorrow
+    minDate.setDate(minDate.getDate() + 1);
+  } else {
+    // After business hours: can only book from day after tomorrow
+    minDate.setDate(minDate.getDate() + 2);
+  }
+
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7);
 
-  const minDateString = today.toISOString().split("T")[0];
-  const maxDateString = maxDate.toISOString().split("T")[0];
+  // Format dates using local timezone (not UTC)
+  const formatDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const minDateString = formatDateString(minDate);
+  const maxDateString = formatDateString(maxDate);
 
   // Load doctors on component mount
   useEffect(() => {
