@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAppointmentNotification } from "../context/AppointmentNotificationContext";
 import { ROLE_NAME } from "../constants/role";
@@ -166,20 +167,21 @@ export function Header() {
                 <a href="/staff/review-approvals">✅ Duyệt hồ sơ</a>
 
                 <a href="/appointments">📋 My Dashboard</a>
-                <a href="/profile">Hồ sơ cá nhân</a>
 
                 <NotificationIcon />
-                <span className="user-info">
-                  <img
-                    src={avatarSrc}
-                    alt="avatar"
-                    className="header-avatar"
-                    onError={(e) => {
-                      e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
-                    }}
-                  />
-                  Xin chào, {getUserName()} ({user.role})
-                </span>
+                <Link to="/profile" className="header-user-link">
+                  <span className="user-info">
+                    <img
+                      src={avatarSrc}
+                      alt="avatar"
+                      className="header-avatar"
+                      onError={(e) => {
+                        e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                      }}
+                    />
+                    Xin chào, {getUserName()} ({user.role})
+                  </span>
+                </Link>
                 <button onClick={handleLogout} className="btn-logout">
                   Logout
                 </button>
@@ -188,18 +190,19 @@ export function Header() {
               /* 2. Giao diện dành riêng cho CUSTOMER SUPPORT */
               <>
                 <a href="/support/chat">Chat Ho Tro</a>
-                <a href="/profile">Hồ sơ cá nhân</a>
-                <span className="user-info">
-                  <img
-                    src={avatarSrc}
-                    alt="avatar"
-                    className="header-avatar"
-                    onError={(e) => {
-                      e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
-                    }}
-                  />
-                  Xin chào, {getUserName()} ({user.role})
-                </span>
+                <Link to="/profile" className="header-user-link">
+                  <span className="user-info">
+                    <img
+                      src={avatarSrc}
+                      alt="avatar"
+                      className="header-avatar"
+                      onError={(e) => {
+                        e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                      }}
+                    />
+                    Xin chào, {getUserName()} ({user.role})
+                  </span>
+                </Link>
                 <button onClick={handleLogout} className="btn-logout">
                   Logout
                 </button>
@@ -214,20 +217,21 @@ export function Header() {
                 <a href="/appointments">📋 My Dashboard</a>
                 <a href="/medical-records">Hồ sơ bệnh án</a>
                 <a href="/feedbacks">Đánh giá</a>
-                <a href="/profile">Hồ sơ cá nhân</a>
                 {isAdmin && <a href="/admin/statistics">📊 Thống kê</a>}
                 <NotificationIcon />
-                <span className="user-info">
-                  <img
-                    src={avatarSrc}
-                    alt="avatar"
-                    className="header-avatar"
-                    onError={(e) => {
-                      e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
-                    }}
-                  />
-                  Xin chào, {getUserName()}
-                </span>
+                <Link to="/profile" className="header-user-link">
+                  <span className="user-info">
+                    <img
+                      src={avatarSrc}
+                      alt="avatar"
+                      className="header-avatar"
+                      onError={(e) => {
+                        e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                      }}
+                    />
+                    Xin chào, {getUserName()}
+                  </span>
+                </Link>
                 <button onClick={handleLogout} className="btn-logout">
                   Logout
                 </button>

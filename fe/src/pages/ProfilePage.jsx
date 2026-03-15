@@ -232,7 +232,9 @@ export function ProfilePage() {
       };
 
       const { data } = await profileService.updateMyProfile(payload);
-      const updatedAvatar = data.data?.avatar;
+      const updatedData = data.data;
+      if (updatedData) setProfile((prev) => ({ ...prev, ...updatedData }));
+      const updatedAvatar = updatedData?.avatar;
       if (updatedAvatar) {
         setAvatarPreview(updatedAvatar);
         updateUser({ avatar: updatedAvatar, fullName: form.fullName });
@@ -296,6 +298,11 @@ export function ProfilePage() {
   const displayAvatar =
     avatarPreview ||
     `${DEFAULT_AVATAR}&name=${encodeURIComponent(form.fullName || "User")}`;
+
+  /** Avatar và tên hiển thị ở sidebar (chỉ đổi khi đã lưu) */
+  const sidebarDisplayAvatar = profile?.avatar
+    ? getUploadFullUrl(profile.avatar)
+    : `${DEFAULT_AVATAR}&name=${encodeURIComponent(profile?.fullName || "User")}`;
 
   const statusCfg = STATUS_CONFIG[profile?.account?.status] || {};
   const roleLabel = ROLE_LABEL[user?.role] || user?.role;
@@ -673,16 +680,16 @@ export function ProfilePage() {
       <div className="pv2-layout">
         {/* ── Left Column: Avatar + Account Info ── */}
         <aside className="pv2-sidebar">
-          {/* Avatar Card */}
+          {/* Avatar Card — chỉ hiển thị dữ liệu đã lưu, đổi khi bấm Lưu */}
           <div className="pv2-card pv2-avatar-card">
             <div className="pv2-avatar-wrap">
               <img
-                src={displayAvatar}
+                src={sidebarDisplayAvatar}
                 alt="Avatar"
                 className="pv2-avatar-img"
                 onError={(e) => {
                   e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
-                    form.fullName || "User",
+                    profile?.fullName || "User",
                   )}`;
                 }}
               />
@@ -704,7 +711,7 @@ export function ProfilePage() {
               onChange={handleAvatarChange}
             />
             <div className="pv2-avatar-info">
-              <p className="pv2-avatar-name">{form.fullName || "—"}</p>
+              <p className="pv2-avatar-name">{profile?.fullName || "—"}</p>
               <span className={`badge badge-${user?.role?.toLowerCase()}`}>
                 {roleLabel}
               </span>
@@ -712,7 +719,7 @@ export function ProfilePage() {
             {avatarFile && (
               <div className="pv2-avatar-hint">
                 <span className="pv2-avatar-hint-icon">📎</span>
-                <span>{avatarFile.name}</span>
+                <span>{avatarFile.name} — bấm Lưu để cập nhật</span>
               </div>
             )}
           </div>
@@ -722,21 +729,21 @@ export function ProfilePage() {
             <div className="pv2-card pv2-info-card">
               <h3 className="pv2-info-card-title">Thông tin tài khoản</h3>
 
-              {/* Avatar hiển thị trong thông tin cá nhân */}
+              {/* Avatar và tên đã lưu — chỉ đổi khi bấm Lưu */}
               <div className="pv2-account-avatar-wrap">
                 <img
-                  src={displayAvatar}
+                  src={sidebarDisplayAvatar}
                   alt="Ảnh đại diện"
                   className="pv2-account-avatar"
                   onError={(e) => {
                     e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
-                      form.fullName || "User",
+                      profile?.fullName || "User",
                     )}`;
                   }}
                 />
                 <div className="pv2-account-avatar-meta">
                   <p className="pv2-account-avatar-name">
-                    {form.fullName || "—"}
+                    {profile?.fullName || "—"}
                   </p>
                   <span className={`badge badge-${user?.role?.toLowerCase()}`}>
                     {roleLabel}
@@ -873,14 +880,17 @@ export function ProfilePage() {
               </div>
 
               <div className="pv2-form-footer flex items-center justify-between">
-                {/* THÊM NÚT NÀY VÀO ĐÂY */}
-                <button
-                  type="button"
-                  className="text-blue-600 hover:underline text-sm font-medium"
-                  onClick={() => setChangePasswordOpen(true)}
-                >
-                  🔒 Đổi mật khẩu?
-                </button>
+                {user?.role === "CUSTOMER" ? (
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                    onClick={() => setChangePasswordOpen(true)}
+                  >
+                    🔒 Đổi mật khẩu?
+                  </button>
+                ) : (
+                  <span />
+                )}
 
                 <Button
                   type="submit"
@@ -901,12 +911,13 @@ export function ProfilePage() {
           </div>
         </main>
       </div>
-      <Modal
-        open={changePasswordOpen}
-        onClose={() => setChangePasswordOpen(false)}
-        title="Đổi mật khẩu tài khoản"
-      >
-        <form onSubmit={handleChangePassword} className="space-y-4">
+      {user?.role === "CUSTOMER" && (
+        <Modal
+          open={changePasswordOpen}
+          onClose={() => setChangePasswordOpen(false)}
+          title="Đổi mật khẩu tài khoản"
+        >
+          <form onSubmit={handleChangePassword} className="space-y-4">
           <div className="form-group">
             <label className="block text-sm text-gray-600 mb-1">
               Mật khẩu hiện tại
@@ -975,7 +986,8 @@ export function ProfilePage() {
             </button>
           </div>
         </form>
-      </Modal>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -81,6 +81,16 @@ button {
   text-decoration: underline;
 }
 
+.header-user-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+.header-user-link:hover {
+  opacity: 0.9;
+}
+
 .user-info {
   display: flex;
   align-items: center;
