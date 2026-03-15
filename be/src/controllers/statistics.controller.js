@@ -56,7 +56,9 @@ export const getOverviewStatsController = async (req, res) => {
       advancedRevenue: 0,
       totalDoctors: result.accounts?.doctors || 0,
       totalCustomers: result.accounts?.customers || 0,
-      totalAccounts: result.accounts?.total || 0,
+      totalAccounts: result.accounts || 0,
+      medicalRecords: result.medicalRecords || 0, 
+      feedbacks: result.feedbacks || 0,
     };
 
     return res.status(200).json({
