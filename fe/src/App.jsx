@@ -19,6 +19,7 @@ import { ManageBlogForm } from "./pages/ManageBlogForm";
 import { ProfilePage } from "./pages/ProfilePage";
 import { MedicalRecordsPage } from "./pages/MedicalRecordsPage";
 import { FeedbacksPage } from "./pages/FeedbacksPage";
+import { SubmitFeedbackPage } from "./pages/SubmitFeedbackPage";
 import { Forbidden } from "./pages/Forbidden";
 import { ManageSpecializations } from "./pages/ManageSpecializations";
 import { PaymentPage } from "./pages/PaymentPage";
@@ -184,6 +185,14 @@ function App() {
               <Route
                 path="/feedbacks"
                 element={<ProtectedRoute element={<FeedbacksPage />} />}
+              />
+              <Route
+                path="/feedback"
+                element={
+                  <PrivateRoute>
+                    <SubmitFeedbackPage />
+                  </PrivateRoute>
+                }
               />
 
               {/* ========== Role-Based Dashboard (Option 3) ========== */}
