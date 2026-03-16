@@ -21,6 +21,35 @@ export function Register() {
   const navigate = useNavigate();
 
   const validateEmail = (v) => /^\S+@\S+\.\S+$/.test(v);
+  const getAdultMaxDate = () => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 18);
+    return d.toISOString().split("T")[0];
+  };
+  const getAge = (birthDate) => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age -= 1;
+    }
+    return age;
+  };
+  const validateDateOfBirth = (value) => {
+    if (!value) return null;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "Ngày sinh không hợp lệ";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dob = new Date(d);
+    dob.setHours(0, 0, 0, 0);
+
+    if (dob >= today) return "Ngày sinh phải là ngày trong quá khứ";
+    if (getAge(dob) < 18) return "Tuổi phải lớn hơn hoặc bằng 18";
+
+    return null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +66,8 @@ export function Register() {
     if (!phone || phone.trim().length < 8) errors.phone = "Invalid phone";
     if (gender && !["MALE", "FEMALE"].includes(gender))
       errors.gender = "Gender must be MALE or FEMALE";
+    const dobError = validateDateOfBirth(dateOfBirth);
+    if (dobError) errors.dateOfBirth = dobError;
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -133,8 +164,12 @@ export function Register() {
               className="form-input"
               type="date"
               value={dateOfBirth}
+              max={getAdultMaxDate()}
               onChange={(e) => setDateOfBirth(e.target.value)}
             />
+            {fieldErrors.dateOfBirth && (
+              <span className="form-error">{fieldErrors.dateOfBirth}</span>
+            )}
           </div>
 
           <div className="form-group">

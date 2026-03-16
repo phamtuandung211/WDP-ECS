@@ -68,6 +68,17 @@ const STATUS_LABEL = {
 
 const IMAGE_EXT_REGEX = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i;
 
+function isFutureDate(value) {
+    if (!value) return false;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date > today;
+}
+
 /* ─── Blank form ─── */
 const blankForm = () => ({ name: "", issuedBy: "", issueDate: "" });
 
@@ -140,6 +151,12 @@ export default function ManageCertificatesDoctor() {
             notify("Vui lòng điền đầy đủ thông tin và chọn file", "error");
             return;
         }
+
+        if (isFutureDate(form.issueDate)) {
+            notify("Ngày cấp không được là ngày trong tương lai", "error");
+            return;
+        }
+
         setSubmitting(true);
         try {
             const fd = new FormData();
@@ -198,6 +215,11 @@ export default function ManageCertificatesDoctor() {
 
         if (!form.name.trim() || !form.issuedBy.trim() || !form.issueDate) {
             notify("Vui lòng điền đầy đủ thông tin", "error");
+            return;
+        }
+
+        if (isFutureDate(form.issueDate)) {
+            notify("Ngày cấp không được là ngày trong tương lai", "error");
             return;
         }
 
@@ -528,6 +550,7 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false, curren
     const existingFileUrl = currentCert?.fileUrl ? getUploadFullUrl(currentCert.fileUrl) : null;
     const existingIsImage = IMAGE_EXT_REGEX.test(currentCert?.fileUrl || "");
     const newIsImage = certFile?.type?.startsWith("image/");
+    const today = new Date().toISOString().split("T")[0];
 
     const handleFileChange = (e) => {
         const file = e.target.files[0] || null;
@@ -574,6 +597,7 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false, curren
                     type="date"
                     className="form-input w-full border rounded px-3 py-2 text-sm"
                     value={form.issueDate}
+                    max={today}
                     onChange={(e) => setForm((p) => ({ ...p, issueDate: e.target.value }))}
                 />
             </div>
@@ -590,10 +614,10 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false, curren
                 {certFile && <p className="text-xs text-gray-500 mt-1">{certFile.name}</p>}
             </div>
 
-            {isEdit && (
+            {(certFile || isEdit) && (
                 <div className="space-y-2">
                     <p className="text-sm text-gray-600">
-                        {certFile ? "Xem trước file mới" : "File hiện tại"}
+                        {certFile ? "Xem trước file đã chọn" : "File hiện tại"}
                     </p>
 
                     <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
@@ -605,11 +629,13 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false, curren
                                     className="w-full h-56 object-contain bg-white"
                                 />
                             ) : (
-                                <div className="w-full h-40 flex items-center justify-center text-gray-500 bg-white">
-                                    Đã chọn file mới: {certFile.name}
-                                </div>
+                                <iframe
+                                    src={newFilePreview}
+                                    title={certFile.name || "preview new certificate"}
+                                    className="w-full h-56 bg-white"
+                                />
                             )
-                        ) : existingFileUrl ? (
+                        ) : isEdit && existingFileUrl ? (
                             existingIsImage ? (
                                 <img
                                     src={existingFileUrl}
@@ -625,7 +651,7 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false, curren
                             )
                         ) : (
                             <div className="w-full h-40 flex items-center justify-center text-gray-400 bg-white">
-                                Chưa có file để xem trước
+                                Chưa chọn file để xem trước
                             </div>
                         )}
                     </div>

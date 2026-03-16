@@ -67,6 +67,7 @@ const STATUS_LABEL = {
 };
 
 const IMAGE_EXT_REGEX = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i;
+const DEGREE_OPTIONS = ["Đại Học", "Thạc sĩ", "Tiến sĩ", "Phó Giáo Sư", "Giáo Sư"];
 
 export default function ManageDegreesDoctor() {
     /* ── list state ── */
@@ -92,9 +93,6 @@ export default function ManageDegreesDoctor() {
     const [formName, setFormName] = useState("");
     const [degreeFile, setDegreeFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
-
-    /* ── degree name suggestions ── */
-    const [degreeNames, setDegreeNames] = useState([]);
 
     /* ── toast ── */
     const [toast, setToast] = useState(null);
@@ -134,19 +132,18 @@ export default function ManageDegreesDoctor() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    /* ── fetch name suggestions ── */
-    useEffect(() => {
-        degreeService.getAllNames().then(({ data }) => {
-            setDegreeNames(data.data ?? []);
-        }).catch(() => { });
-    }, []);
-
     /* ── Add ── */
     const handleAdd = async () => {
         if (!formName.trim() || !degreeFile) {
             notify("Vui lòng nhập tên bằng cấp và chọn file", "error");
             return;
         }
+
+        if (!DEGREE_OPTIONS.includes(formName.trim())) {
+            notify("Bằng cấp chỉ được chọn: Đại Học, Thạc sĩ, Tiến sĩ, Phó Giáo Sư, Giáo Sư", "error");
+            return;
+        }
+
         setSubmitting(true);
         try {
             const fd = new FormData();
@@ -199,6 +196,11 @@ export default function ManageDegreesDoctor() {
 
         if (!formName.trim()) {
             notify("Vui lòng nhập tên bằng cấp", "error");
+            return;
+        }
+
+        if (!DEGREE_OPTIONS.includes(formName.trim())) {
+            notify("Bằng cấp chỉ được chọn: Đại Học, Thạc sĩ, Tiến sĩ, Phó Giáo Sư, Giáo Sư", "error");
             return;
         }
 
@@ -377,7 +379,6 @@ export default function ManageDegreesDoctor() {
                     setName={setFormName}
                     file={degreeFile}
                     setFile={setDegreeFile}
-                    suggestions={degreeNames}
                 />
                 <div className="flex justify-end gap-2 pt-3">
                     <button className="btn btn-secondary px-4 py-2 text-sm" onClick={() => setAddOpen(false)}>Hủy</button>
@@ -468,7 +469,6 @@ export default function ManageDegreesDoctor() {
                     setName={setFormName}
                     file={degreeFile}
                     setFile={setDegreeFile}
-                    suggestions={degreeNames}
                     isEdit
                     currentDegree={selected}
                 />
@@ -502,7 +502,7 @@ export default function ManageDegreesDoctor() {
 }
 
 /* ─── Degree form fields ─── */
-function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false, currentDegree = null }) {
+function DegreeForm({ name, setName, file, setFile, isEdit = false, currentDegree = null }) {
     const [newFilePreview, setNewFilePreview] = useState(null);
 
     useEffect(() => {
@@ -520,6 +520,9 @@ function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false,
     const existingFileUrl = currentDegree?.fileUrl ? getUploadFullUrl(currentDegree.fileUrl) : null;
     const existingIsImage = IMAGE_EXT_REGEX.test(currentDegree?.fileUrl || "");
     const newIsImage = file?.type?.startsWith("image/");
+    const availableOptions = name && !DEGREE_OPTIONS.includes(name)
+        ? [name, ...DEGREE_OPTIONS]
+        : DEGREE_OPTIONS;
 
     const handleFileChange = (e) => {
         const nextFile = e.target.files[0] || null;
@@ -546,18 +549,16 @@ function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false,
         <div className="space-y-3">
             <div>
                 <label className="block text-sm text-gray-600 mb-1">Tên bằng cấp *</label>
-                <input
+                <select
                     className="form-input w-full border rounded px-3 py-2 text-sm"
-                    list="degree-names"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="VD: Tiến sĩ Y khoa, Bác sĩ nội trú..."
-                />
-                {suggestions.length > 0 && (
-                    <datalist id="degree-names">
-                        {suggestions.map((n) => <option key={n} value={n} />)}
-                    </datalist>
-                )}
+                >
+                    <option value="">-- Chọn bằng cấp --</option>
+                    {availableOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                    ))}
+                </select>
             </div>
             <div>
                 <label className="block text-sm text-gray-600 mb-1">
@@ -572,10 +573,10 @@ function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false,
                 {file && <p className="text-xs text-gray-500 mt-1">{file.name}</p>}
             </div>
 
-            {isEdit && (
+            {(file || isEdit) && (
                 <div className="space-y-2">
                     <p className="text-sm text-gray-600">
-                        {file ? "Xem trước file mới" : "File hiện tại"}
+                        {file ? "Xem trước file đã chọn" : "File hiện tại"}
                     </p>
 
                     <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
@@ -587,11 +588,13 @@ function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false,
                                     className="w-full h-56 object-contain bg-white"
                                 />
                             ) : (
-                                <div className="w-full h-40 flex items-center justify-center text-gray-500 bg-white">
-                                    Đã chọn file mới: {file.name}
-                                </div>
+                                <iframe
+                                    src={newFilePreview}
+                                    title={file.name || "preview new degree"}
+                                    className="w-full h-56 bg-white"
+                                />
                             )
-                        ) : existingFileUrl ? (
+                        ) : isEdit && existingFileUrl ? (
                             existingIsImage ? (
                                 <img
                                     src={existingFileUrl}
@@ -607,7 +610,7 @@ function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false,
                             )
                         ) : (
                             <div className="w-full h-40 flex items-center justify-center text-gray-400 bg-white">
-                                Chưa có file để xem trước
+                                Chưa chọn file để xem trước
                             </div>
                         )}
                     </div>
