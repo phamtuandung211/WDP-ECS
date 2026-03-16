@@ -116,7 +116,12 @@ export function ProfilePage() {
   const [allSpecializations, setAllSpecializations] = useState([]);
   const [updateOpen, setUpdateOpen] = useState(false);
   const fileInputRef = useRef(null);
-
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -174,6 +179,33 @@ export function ProfilePage() {
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp");
+      return;
+    }
+    setSaving(true);
+    try {
+      // Giả sử bạn có authService.changePassword hoặc profileService.changePassword
+      await profileService.changePassword({
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setSuccess("Đổi mật khẩu thành công!");
+      setChangePasswordOpen(false);
+      setPasswordForm({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Đổi mật khẩu thất bại");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -652,7 +684,7 @@ export function ProfilePage() {
       <div className="pv2-layout">
         {/* ── Left Column: Avatar + Account Info ── */}
         <aside className="pv2-sidebar">
-          {/* Avatar Card */}
+          {/* Avatar Card — chỉ hiển thị dữ liệu đã lưu, đổi khi bấm Lưu */}
           <div className="pv2-card pv2-avatar-card">
             <div className="pv2-avatar-wrap">
               <img
@@ -661,7 +693,7 @@ export function ProfilePage() {
                 className="pv2-avatar-img"
                 onError={(e) => {
                   e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
-                    form.fullName || "User"
+                    profile?.fullName || "User",
                   )}`;
                 }}
               />
@@ -683,7 +715,7 @@ export function ProfilePage() {
               onChange={handleAvatarChange}
             />
             <div className="pv2-avatar-info">
-              <p className="pv2-avatar-name">{form.fullName || "—"}</p>
+              <p className="pv2-avatar-name">{profile?.fullName || "—"}</p>
               <span className={`badge badge-${user?.role?.toLowerCase()}`}>
                 {roleLabel}
               </span>
@@ -691,7 +723,7 @@ export function ProfilePage() {
             {avatarFile && (
               <div className="pv2-avatar-hint">
                 <span className="pv2-avatar-hint-icon">📎</span>
-                <span>{avatarFile.name}</span>
+                <span>{avatarFile.name} — bấm Lưu để cập nhật</span>
               </div>
             )}
           </div>
@@ -701,7 +733,7 @@ export function ProfilePage() {
             <div className="pv2-card pv2-info-card">
               <h3 className="pv2-info-card-title">Thông tin tài khoản</h3>
 
-              {/* Avatar hiển thị trong thông tin cá nhân */}
+              {/* Avatar và tên đã lưu — chỉ đổi khi bấm Lưu */}
               <div className="pv2-account-avatar-wrap">
                 <img
                   src={displayAvatar}
@@ -709,12 +741,14 @@ export function ProfilePage() {
                   className="pv2-account-avatar"
                   onError={(e) => {
                     e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(
-                      form.fullName || "User"
+                      profile?.fullName || "User",
                     )}`;
                   }}
                 />
                 <div className="pv2-account-avatar-meta">
-                  <p className="pv2-account-avatar-name">{form.fullName || "—"}</p>
+                  <p className="pv2-account-avatar-name">
+                    {profile?.fullName || "—"}
+                  </p>
                   <span className={`badge badge-${user?.role?.toLowerCase()}`}>
                     {roleLabel}
                   </span>
@@ -757,7 +791,9 @@ export function ProfilePage() {
                     <div>
                       <p className="pv2-info-label">Ngày tham gia</p>
                       <p className="pv2-info-value">
-                        {new Date(profile.account.createdAt).toLocaleDateString("vi-VN")}
+                        {new Date(profile.account.createdAt).toLocaleDateString(
+                          "vi-VN",
+                        )}
                       </p>
                     </div>
                   </li>
@@ -848,8 +884,24 @@ export function ProfilePage() {
                 />
               </div>
 
-              <div className="pv2-form-footer">
-                <Button type="submit" className="btn-primary pv2-save-btn" disabled={saving}>
+              <div className="pv2-form-footer flex items-center justify-between">
+                {user?.role === "CUSTOMER" ? (
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                    onClick={() => setChangePasswordOpen(true)}
+                  >
+                    🔒 Đổi mật khẩu?
+                  </button>
+                ) : (
+                  <span />
+                )}
+
+                <Button
+                  type="submit"
+                  className="btn-primary pv2-save-btn"
+                  disabled={saving}
+                >
                   {saving ? (
                     <>
                       <span className="pv2-spinner" />
@@ -864,6 +916,83 @@ export function ProfilePage() {
           </div>
         </main>
       </div>
+      {user?.role === "CUSTOMER" && (
+        <Modal
+          open={changePasswordOpen}
+          onClose={() => setChangePasswordOpen(false)}
+          title="Đổi mật khẩu tài khoản"
+        >
+          <form onSubmit={handleChangePassword} className="space-y-4">
+          <div className="form-group">
+            <label className="block text-sm text-gray-600 mb-1">
+              Mật khẩu hiện tại
+            </label>
+            <input
+              type="password"
+              className="form-input w-full border rounded px-3 py-2 text-sm"
+              required
+              value={passwordForm.oldPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  oldPassword: e.target.value,
+                })
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label className="block text-sm text-gray-600 mb-1">
+              Mật khẩu mới
+            </label>
+            <input
+              type="password"
+              className="form-input w-full border rounded px-3 py-2 text-sm"
+              required
+              value={passwordForm.newPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  newPassword: e.target.value,
+                })
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label className="block text-sm text-gray-600 mb-1">
+              Xác nhận mật khẩu mới
+            </label>
+            <input
+              type="password"
+              className="form-input w-full border rounded px-3 py-2 text-sm"
+              required
+              value={passwordForm.confirmPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  confirmPassword: e.target.value,
+                })
+              }
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <button
+              type="button"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              onClick={() => setChangePasswordOpen(false)}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              disabled={saving}
+            >
+              {saving ? "Đang xử lý..." : "Cập nhật mật khẩu"}
+            </button>
+          </div>
+        </form>
+        </Modal>
+      )}
     </div>
   );
 }
