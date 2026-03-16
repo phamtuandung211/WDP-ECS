@@ -10,7 +10,8 @@ import {
 } from "../services";
 import { Loading, Alert, Button } from "../components/UI";
 
-const DEFAULT_AVATAR = "https://ui-avatars.com/api/?background=4361ee&color=fff&size=200";
+const DEFAULT_AVATAR =
+  "https://ui-avatars.com/api/?background=4361ee&color=fff&size=200";
 
 const ROLE_LABEL = {
   ADMIN: "Quản trị viên",
@@ -71,7 +72,10 @@ function getAge(birthDate) {
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age -= 1;
   }
   return age;
@@ -122,6 +126,8 @@ export function ProfilePage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [passwordModalError, setPasswordModalError] = useState(null);
+  const [passwordModalSuccess, setPasswordModalSuccess] = useState(null);
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -177,13 +183,23 @@ export function ProfilePage() {
     return () => clearTimeout(timer);
   }, [success]);
 
+  useEffect(() => {
+    if (changePasswordOpen) {
+      setPasswordModalError(null);
+      setPasswordModalSuccess(null);
+    }
+  }, [changePasswordOpen]);
+
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    setPasswordModalError(null);
+    setPasswordModalSuccess(null);
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp");
+      setPasswordModalError("Mật khẩu xác nhận không khớp");
       return;
     }
     setSaving(true);
@@ -193,15 +209,21 @@ export function ProfilePage() {
         oldPassword: passwordForm.oldPassword,
         newPassword: passwordForm.newPassword,
       });
-      setSuccess("Đổi mật khẩu thành công!");
-      setChangePasswordOpen(false);
-      setPasswordForm({
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      setPasswordModalSuccess("Đổi mật khẩu thành công!");
+      setTimeout(() => {
+        setChangePasswordOpen(false);
+        setPasswordForm({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setPasswordModalError(null);
+        setPasswordModalSuccess(null);
+      }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Đổi mật khẩu thất bại");
+      setPasswordModalError(
+        err.response?.data?.message || "Đổi mật khẩu thất bại",
+      );
     } finally {
       setSaving(false);
     }
@@ -240,7 +262,9 @@ export function ProfilePage() {
     setError(null);
     setSuccess(null);
     try {
-      const { data } = await specializationService.getAllSpecializations({ limit: 100 });
+      const { data } = await specializationService.getAllSpecializations({
+        limit: 100,
+      });
       setAllSpecializations(data.data ?? []);
     } catch {
       setAllSpecializations([]);
@@ -289,7 +313,9 @@ export function ProfilePage() {
       setAvatarFile(null);
       setSuccess("Cập nhật thông tin thành công!");
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Cập nhật thất bại");
+      setError(
+        err.response?.data?.message || err.message || "Cập nhật thất bại",
+      );
     } finally {
       setSaving(false);
     }
@@ -324,7 +350,9 @@ export function ProfilePage() {
 
       const { data } = await doctorProfileService.updateMyProfile(payload);
       const updatedDoctor = data.data ?? data;
-      const nextAvatar = getUploadFullUrl(updatedDoctor.avatar || updatedDoctor.img);
+      const nextAvatar = getUploadFullUrl(
+        updatedDoctor.avatar || updatedDoctor.img,
+      );
 
       setProfile(updatedDoctor);
       setAvatarFile(null);
@@ -361,7 +389,9 @@ export function ProfilePage() {
         <div className="pv2-title-row">
           <div>
             <h1 className="pv2-heading">Hồ sơ bác sĩ</h1>
-            <p className="pv2-subheading">Quản lý thông tin cá nhân và hồ sơ chuyên môn của bạn</p>
+            <p className="pv2-subheading">
+              Quản lý thông tin cá nhân và hồ sơ chuyên môn của bạn
+            </p>
           </div>
         </div>
 
@@ -428,7 +458,9 @@ export function ProfilePage() {
                     <p className="pv2-info-label">Ngày sinh</p>
                     <p className="pv2-info-value">
                       {profile?.dateOfBirth
-                        ? new Date(profile.dateOfBirth).toLocaleDateString("vi-VN")
+                        ? new Date(profile.dateOfBirth).toLocaleDateString(
+                            "vi-VN",
+                          )
                         : "—"}
                     </p>
                   </div>
@@ -449,7 +481,8 @@ export function ProfilePage() {
               <div className="pv2-form-header">
                 <h2 className="pv2-form-title">Thông tin hồ sơ</h2>
                 <p className="pv2-form-desc">
-                  Hồ sơ chuyên môn, bằng cấp và chứng chỉ của bạn đã được gộp vào cùng một màn hình.
+                  Hồ sơ chuyên môn, bằng cấp và chứng chỉ của bạn đã được gộp
+                  vào cùng một màn hình.
                 </p>
               </div>
 
@@ -470,7 +503,9 @@ export function ProfilePage() {
                   label="Ngày sinh"
                   value={
                     profile?.dateOfBirth
-                      ? new Date(profile.dateOfBirth).toLocaleDateString("vi-VN")
+                      ? new Date(profile.dateOfBirth).toLocaleDateString(
+                          "vi-VN",
+                        )
                       : "—"
                   }
                 />
@@ -488,7 +523,9 @@ export function ProfilePage() {
 
               {profile?.degrees?.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Bằng cấp đã duyệt</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                    Bằng cấp đã duyệt
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {profile.degrees.map((degree) => (
                       <span
@@ -504,7 +541,9 @@ export function ProfilePage() {
 
               {profile?.certificates?.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Chứng chỉ đã duyệt</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                    Chứng chỉ đã duyệt
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {profile.certificates.map((certificate) => (
                       <span
@@ -519,7 +558,11 @@ export function ProfilePage() {
               )}
 
               <div className="flex flex-wrap gap-3">
-                <Button type="button" className="btn-primary" onClick={openDoctorUpdate}>
+                <Button
+                  type="button"
+                  className="btn-primary"
+                  onClick={openDoctorUpdate}
+                >
                   ✏️ Cập nhật thông tin
                 </Button>
                 <button
@@ -541,11 +584,19 @@ export function ProfilePage() {
           </main>
         </div>
 
-        <Modal open={updateOpen} onClose={() => setUpdateOpen(false)} title="Cập nhật hồ sơ bác sĩ">
+        <Modal
+          open={updateOpen}
+          onClose={() => setUpdateOpen(false)}
+          title="Cập nhật hồ sơ bác sĩ"
+        >
           <div className="space-y-3">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-                <img src={displayAvatar} alt="avatar preview" className="w-full h-full object-cover" />
+                <img
+                  src={displayAvatar}
+                  alt="avatar preview"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <label className="cursor-pointer text-sm text-blue-600 hover:underline">
                 Thay đổi ảnh đại diện
@@ -559,7 +610,9 @@ export function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Họ và tên *</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Họ và tên *
+              </label>
               <input
                 className="form-input w-full border rounded px-3 py-2 text-sm"
                 name="fullName"
@@ -568,7 +621,9 @@ export function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Số điện thoại *</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Số điện thoại *
+              </label>
               <input
                 className="form-input w-full border rounded px-3 py-2 text-sm"
                 name="phone"
@@ -577,7 +632,9 @@ export function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Giới tính</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Giới tính
+              </label>
               <select
                 className="form-input w-full border rounded px-3 py-2 text-sm"
                 name="gender"
@@ -590,7 +647,9 @@ export function ProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Ngày sinh</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Ngày sinh
+              </label>
               <input
                 type="date"
                 className="form-input w-full border rounded px-3 py-2 text-sm"
@@ -601,7 +660,9 @@ export function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Địa chỉ</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Địa chỉ
+              </label>
               <input
                 className="form-input w-full border rounded px-3 py-2 text-sm"
                 name="address"
@@ -610,7 +671,9 @@ export function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Số năm kinh nghiệm</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Số năm kinh nghiệm
+              </label>
               <input
                 type="number"
                 min="0"
@@ -622,19 +685,24 @@ export function ProfilePage() {
             </div>
             {allSpecializations.length > 0 && (
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Chuyên khoa</label>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Chuyên khoa
+                </label>
                 <div className="flex flex-wrap gap-2 border rounded p-2 max-h-36 overflow-y-auto">
                   {allSpecializations.map((item) => {
-                    const selected = (form.specializations || []).includes(item._id);
+                    const selected = (form.specializations || []).includes(
+                      item._id,
+                    );
                     return (
                       <button
                         key={item._id}
                         type="button"
                         onClick={() => toggleSpecialization(item._id)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${selected
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-                          }`}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          selected
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                        }`}
                       >
                         {item.name}
                       </button>
@@ -923,74 +991,84 @@ export function ProfilePage() {
           title="Đổi mật khẩu tài khoản"
         >
           <form onSubmit={handleChangePassword} className="space-y-4">
-          <div className="form-group">
-            <label className="block text-sm text-gray-600 mb-1">
-              Mật khẩu hiện tại
-            </label>
-            <input
-              type="password"
-              className="form-input w-full border rounded px-3 py-2 text-sm"
-              required
-              value={passwordForm.oldPassword}
-              onChange={(e) =>
-                setPasswordForm({
-                  ...passwordForm,
-                  oldPassword: e.target.value,
-                })
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label className="block text-sm text-gray-600 mb-1">
-              Mật khẩu mới
-            </label>
-            <input
-              type="password"
-              className="form-input w-full border rounded px-3 py-2 text-sm"
-              required
-              value={passwordForm.newPassword}
-              onChange={(e) =>
-                setPasswordForm({
-                  ...passwordForm,
-                  newPassword: e.target.value,
-                })
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label className="block text-sm text-gray-600 mb-1">
-              Xác nhận mật khẩu mới
-            </label>
-            <input
-              type="password"
-              className="form-input w-full border rounded px-3 py-2 text-sm"
-              required
-              value={passwordForm.confirmPassword}
-              onChange={(e) =>
-                setPasswordForm({
-                  ...passwordForm,
-                  confirmPassword: e.target.value,
-                })
-              }
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              type="button"
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              onClick={() => setChangePasswordOpen(false)}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-              disabled={saving}
-            >
-              {saving ? "Đang xử lý..." : "Cập nhật mật khẩu"}
-            </button>
-          </div>
-        </form>
+            {passwordModalError && (
+              <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-sm text-red-700">
+                {passwordModalError}
+              </div>
+            )}
+            {passwordModalSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded px-3 py-2 text-sm text-green-700">
+                {passwordModalSuccess}
+              </div>
+            )}
+            <div className="form-group">
+              <label className="block text-sm text-gray-600 mb-1">
+                Mật khẩu hiện tại
+              </label>
+              <input
+                type="password"
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                required
+                value={passwordForm.oldPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    oldPassword: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="form-group">
+              <label className="block text-sm text-gray-600 mb-1">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                required
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    newPassword: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="form-group">
+              <label className="block text-sm text-gray-600 mb-1">
+                Xác nhận mật khẩu mới
+              </label>
+              <input
+                type="password"
+                className="form-input w-full border rounded px-3 py-2 text-sm"
+                required
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    confirmPassword: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                onClick={() => setChangePasswordOpen(false)}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                disabled={saving}
+              >
+                {saving ? "Đang xử lý..." : "Cập nhật mật khẩu"}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>
