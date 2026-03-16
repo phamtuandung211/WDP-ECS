@@ -66,6 +66,9 @@ const STATUS_LABEL = {
     OUTOFDATE: "Hết hạn",
 };
 
+const IMAGE_EXT_REGEX = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i;
+const DEGREE_OPTIONS = ["Đại Học", "Thạc sĩ", "Tiến sĩ", "Phó Giáo Sư", "Giáo Sư"];
+
 export default function ManageDegreesDoctor() {
     /* ── list state ── */
     const [degrees, setDegrees] = useState([]);
@@ -73,7 +76,7 @@ export default function ManageDegreesDoctor() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
-    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
     const [sortBy, setSortBy] = useState("createdAt");
     const [order, setOrder] = useState("desc");
@@ -91,9 +94,6 @@ export default function ManageDegreesDoctor() {
     const [degreeFile, setDegreeFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
-    /* ── degree name suggestions ── */
-    const [degreeNames, setDegreeNames] = useState([]);
-
     /* ── toast ── */
     const [toast, setToast] = useState(null);
     const notify = (message, type = "success") => setToast({ message, type });
@@ -105,7 +105,7 @@ export default function ManageDegreesDoctor() {
             const { data } = await degreeService.getMyDegrees({
                 page,
                 limit,
-                search: search || undefined,
+                search: debouncedSearch || undefined,
                 status: filterStatus || undefined,
                 sortBy,
                 order,
@@ -117,18 +117,20 @@ export default function ManageDegreesDoctor() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, filterStatus, sortBy, order]);
+    }, [page, debouncedSearch, filterStatus, sortBy, order]);
 
     useEffect(() => {
         fetchList();
     }, [fetchList]);
 
-    /* ── fetch name suggestions ── */
     useEffect(() => {
-        degreeService.getAllNames().then(({ data }) => {
-            setDegreeNames(data.data ?? []);
-        }).catch(() => { });
-    }, []);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setPage(1);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
     /* ── Add ── */
     const handleAdd = async () => {
@@ -136,6 +138,12 @@ export default function ManageDegreesDoctor() {
             notify("Vui lòng nhập tên bằng cấp và chọn file", "error");
             return;
         }
+
+        if (!DEGREE_OPTIONS.includes(formName.trim())) {
+            notify("Bằng cấp chỉ được chọn: Đại Học, Thạc sĩ, Tiến sĩ, Phó Giáo Sư, Giáo Sư", "error");
+            return;
+        }
+
         setSubmitting(true);
         try {
             const fd = new FormData();
@@ -167,6 +175,11 @@ export default function ManageDegreesDoctor() {
 
     /* ── Open edit ── */
     const openEdit = (degree) => {
+        if (degree.status === "PENDING") {
+            notify("Bằng cấp đang ở trạng thái PENDING nên không thể cập nhật", "error");
+            return;
+        }
+
         setSelected(degree);
         setFormName(degree.name || "");
         setDegreeFile(null);
@@ -176,10 +189,30 @@ export default function ManageDegreesDoctor() {
 
     /* ── Edit ── */
     const handleEdit = async () => {
+        if (selected?.status === "PENDING") {
+            notify("Bằng cấp đang ở trạng thái PENDING nên không thể cập nhật", "error");
+            return;
+        }
+
         if (!formName.trim()) {
             notify("Vui lòng nhập tên bằng cấp", "error");
             return;
         }
+
+        if (!DEGREE_OPTIONS.includes(formName.trim())) {
+            notify("Bằng cấp chỉ được chọn: Đại Học, Thạc sĩ, Tiến sĩ, Phó Giáo Sư, Giáo Sư", "error");
+            return;
+        }
+
+        if (degreeFile) {
+            const isImageType = degreeFile.type?.startsWith("image/");
+            const isImageExt = IMAGE_EXT_REGEX.test(degreeFile.name || "");
+            if (!isImageType || !isImageExt) {
+                notify("Khi cập nhật chỉ được upload file ảnh (jpg, jpeg, png, webp, gif, bmp, svg)", "error");
+                return;
+            }
+        }
+
         setSubmitting(true);
         try {
             const fd = new FormData();
@@ -214,21 +247,6 @@ export default function ManageDegreesDoctor() {
         }
     };
 
-    /* ── Sort ── */
-    const toggleSort = (field) => {
-        if (sortBy === field) {
-            setOrder((p) => (p === "asc" ? "desc" : "asc"));
-        } else {
-            setSortBy(field);
-            setOrder("desc");
-        }
-        setPage(1);
-    };
-    const SortIcon = ({ field }) => {
-        if (sortBy !== field) return <span className="ml-1 text-gray-300">↕</span>;
-        return <span className="ml-1">{order === "asc" ? "↑" : "↓"}</span>;
-    };
-
     const totalPages = pagination.totalPages ?? 1;
 
     return (
@@ -240,33 +258,27 @@ export default function ManageDegreesDoctor() {
                 backLabel="← Hồ sơ"
                 title="Quản lý bằng cấp"
                 action={
-                    <button
-                        className="btn btn-primary px-4 py-2 text-sm"
-                        onClick={() => { setFormName(""); setDegreeFile(null); setAddOpen(true); }}
-                    >
-                        + Thêm bằng cấp
-                    </button>
+                    <div className="ml-auto flex justify-end mb-5">
+                        <button
+                            className="btn btn-primary px-5 py-2 text-sm font-semibold shadow"
+                            onClick={() => { setFormName(""); setDegreeFile(null); setAddOpen(true); }}
+                        >
+                            + Thêm bằng cấp
+                        </button>
+                    </div>
                 }
             />
 
             {/* ── Filters ── */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
-                <form
-                    className="flex gap-2 flex-1 min-w-[220px]"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        setPage(1);
-                        setSearch(searchInput.trim());
-                    }}
-                >
+                <div className="flex-1 min-w-[220px]">
                     <input
-                        className="form-input border rounded px-3 py-2 text-sm flex-1"
+                        className="form-input border rounded px-3 py-2 text-sm w-full"
                         placeholder="Tìm theo tên bằng cấp..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
-                    <button type="submit" className="btn btn-secondary text-sm px-3 py-2">Tìm</button>
-                </form>
+                </div>
                 <select
                     className="border rounded px-3 py-2 text-sm"
                     value={filterStatus}
@@ -277,60 +289,73 @@ export default function ManageDegreesDoctor() {
                         <option key={k} value={k}>{v}</option>
                     ))}
                 </select>
+                <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                >
+                    <option value="createdAt">Sắp xếp: Ngày thêm</option>
+                    <option value="name">Sắp xếp: Tên bằng cấp</option>
+                </select>
+                <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={order}
+                    onChange={(e) => { setOrder(e.target.value); setPage(1); }}
+                >
+                    <option value="desc">Mới nhất trước</option>
+                    <option value="asc">Cũ nhất trước</option>
+                </select>
             </div>
 
-            {/* ── Table ── */}
+            {/* ── Card Grid ── */}
             {loading && !degrees.length ? (
                 <Loading />
             ) : (
                 <>
-                    <div className="bg-white rounded-xl shadow overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50 border-b">
-                                <tr>
-                                    <th className="text-left px-4 py-3 w-10">#</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("name")}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {degrees.length ? (
+                            degrees.map((deg) => {
+                                const fileUrl = getUploadFullUrl(deg.fileUrl);
+                                const isImage = IMAGE_EXT_REGEX.test(deg.fileUrl || "");
+
+                                return (
+                                    <article
+                                        key={deg._id}
+                                        className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                                        onClick={() => openDetail(deg)}
                                     >
-                                        Tên bằng cấp<SortIcon field="name" />
-                                    </th>
-                                    <th className="text-left px-4 py-3">Trạng thái</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("createdAt")}
-                                    >
-                                        Ngày thêm<SortIcon field="createdAt" />
-                                    </th>
-                                    <th className="text-left px-4 py-3">Ghi chú</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {degrees.length ? (
-                                    degrees.map((deg, idx) => (
-                                        <tr
-                                            key={deg._id}
-                                            className="border-b hover:bg-gray-50 cursor-pointer"
-                                            onClick={() => openDetail(deg)}
-                                        >
-                                            <td className="px-4 py-3 text-gray-500">{(page - 1) * limit + idx + 1}</td>
-                                            <td className="px-4 py-3 font-medium text-blue-700 hover:underline">{deg.name}</td>
-                                            <td className="px-4 py-3"><Badge status={deg.status} /></td>
-                                            <td className="px-4 py-3 text-gray-500">
-                                                {deg.createdAt ? new Date(deg.createdAt).toLocaleDateString("vi-VN") : "—"}
-                                            </td>
-                                            <td className="px-4 py-3 text-gray-500 text-xs">{deg.note || "—"}</td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                                            Chưa có bằng cấp nào.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                        <div className="h-44 bg-gray-100">
+                                            {isImage ? (
+                                                <img
+                                                    src={fileUrl}
+                                                    alt={deg.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+                                                    <span className="text-4xl mb-2">📄</span>
+                                                    <span className="text-xs">File PDF / Document</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 space-y-2">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h3 className="font-semibold text-gray-800 line-clamp-2">{deg.name}</h3>
+                                                <Badge status={deg.status} />
+                                            </div>
+                                            <p className="text-xs text-gray-500">
+                                                Ngày thêm: {deg.createdAt ? new Date(deg.createdAt).toLocaleDateString("vi-VN") : "—"}
+                                            </p>
+                                            <p className="text-xs text-gray-500 line-clamp-2">Ghi chú: {deg.note || "—"}</p>
+                                        </div>
+                                    </article>
+                                );
+                            })
+                        ) : (
+                            <div className="col-span-full bg-white rounded-xl shadow border border-gray-100 px-4 py-10 text-center text-gray-400">
+                                Chưa có bằng cấp nào.
+                            </div>
+                        )}
                     </div>
 
                     {totalPages > 1 && (
@@ -354,7 +379,6 @@ export default function ManageDegreesDoctor() {
                     setName={setFormName}
                     file={degreeFile}
                     setFile={setDegreeFile}
-                    suggestions={degreeNames}
                 />
                 <div className="flex justify-end gap-2 pt-3">
                     <button className="btn btn-secondary px-4 py-2 text-sm" onClick={() => setAddOpen(false)}>Hủy</button>
@@ -368,6 +392,23 @@ export default function ManageDegreesDoctor() {
             <Modal open={detailOpen} onClose={() => setDetailOpen(false)} title="Chi tiết bằng cấp">
                 {selected && (
                     <div className="space-y-3 text-sm">
+                        {selected.fileUrl && (
+                            <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                                {IMAGE_EXT_REGEX.test(selected.fileUrl) ? (
+                                    <img
+                                        src={getUploadFullUrl(selected.fileUrl)}
+                                        alt={selected.name}
+                                        className="w-full h-64 object-contain bg-white"
+                                    />
+                                ) : (
+                                    <iframe
+                                        src={getUploadFullUrl(selected.fileUrl)}
+                                        title={selected.name}
+                                        className="w-full h-64 bg-white"
+                                    />
+                                )}
+                            </div>
+                        )}
                         <div><span className="text-gray-500">Tên:</span> <strong>{selected.name}</strong></div>
                         <div><span className="text-gray-500">Trạng thái:</span> <Badge status={selected.status} /></div>
                         <div><span className="text-gray-500">Ngày thêm:</span>{" "}
@@ -394,14 +435,19 @@ export default function ManageDegreesDoctor() {
                                     rel="noreferrer"
                                     className="text-blue-600 hover:underline text-sm"
                                 >
-                                    📎 Xem file bằng cấp
+                                    Mở file ở tab mới
                                 </a>
                             </div>
                         )}
                         <div className="flex gap-2 pt-3">
                             <button
-                                className="btn btn-secondary px-4 py-2 text-sm"
+                                className={`btn px-4 py-2 text-sm ${selected.status === "PENDING"
+                                    ? "btn-secondary opacity-50 cursor-not-allowed"
+                                    : "btn-secondary"
+                                    }`}
                                 onClick={() => openEdit(selected)}
+                                disabled={selected.status === "PENDING"}
+                                title={selected.status === "PENDING" ? "Bằng cấp đang chờ duyệt, không thể sửa" : "Sửa bằng cấp"}
                             >
                                 ✏️ Sửa
                             </button>
@@ -423,8 +469,8 @@ export default function ManageDegreesDoctor() {
                     setName={setFormName}
                     file={degreeFile}
                     setFile={setDegreeFile}
-                    suggestions={degreeNames}
                     isEdit
+                    currentDegree={selected}
                 />
                 <div className="flex justify-end gap-2 pt-3">
                     <button className="btn btn-secondary px-4 py-2 text-sm" onClick={() => setEditOpen(false)}>Hủy</button>
@@ -456,23 +502,63 @@ export default function ManageDegreesDoctor() {
 }
 
 /* ─── Degree form fields ─── */
-function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false }) {
+function DegreeForm({ name, setName, file, setFile, isEdit = false, currentDegree = null }) {
+    const [newFilePreview, setNewFilePreview] = useState(null);
+
+    useEffect(() => {
+        if (!file) {
+            setNewFilePreview(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        setNewFilePreview(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [file]);
+
+    const existingFileUrl = currentDegree?.fileUrl ? getUploadFullUrl(currentDegree.fileUrl) : null;
+    const existingIsImage = IMAGE_EXT_REGEX.test(currentDegree?.fileUrl || "");
+    const newIsImage = file?.type?.startsWith("image/");
+    const availableOptions = name && !DEGREE_OPTIONS.includes(name)
+        ? [name, ...DEGREE_OPTIONS]
+        : DEGREE_OPTIONS;
+
+    const handleFileChange = (e) => {
+        const nextFile = e.target.files[0] || null;
+        if (!nextFile) {
+            setFile(null);
+            return;
+        }
+
+        if (isEdit) {
+            const isImageType = nextFile.type?.startsWith("image/");
+            const isImageExt = IMAGE_EXT_REGEX.test(nextFile.name || "");
+            if (!isImageType || !isImageExt) {
+                setFile(null);
+                e.target.value = "";
+                window.alert("Chỉ được chọn file ảnh khi cập nhật bằng cấp (jpg, jpeg, png, webp, gif, bmp, svg).");
+                return;
+            }
+        }
+
+        setFile(nextFile);
+    };
+
     return (
         <div className="space-y-3">
             <div>
                 <label className="block text-sm text-gray-600 mb-1">Tên bằng cấp *</label>
-                <input
+                <select
                     className="form-input w-full border rounded px-3 py-2 text-sm"
-                    list="degree-names"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="VD: Tiến sĩ Y khoa, Bác sĩ nội trú..."
-                />
-                {suggestions.length > 0 && (
-                    <datalist id="degree-names">
-                        {suggestions.map((n) => <option key={n} value={n} />)}
-                    </datalist>
-                )}
+                >
+                    <option value="">-- Chọn bằng cấp --</option>
+                    {availableOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                    ))}
+                </select>
             </div>
             <div>
                 <label className="block text-sm text-gray-600 mb-1">
@@ -482,10 +568,54 @@ function DegreeForm({ name, setName, file, setFile, suggestions, isEdit = false 
                     type="file"
                     accept="image/*,.pdf"
                     className="text-sm"
-                    onChange={(e) => setFile(e.target.files[0] || null)}
+                    onChange={handleFileChange}
                 />
                 {file && <p className="text-xs text-gray-500 mt-1">{file.name}</p>}
             </div>
+
+            {(file || isEdit) && (
+                <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                        {file ? "Xem trước file đã chọn" : "File hiện tại"}
+                    </p>
+
+                    <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                        {file ? (
+                            newIsImage ? (
+                                <img
+                                    src={newFilePreview}
+                                    alt="preview new degree"
+                                    className="w-full h-56 object-contain bg-white"
+                                />
+                            ) : (
+                                <iframe
+                                    src={newFilePreview}
+                                    title={file.name || "preview new degree"}
+                                    className="w-full h-56 bg-white"
+                                />
+                            )
+                        ) : isEdit && existingFileUrl ? (
+                            existingIsImage ? (
+                                <img
+                                    src={existingFileUrl}
+                                    alt={currentDegree?.name || "current degree"}
+                                    className="w-full h-56 object-contain bg-white"
+                                />
+                            ) : (
+                                <iframe
+                                    src={existingFileUrl}
+                                    title={currentDegree?.name || "current degree"}
+                                    className="w-full h-56 bg-white"
+                                />
+                            )
+                        ) : (
+                            <div className="w-full h-40 flex items-center justify-center text-gray-400 bg-white">
+                                Chưa chọn file để xem trước
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { certificateService, getUploadFullUrl } from "../services";
 import { Loading } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
@@ -67,19 +66,30 @@ const STATUS_LABEL = {
     OUTOFDATE: "Hết hạn",
 };
 
+const IMAGE_EXT_REGEX = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i;
+
+function isFutureDate(value) {
+    if (!value) return false;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date > today;
+}
+
 /* ─── Blank form ─── */
 const blankForm = () => ({ name: "", issuedBy: "", issueDate: "" });
 
 export default function ManageCertificatesDoctor() {
-    const navigate = useNavigate();
-
     /* ── list state ── */
     const [certs, setCerts] = useState([]);
     const [pagination, setPagination] = useState({});
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
-    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
     const [sortBy, setSortBy] = useState("createdAt");
     const [order, setOrder] = useState("desc");
@@ -108,7 +118,7 @@ export default function ManageCertificatesDoctor() {
             const { data } = await certificateService.getMyCertificates({
                 page,
                 limit,
-                search: search || undefined,
+                search: debouncedSearch || undefined,
                 status: filterStatus || undefined,
                 sortBy,
                 order,
@@ -120,11 +130,20 @@ export default function ManageCertificatesDoctor() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, filterStatus, sortBy, order]);
+    }, [page, debouncedSearch, filterStatus, sortBy, order]);
 
     useEffect(() => {
         fetchList();
     }, [fetchList]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setPage(1);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
     /* ── Add ── */
     const handleAdd = async () => {
@@ -132,6 +151,12 @@ export default function ManageCertificatesDoctor() {
             notify("Vui lòng điền đầy đủ thông tin và chọn file", "error");
             return;
         }
+
+        if (isFutureDate(form.issueDate)) {
+            notify("Ngày cấp không được là ngày trong tương lai", "error");
+            return;
+        }
+
         setSubmitting(true);
         try {
             const fd = new FormData();
@@ -165,6 +190,11 @@ export default function ManageCertificatesDoctor() {
 
     /* ── Open edit ── */
     const openEdit = (cert) => {
+        if (cert.status === "PENDING") {
+            notify("Chứng chỉ đang ở trạng thái PENDING nên không thể cập nhật", "error");
+            return;
+        }
+
         setSelected(cert);
         setForm({
             name: cert.name || "",
@@ -178,10 +208,30 @@ export default function ManageCertificatesDoctor() {
 
     /* ── Edit ── */
     const handleEdit = async () => {
+        if (selected?.status === "PENDING") {
+            notify("Chứng chỉ đang ở trạng thái PENDING nên không thể cập nhật", "error");
+            return;
+        }
+
         if (!form.name.trim() || !form.issuedBy.trim() || !form.issueDate) {
             notify("Vui lòng điền đầy đủ thông tin", "error");
             return;
         }
+
+        if (isFutureDate(form.issueDate)) {
+            notify("Ngày cấp không được là ngày trong tương lai", "error");
+            return;
+        }
+
+        if (certFile) {
+            const isImageType = certFile.type?.startsWith("image/");
+            const isImageExt = IMAGE_EXT_REGEX.test(certFile.name || "");
+            if (!isImageType || !isImageExt) {
+                notify("Khi cập nhật chỉ được upload file ảnh (jpg, jpeg, png, webp, gif, bmp, svg)", "error");
+                return;
+            }
+        }
+
         setSubmitting(true);
         try {
             const fd = new FormData();
@@ -218,21 +268,6 @@ export default function ManageCertificatesDoctor() {
         }
     };
 
-    /* ── Sort ── */
-    const toggleSort = (field) => {
-        if (sortBy === field) {
-            setOrder((p) => (p === "asc" ? "desc" : "asc"));
-        } else {
-            setSortBy(field);
-            setOrder("desc");
-        }
-        setPage(1);
-    };
-    const SortIcon = ({ field }) => {
-        if (sortBy !== field) return <span className="ml-1 text-gray-300">↕</span>;
-        return <span className="ml-1">{order === "asc" ? "↑" : "↓"}</span>;
-    };
-
     const totalPages = pagination.totalPages ?? 1;
 
     return (
@@ -244,35 +279,27 @@ export default function ManageCertificatesDoctor() {
                 backLabel="← Hồ sơ"
                 title="Quản lý chứng chỉ"
                 action={
-                    <button
-                        className="btn btn-primary px-4 py-2 text-sm"
-                        onClick={() => { setForm(blankForm()); setCertFile(null); setAddOpen(true); }}
-                    >
-                        + Thêm chứng chỉ
-                    </button>
+                    <div className="ml-auto flex justify-end mb-5">
+                        <button
+                            className="btn btn-primary px-5 py-2 text-sm font-semibold shadow"
+                            onClick={() => { setForm(blankForm()); setCertFile(null); setAddOpen(true); }}
+                        >
+                            + Thêm chứng chỉ
+                        </button>
+                    </div>
                 }
             />
 
             {/* ── Filters ── */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
-                <form
-                    className="flex gap-2 flex-1 min-w-[220px]"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        setPage(1);
-                        setSearch(searchInput.trim());
-                    }}
-                >
+                <div className="flex-1 min-w-[220px]">
                     <input
-                        className="form-input border rounded px-3 py-2 text-sm flex-1"
+                        className="form-input border rounded px-3 py-2 text-sm w-full"
                         placeholder="Tìm theo tên chứng chỉ..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
-                    <button type="submit" className="btn btn-secondary text-sm px-3 py-2">
-                        Tìm
-                    </button>
-                </form>
+                </div>
                 <select
                     className="border rounded px-3 py-2 text-sm"
                     value={filterStatus}
@@ -283,69 +310,80 @@ export default function ManageCertificatesDoctor() {
                         <option key={k} value={k}>{v}</option>
                     ))}
                 </select>
+                <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                >
+                    <option value="createdAt">Sắp xếp: Ngày thêm</option>
+                    <option value="name">Sắp xếp: Tên chứng chỉ</option>
+                    <option value="issueDate">Sắp xếp: Ngày cấp</option>
+                </select>
+                <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={order}
+                    onChange={(e) => { setOrder(e.target.value); setPage(1); }}
+                >
+                    <option value="desc">Mới nhất trước</option>
+                    <option value="asc">Cũ nhất trước</option>
+                </select>
             </div>
 
-            {/* ── Table ── */}
+            {/* ── Card Grid ── */}
             {loading && !certs.length ? (
                 <Loading />
             ) : (
                 <>
-                    <div className="bg-white rounded-xl shadow overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50 border-b">
-                                <tr>
-                                    <th className="text-left px-4 py-3 w-10">#</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("name")}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {certs.length ? (
+                            certs.map((cert) => {
+                                const fileUrl = getUploadFullUrl(cert.fileUrl);
+                                const isImage = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(cert.fileUrl || "");
+
+                                return (
+                                    <article
+                                        key={cert._id}
+                                        className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                                        onClick={() => openDetail(cert)}
                                     >
-                                        Tên chứng chỉ<SortIcon field="name" />
-                                    </th>
-                                    <th className="text-left px-4 py-3">Cấp bởi</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("issueDate")}
-                                    >
-                                        Ngày cấp<SortIcon field="issueDate" />
-                                    </th>
-                                    <th className="text-left px-4 py-3">Trạng thái</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("createdAt")}
-                                    >
-                                        Ngày thêm<SortIcon field="createdAt" />
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {certs.length ? (
-                                    certs.map((cert, idx) => (
-                                        <tr
-                                            key={cert._id}
-                                            className="border-b hover:bg-gray-50 cursor-pointer"
-                                            onClick={() => openDetail(cert)}
-                                        >
-                                            <td className="px-4 py-3 text-gray-500">{(page - 1) * limit + idx + 1}</td>
-                                            <td className="px-4 py-3 font-medium text-blue-700 hover:underline">{cert.name}</td>
-                                            <td className="px-4 py-3 text-gray-600">{cert.issuedBy}</td>
-                                            <td className="px-4 py-3 text-gray-600">
+                                        <div className="h-44 bg-gray-100">
+                                            {isImage ? (
+                                                <img
+                                                    src={fileUrl}
+                                                    alt={cert.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+                                                    <span className="text-4xl mb-2">📄</span>
+                                                    <span className="text-xs">File PDF / Document</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 space-y-2">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h3 className="font-semibold text-gray-800 line-clamp-2">{cert.name}</h3>
+                                                <Badge status={cert.status} />
+                                            </div>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Cấp bởi:</span> {cert.issuedBy}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Ngày cấp:</span>{" "}
                                                 {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString("vi-VN") : "—"}
-                                            </td>
-                                            <td className="px-4 py-3"><Badge status={cert.status} /></td>
-                                            <td className="px-4 py-3 text-gray-500">
-                                                {cert.createdAt ? new Date(cert.createdAt).toLocaleDateString("vi-VN") : "—"}
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                                            Chưa có chứng chỉ nào.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                Ngày thêm: {cert.createdAt ? new Date(cert.createdAt).toLocaleDateString("vi-VN") : "—"}
+                                            </p>
+                                        </div>
+                                    </article>
+                                );
+                            })
+                        ) : (
+                            <div className="col-span-full bg-white rounded-xl shadow border border-gray-100 px-4 py-10 text-center text-gray-400">
+                                Chưa có chứng chỉ nào.
+                            </div>
+                        )}
                     </div>
 
                     {totalPages > 1 && (
@@ -379,6 +417,23 @@ export default function ManageCertificatesDoctor() {
             <Modal open={detailOpen} onClose={() => setDetailOpen(false)} title="Chi tiết chứng chỉ">
                 {selected && (
                     <div className="space-y-3 text-sm">
+                        {selected.fileUrl && (
+                            <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                                {/\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(selected.fileUrl) ? (
+                                    <img
+                                        src={getUploadFullUrl(selected.fileUrl)}
+                                        alt={selected.name}
+                                        className="w-full h-64 object-contain bg-white"
+                                    />
+                                ) : (
+                                    <iframe
+                                        src={getUploadFullUrl(selected.fileUrl)}
+                                        title={selected.name}
+                                        className="w-full h-64 bg-white"
+                                    />
+                                )}
+                            </div>
+                        )}
                         <div><span className="text-gray-500">Tên:</span> <strong>{selected.name}</strong></div>
                         <div><span className="text-gray-500">Cấp bởi:</span> {selected.issuedBy}</div>
                         <div><span className="text-gray-500">Ngày cấp:</span>{" "}
@@ -406,14 +461,19 @@ export default function ManageCertificatesDoctor() {
                                     rel="noreferrer"
                                     className="text-blue-600 hover:underline text-sm"
                                 >
-                                    📎 Xem file chứng chỉ
+                                    Mở file ở tab mới
                                 </a>
                             </div>
                         )}
                         <div className="flex gap-2 pt-3">
                             <button
-                                className="btn btn-secondary px-4 py-2 text-sm"
+                                className={`btn px-4 py-2 text-sm ${selected.status === "PENDING"
+                                    ? "btn-secondary opacity-50 cursor-not-allowed"
+                                    : "btn-secondary"
+                                    }`}
                                 onClick={() => openEdit(selected)}
+                                disabled={selected.status === "PENDING"}
+                                title={selected.status === "PENDING" ? "Chứng chỉ đang chờ duyệt, không thể sửa" : "Sửa chứng chỉ"}
                             >
                                 ✏️ Sửa
                             </button>
@@ -430,7 +490,14 @@ export default function ManageCertificatesDoctor() {
 
             {/* ── Edit Modal ── */}
             <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Cập nhật chứng chỉ">
-                <CertForm form={form} setForm={setForm} certFile={certFile} setCertFile={setCertFile} isEdit />
+                <CertForm
+                    form={form}
+                    setForm={setForm}
+                    certFile={certFile}
+                    setCertFile={setCertFile}
+                    isEdit
+                    currentCert={selected}
+                />
                 <div className="flex justify-end gap-2 pt-3">
                     <button className="btn btn-secondary px-4 py-2 text-sm" onClick={() => setEditOpen(false)}>
                         Hủy
@@ -465,7 +532,47 @@ export default function ManageCertificatesDoctor() {
 }
 
 /* ─── Cert form fields (shared between Add and Edit) ─── */
-function CertForm({ form, setForm, certFile, setCertFile, isEdit = false }) {
+function CertForm({ form, setForm, certFile, setCertFile, isEdit = false, currentCert = null }) {
+    const [newFilePreview, setNewFilePreview] = useState(null);
+
+    useEffect(() => {
+        if (!certFile) {
+            setNewFilePreview(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(certFile);
+        setNewFilePreview(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [certFile]);
+
+    const existingFileUrl = currentCert?.fileUrl ? getUploadFullUrl(currentCert.fileUrl) : null;
+    const existingIsImage = IMAGE_EXT_REGEX.test(currentCert?.fileUrl || "");
+    const newIsImage = certFile?.type?.startsWith("image/");
+    const today = new Date().toISOString().split("T")[0];
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0] || null;
+        if (!file) {
+            setCertFile(null);
+            return;
+        }
+
+        if (isEdit) {
+            const isImageType = file.type?.startsWith("image/");
+            const isImageExt = IMAGE_EXT_REGEX.test(file.name || "");
+            if (!isImageType || !isImageExt) {
+                setCertFile(null);
+                e.target.value = "";
+                window.alert("Chỉ được chọn file ảnh khi cập nhật chứng chỉ (jpg, jpeg, png, webp, gif, bmp, svg).");
+                return;
+            }
+        }
+
+        setCertFile(file);
+    };
+
     return (
         <div className="space-y-3">
             <div>
@@ -490,6 +597,7 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false }) {
                     type="date"
                     className="form-input w-full border rounded px-3 py-2 text-sm"
                     value={form.issueDate}
+                    max={today}
                     onChange={(e) => setForm((p) => ({ ...p, issueDate: e.target.value }))}
                 />
             </div>
@@ -501,10 +609,54 @@ function CertForm({ form, setForm, certFile, setCertFile, isEdit = false }) {
                     type="file"
                     accept="image/*,.pdf"
                     className="text-sm"
-                    onChange={(e) => setCertFile(e.target.files[0] || null)}
+                    onChange={handleFileChange}
                 />
                 {certFile && <p className="text-xs text-gray-500 mt-1">{certFile.name}</p>}
             </div>
+
+            {(certFile || isEdit) && (
+                <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                        {certFile ? "Xem trước file đã chọn" : "File hiện tại"}
+                    </p>
+
+                    <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                        {certFile ? (
+                            newIsImage ? (
+                                <img
+                                    src={newFilePreview}
+                                    alt="preview new certificate"
+                                    className="w-full h-56 object-contain bg-white"
+                                />
+                            ) : (
+                                <iframe
+                                    src={newFilePreview}
+                                    title={certFile.name || "preview new certificate"}
+                                    className="w-full h-56 bg-white"
+                                />
+                            )
+                        ) : isEdit && existingFileUrl ? (
+                            existingIsImage ? (
+                                <img
+                                    src={existingFileUrl}
+                                    alt={currentCert?.name || "current certificate"}
+                                    className="w-full h-56 object-contain bg-white"
+                                />
+                            ) : (
+                                <iframe
+                                    src={existingFileUrl}
+                                    title={currentCert?.name || "current certificate"}
+                                    className="w-full h-56 bg-white"
+                                />
+                            )
+                        ) : (
+                            <div className="w-full h-40 flex items-center justify-center text-gray-400 bg-white">
+                                Chưa chọn file để xem trước
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

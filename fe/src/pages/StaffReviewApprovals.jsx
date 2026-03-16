@@ -66,6 +66,8 @@ const STATUS_LABEL = {
     OUTOFDATE: "Hết hạn",
 };
 
+const IMAGE_EXT_REGEX = /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i;
+
 /* ══════════════════════════════════════
    Generic list panel (reused for certs & degrees)
 ═══════════════════════════════════════ */
@@ -146,21 +148,6 @@ function ReviewPanel({ type }) {
         }
     };
 
-    /* ── Sort ── */
-    const toggleSort = (field) => {
-        if (sortBy === field) {
-            setOrder((p) => (p === "asc" ? "desc" : "asc"));
-        } else {
-            setSortBy(field);
-            setOrder("desc");
-        }
-        setPage(1);
-    };
-    const SortIcon = ({ field }) => {
-        if (sortBy !== field) return <span className="ml-1 text-gray-300">↕</span>;
-        return <span className="ml-1">{order === "asc" ? "↑" : "↓"}</span>;
-    };
-
     const totalPages = pagination.totalPages ?? 1;
 
     return (
@@ -195,103 +182,115 @@ function ReviewPanel({ type }) {
                         <option key={k} value={k}>{v}</option>
                     ))}
                 </select>
+                <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                >
+                    <option value="createdAt">Sắp xếp: Ngày gửi</option>
+                    <option value="name">Sắp xếp: Tên</option>
+                    {isCert && <option value="issueDate">Sắp xếp: Ngày cấp</option>}
+                </select>
+                <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={order}
+                    onChange={(e) => { setOrder(e.target.value); setPage(1); }}
+                >
+                    <option value="desc">Mới nhất trước</option>
+                    <option value="asc">Cũ nhất trước</option>
+                </select>
             </div>
 
-            {/* ── Table ── */}
+            {/* ── Card Grid ── */}
             {loading && !items.length ? (
                 <Loading />
             ) : (
                 <>
-                    <div className="bg-white rounded-xl shadow overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50 border-b">
-                                <tr>
-                                    <th className="text-left px-4 py-3 w-10">#</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("name")}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {items.length ? (
+                            items.map((item) => {
+                                const fileUrl = getUploadFullUrl(item.fileUrl);
+                                const isImage = IMAGE_EXT_REGEX.test(item.fileUrl || "");
+
+                                return (
+                                    <article
+                                        key={item._id}
+                                        className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
                                     >
-                                        {isCert ? "Tên chứng chỉ" : "Tên bằng cấp"}<SortIcon field="name" />
-                                    </th>
-                                    <th className="text-left px-4 py-3">Bác sĩ</th>
-                                    {isCert && <th className="text-left px-4 py-3">Cấp bởi</th>}
-                                    <th className="text-left px-4 py-3">Trạng thái</th>
-                                    <th
-                                        className="text-left px-4 py-3 cursor-pointer select-none"
-                                        onClick={() => toggleSort("createdAt")}
-                                    >
-                                        Ngày gửi<SortIcon field="createdAt" />
-                                    </th>
-                                    {filterStatus !== "PENDING" && (
-                                        <th className="text-left px-4 py-3">Người duyệt</th>
-                                    )}
-                                    <th className="text-center px-4 py-3 w-28">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.length ? (
-                                    items.map((item, idx) => (
-                                        <tr key={item._id} className="border-b hover:bg-gray-50">
-                                            <td className="px-4 py-3 text-gray-500">{(page - 1) * limit + idx + 1}</td>
-                                            <td className="px-4 py-3 font-medium">{item.name}</td>
-                                            <td className="px-4 py-3 text-gray-600">
-                                                {item.doctorId?.fullName || "—"}
-                                            </td>
-                                            {isCert && (
-                                                <td className="px-4 py-3 text-gray-600">{item.issuedBy}</td>
-                                            )}
-                                            <td className="px-4 py-3"><Badge status={item.status} /></td>
-                                            <td className="px-4 py-3 text-gray-500">
-                                                {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : "—"}
-                                            </td>
-                                            {filterStatus !== "PENDING" && (
-                                                <td className="px-4 py-3 text-gray-500">
-                                                    {item.reviewedBy?.fullName || "—"}
-                                                </td>
-                                            )}
-                                            <td className="px-4 py-3 text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    {/* View detail */}
-                                                    <button
-                                                        title="Xem chi tiết"
-                                                        className="text-blue-600 hover:text-blue-800"
-                                                        onClick={() => { setSelected(item); setDetailOpen(true); }}
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                    </button>
-                                                    {/* Review (only for PENDING) */}
-                                                    {item.status === "PENDING" && (
-                                                        <button
-                                                            title="Duyệt / Từ chối"
-                                                            className="text-green-600 hover:text-green-800"
-                                                            onClick={() => {
-                                                                setSelected(item);
-                                                                setAction("APPROVED");
-                                                                setNote("");
-                                                                setReviewOpen(true);
-                                                            }}
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
+                                        <button
+                                            type="button"
+                                            className="w-full h-44 bg-gray-100"
+                                            onClick={() => { setSelected(item); setDetailOpen(true); }}
+                                        >
+                                            {isImage ? (
+                                                <img
+                                                    src={fileUrl}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+                                                    <span className="text-4xl mb-2">📄</span>
+                                                    <span className="text-xs">File PDF / Document</span>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={isCert ? 8 : 7} className="px-4 py-8 text-center text-gray-400">
-                                            Không có dữ liệu.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                            )}
+                                        </button>
+
+                                        <div className="p-4 space-y-2">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h3 className="font-semibold text-gray-800 line-clamp-2">{item.name}</h3>
+                                                <Badge status={item.status} />
+                                            </div>
+
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Bác sĩ:</span> {item.doctorId?.fullName || "—"}
+                                            </p>
+                                            {isCert && (
+                                                <p className="text-sm text-gray-600">
+                                                    <span className="font-medium">Cấp bởi:</span> {item.issuedBy || "—"}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-gray-500">
+                                                Ngày gửi: {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : "—"}
+                                            </p>
+                                            {filterStatus !== "PENDING" && (
+                                                <p className="text-xs text-gray-500">
+                                                    Người duyệt: {item.reviewedBy?.fullName || "—"}
+                                                </p>
+                                            )}
+
+                                            <div className="flex items-center gap-2 pt-1">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary h-9 px-3 text-xs inline-flex items-center justify-center"
+                                                    onClick={() => { setSelected(item); setDetailOpen(true); }}
+                                                >
+                                                    Xem chi tiết
+                                                </button>
+                                                {item.status === "PENDING" && (
+                                                    <button
+                                                        type="button"
+                                                        className="h-9 px-3 text-xs rounded bg-green-600 text-white hover:bg-green-700 inline-flex items-center justify-center"
+                                                        onClick={() => {
+                                                            setSelected(item);
+                                                            setAction("APPROVED");
+                                                            setNote("");
+                                                            setReviewOpen(true);
+                                                        }}
+                                                    >
+                                                        Duyệt / Từ chối
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })
+                        ) : (
+                            <div className="col-span-full bg-white rounded-xl shadow border border-gray-100 px-4 py-10 text-center text-gray-400">
+                                Không có dữ liệu.
+                            </div>
+                        )}
                     </div>
 
                     {totalPages > 1 && (
@@ -312,6 +311,23 @@ function ReviewPanel({ type }) {
             <Modal open={detailOpen} onClose={() => setDetailOpen(false)} title="Chi tiết">
                 {selected && (
                     <div className="space-y-3 text-sm">
+                        {selected.fileUrl && (
+                            <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                                {IMAGE_EXT_REGEX.test(selected.fileUrl) ? (
+                                    <img
+                                        src={getUploadFullUrl(selected.fileUrl)}
+                                        alt={selected.name}
+                                        className="w-full h-64 object-contain bg-white"
+                                    />
+                                ) : (
+                                    <iframe
+                                        src={getUploadFullUrl(selected.fileUrl)}
+                                        title={selected.name}
+                                        className="w-full h-64 bg-white"
+                                    />
+                                )}
+                            </div>
+                        )}
                         <div><span className="text-gray-500">Tên:</span> <strong>{selected.name}</strong></div>
                         <div><span className="text-gray-500">Bác sĩ:</span> {selected.doctorId?.fullName || "—"}</div>
                         {isCert && (
@@ -350,7 +366,7 @@ function ReviewPanel({ type }) {
                                     rel="noreferrer"
                                     className="text-blue-600 hover:underline text-sm"
                                 >
-                                    📎 Xem file
+                                    Mở file ở tab mới
                                 </a>
                             </div>
                         )}
