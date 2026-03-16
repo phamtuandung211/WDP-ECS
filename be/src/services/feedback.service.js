@@ -48,8 +48,8 @@ export const createFeedback = async ({ accountId, appointmentId, point, comment 
         throwErr(403, "You can only review your own appointments");
     }
 
-    // Cuộc hẹn phải ở trạng thái CONFIRMED (đã diễn ra)
-    if (appointment.status !== APPOINTMENT_STATUS.CONFIRMED) {
+    // Cuộc hẹn phải ở trạng thái COMPLETED (bác sĩ đã hoàn tất)
+    if (appointment.status !== APPOINTMENT_STATUS.COMPLETED) {
         throwErr(400, `Cannot submit feedback for appointment with status: ${appointment.status}`);
     }
 

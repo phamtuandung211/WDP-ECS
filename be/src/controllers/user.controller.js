@@ -1,4 +1,5 @@
 import {
+    changePasswordByAccountId,
     getProfileByAccountId,
     updateProfileByAccountId,
 } from "../services/user.service.js";
@@ -35,6 +36,27 @@ export const updateMyProfile = async (req, res) => {
         let body;
         try { body = JSON.parse(err.message); } catch { body = { message: err.message || "Failed to update profile" }; }
         return res.status(err.status || 500).json(body);
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const { accountId } = req.user;
+        console.log(req.body);
+        
+        const {newPassword, oldPassword } = req.body;
+
+        if (typeof newPassword !== "string") {
+            return res.status(400).json({ message: "newPassword is required and must be a string" });
+        }
+        await changePasswordByAccountId({ accountId, oldPassword, newPassword });
+        return res.status(200).json({
+            message: "Password changed successfully",
+        });
+    } catch (err) {
+        return res.status(err.status || 500).json({
+            message: err.message || "Failed to change password",
+        });
     }
 };
 

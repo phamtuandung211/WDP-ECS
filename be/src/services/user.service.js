@@ -1,5 +1,6 @@
 import Account from "../models/Account.js";
 import { PROFILE_MODEL_BY_ROLE } from "../constants/ProfileModel.enum.js";
+import { comparePassword, hashPassword} from "../utils/password.js";
 
 
 function throwErr(status, message) {
@@ -90,3 +91,19 @@ export const updateProfileByAccountId = async ({ accountId, role, payload }) => 
 
     return profile;
 };
+
+export const changePasswordByAccountId = async ({ accountId, oldPassword, newPassword }) => {
+    if (typeof newPassword !== "string" || newPassword.length < 6)
+        throwErr(400, "newPassword must be a string with at least 6 characters");
+
+    const account = await Account.findById(accountId);
+    if (!account) throwErr(404, "Account not found");
+    const isMatch = await comparePassword(oldPassword, account.passwordHash);
+    if (!isMatch) throwErr(400, "Current password is incorrect");
+
+    const newPasswordHash = await hashPassword(newPassword);
+    account.passwordHash = newPasswordHash;
+    await account.save();
+    return;
+};
+
