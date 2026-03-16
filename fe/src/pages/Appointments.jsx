@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { appointmentService } from "../services";
+import { appointmentService, feedbackService } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { BasicAppointmentForm } from "../components/appointment/BasicAppointmentForm";
 import { AdvancedAppointmentForm } from "../components/appointment/AdvancedAppointmentForm";
@@ -18,9 +18,10 @@ export function Appointments() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
+  const [feedbackMap, setFeedbackMap] = useState({}); // { appointmentId: feedback }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("list"); // 'list', 'basic', 'advanced'
+  const [activeTab, setActiveTab] = useState("list");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
 
@@ -30,17 +31,38 @@ export function Appointments() {
     if (filterType !== "all") params.type = filterType;
 
     const response = await appointmentService.getAll(params);
-    setAppointments(response.data?.data || response.data || []);
+    const apts = response.data?.data || response.data || [];
+    setAppointments(apts);
+    return apts;
   };
 
-  // Fetch appointments
+  const refreshFeedbacks = async () => {
+    try {
+      const res = await feedbackService.getMy({ limit: 100 });
+      const feedbacks = res.data?.data || [];
+      // Build map: appointmentId (string) → feedback object
+      const map = {};
+      feedbacks.forEach((fb) => {
+        const aptId =
+          typeof fb.appointmentId === "object"
+            ? fb.appointmentId?._id
+            : fb.appointmentId;
+        if (aptId) map[aptId.toString()] = fb;
+      });
+      setFeedbackMap(map);
+    } catch {
+      // không ảnh hưởng UX nếu lỗi
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
 
-    const fetchAppointments = async () => {
+    const fetchAll = async () => {
       try {
         setLoading(true);
         await refreshAppointments();
+        await refreshFeedbacks();
       } catch (err) {
         console.error("Failed to load appointments:", err);
         setError("Failed to load appointments");
@@ -49,7 +71,7 @@ export function Appointments() {
       }
     };
 
-    fetchAppointments();
+    fetchAll();
   }, [user, filterStatus, filterType]);
 
   useAppointmentNotificationRefresh({
@@ -66,12 +88,9 @@ export function Appointments() {
   };
 
   const handleCancel = async (appointmentId) => {
-    if (
-      !globalThis.confirm("Are you sure you want to cancel this appointment?")
-    ) {
+    if (!globalThis.confirm("Are you sure you want to cancel this appointment?")) {
       return;
     }
-
     try {
       await appointmentService.cancel(appointmentId);
       setAppointments((prev) =>
@@ -88,7 +107,6 @@ export function Appointments() {
   };
 
   const handlePaymentExpired = (expiredAppointment) => {
-    // Remove appointment from list automatically when payment expires
     setAppointments((prev) =>
       prev.filter((apt) => apt._id !== expiredAppointment._id),
     );
@@ -157,7 +175,7 @@ export function Appointments() {
                 className="px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="all">All Status</option>
-                {Object.entries(APPOINTMENT_STATUS).map(([key, value]) => (
+                {Object.entries(APPOINTMENT_STATUS).map(([, value]) => (
                   <option key={value} value={value}>
                     {STATUS_LABELS[value]}
                   </option>
@@ -209,8 +227,8 @@ export function Appointments() {
                 <AppointmentCard
                   key={apt._id}
                   appointment={apt}
+                  existingFeedback={feedbackMap[apt._id?.toString()]}
                   onCancel={() => handleCancel(apt._id)}
-                  onPayNow={() => navigate(`/payment?appointmentId=${apt._id}`)}
                   onPaymentExpired={handlePaymentExpired}
                 />
               ))}
@@ -236,8 +254,8 @@ export function Appointments() {
   );
 }
 
-// Appointment Card Component
-function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
+// ─── Appointment Card ────────────────────────────────────────────────────────
+function AppointmentCard({ appointment, existingFeedback, onCancel, onPaymentExpired }) {
   const [isPayLoading, setIsPayLoading] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const navigate = useNavigate();
@@ -268,6 +286,7 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
   };
 
   const canCancel = appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT;
+  const isCompleted = appointment.status === APPOINTMENT_STATUS.COMPLETED;
 
   const handlePayNow = async () => {
     setIsPayLoading(true);
@@ -277,6 +296,13 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
       setIsPayLoading(false);
     }
   };
+
+  const renderStars = (point) =>
+    [1, 2, 3, 4, 5].map((s) => (
+      <span key={s} style={{ color: s <= point ? "#f59e0b" : "#d1d5db", fontSize: "16px" }}>
+        ★
+      </span>
+    ));
 
   return (
     <div className="appointment-card border border-gray-200 rounded-lg p-4 hover:shadow-lg transition">
@@ -291,9 +317,7 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
             ID: {appointment._id?.slice(-8)}
           </p>
         </div>
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}
-        >
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>
           {statusLabel}
         </span>
       </div>
@@ -306,9 +330,7 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
             showCountdown={true}
             onExpire={(expiredApt) => {
               setIsExpired(true);
-              if (onPaymentExpired) {
-                onPaymentExpired(expiredApt);
-              }
+              if (onPaymentExpired) onPaymentExpired(expiredApt);
             }}
           />
         </div>
@@ -319,18 +341,14 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Date:</span>
           <span className="font-medium">
-            {formatDate(
-              appointment.desiredDate || appointment.slotId?.startTime,
-            )}
+            {formatDate(appointment.desiredDate || appointment.slotId?.startTime)}
           </span>
         </div>
 
         {appointment.slotId && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Time:</span>
-            <span className="font-medium">
-              {formatTime(appointment.slotId)}
-            </span>
+            <span className="font-medium">{formatTime(appointment.slotId)}</span>
           </div>
         )}
 
@@ -357,13 +375,10 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Pay by:</span>
               <span className="font-medium text-red-600">
-                {new Date(appointment.paymentExpireAt).toLocaleTimeString(
-                  "en-US",
-                  {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  },
-                )}
+                {new Date(appointment.paymentExpireAt).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
           )}
@@ -376,8 +391,20 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
         )}
       </div>
 
+      {/* Feedback inline preview (nếu đã đánh giá) */}
+      {isCompleted && existingFeedback && (
+        <div className="apt-feedback-preview">
+          <span>{renderStars(existingFeedback.point)}</span>
+          {existingFeedback.comment && (
+            <span className="apt-feedback-preview__comment">
+              "{existingFeedback.comment}"
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="apt-card-actions">
         {appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT && (
           <button
             onClick={handlePayNow}
@@ -398,14 +425,13 @@ function AppointmentCard({ appointment, onCancel, onPaymentExpired }) {
           </button>
         )}
 
-        {appointment.status === APPOINTMENT_STATUS.COMPLETED && (
+        {/* Nút feedback — luôn render khi COMPLETED */}
+        {isCompleted && (
           <button
-            onClick={() => {
-              navigate(`/feedback?appointmentId=${appointment._id}`);
-            }}
-            className="flex-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+            onClick={() => navigate(`/feedback?appointmentId=${appointment._id}`)}
+            className={existingFeedback ? "apt-feedback-btn apt-feedback-btn--viewed" : "apt-feedback-btn apt-feedback-btn--new"}
           >
-            Leave Feedback
+            {existingFeedback ? "⭐ Xem đánh giá" : "✍️ Đánh giá ngay"}
           </button>
         )}
       </div>
