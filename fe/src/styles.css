@@ -3369,7 +3369,9 @@ button {
   padding: 0 44px 0 16px;
   font-size: 14px;
   outline: none;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .vblog-search-input:focus {

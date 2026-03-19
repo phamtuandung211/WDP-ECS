@@ -28,10 +28,16 @@ function stripHtml(value) {
 }
 
 function detectTopics(blog) {
-  const text = normalizeText(`${blog?.title || ""} ${stripHtml(blog?.content || "")}`);
+  const text = normalizeText(
+    `${blog?.title || ""} ${stripHtml(blog?.content || "")}`,
+  );
   const topics = [];
 
-  if (/(duc thuy tinh the|glocom|glaucoma|vong mac|benh|dau hieu|chan doan)/.test(text)) {
+  if (
+    /(duc thuy tinh the|glocom|glaucoma|vong mac|benh|dau hieu|chan doan)/.test(
+      text,
+    )
+  ) {
     topics.push("benhly");
   }
   if (/(phong ngua|thoi quen|bao ve|kho mat|man hinh|20-20-20)/.test(text)) {
@@ -53,11 +59,26 @@ function detectTopics(blog) {
 
 function topicVisual(topic) {
   const map = {
-    benhly: { icon: "🧪", gradient: "linear-gradient(135deg, #C8E0F4, #4A90C4)" },
-    phongngua: { icon: "💻", gradient: "linear-gradient(135deg, #D0E8F8, #6AADD4)" },
-    phauthu: { icon: "⚡", gradient: "linear-gradient(135deg, #B8D4F0, #2D6FA3)" },
-    treem: { icon: "🧒", gradient: "linear-gradient(135deg, #D4EDF8, #85C2E8)" },
-    congnghe: { icon: "🤖", gradient: "linear-gradient(135deg, #B8D4F0, #4A90C4)" },
+    benhly: {
+      icon: "🧪",
+      gradient: "linear-gradient(135deg, #C8E0F4, #4A90C4)",
+    },
+    phongngua: {
+      icon: "💻",
+      gradient: "linear-gradient(135deg, #D0E8F8, #6AADD4)",
+    },
+    phauthu: {
+      icon: "⚡",
+      gradient: "linear-gradient(135deg, #B8D4F0, #2D6FA3)",
+    },
+    treem: {
+      icon: "🧒",
+      gradient: "linear-gradient(135deg, #D4EDF8, #85C2E8)",
+    },
+    congnghe: {
+      icon: "🤖",
+      gradient: "linear-gradient(135deg, #B8D4F0, #4A90C4)",
+    },
   };
   return map[topic] || map.benhly;
 }
@@ -86,7 +107,9 @@ export function Blogs() {
         });
         setResult(data);
       } catch (err) {
-        setError(err.response?.data?.message || "Không tải được danh sách blog");
+        setError(
+          err.response?.data?.message || "Không tải được danh sách blog",
+        );
       } finally {
         setLoading(false);
       }
@@ -201,8 +224,8 @@ export function Blogs() {
               Bai viet <em>suc khoe</em>
             </h1>
             <p className="vblog-sub">
-              Cac bai viet chuyen sau ve cham soc mat va suc khoe, duoc bien soan
-              boi doi ngu nhan khoa VisionCare.
+              Cac bai viet chuyen sau ve cham soc mat va suc khoe, duoc bien
+              soan boi doi ngu nhan khoa VisionCare.
             </p>
           </div>
           <div className="vblog-search-wrap">
@@ -232,7 +255,9 @@ export function Blogs() {
             {label}
           </button>
         ))}
-        <span className="vblog-filter-count">{filteredBlogs.length} bai viet</span>
+        <span className="vblog-filter-count">
+          {filteredBlogs.length} bai viet
+        </span>
       </section>
 
       {error && <Alert type="error">{error}</Alert>}
@@ -288,9 +313,15 @@ export function Blogs() {
                   data-cat={blog._topicText}
                   data-title={normalizeText(blog.title)}
                 >
-                  <div className="vblog-row-img" style={{ background: blog._visual.gradient }}>
+                  <div
+                    className="vblog-row-img"
+                    style={{ background: blog._visual.gradient }}
+                  >
                     {blog.image ? (
-                      <img src={getUploadFullUrl(blog.image)} alt={blog.title} />
+                      <img
+                        src={getUploadFullUrl(blog.image)}
+                        alt={blog.title}
+                      />
                     ) : (
                       <span>{blog._visual.icon}</span>
                     )}
@@ -312,13 +343,17 @@ export function Blogs() {
                         <span>•</span>
                         <span>{readTime(blog.content)} phut doc</span>
                       </div>
-                      <span className="vblog-btn-read-ghost">Xem chi tiet →</span>
+                      <span className="vblog-btn-read-ghost">
+                        Xem chi tiet →
+                      </span>
                     </div>
                   </div>
                 </Link>
               ))
             ) : (
-              <div className="vblog-empty">Khong tim thay bai viet phu hop.</div>
+              <div className="vblog-empty">
+                Khong tim thay bai viet phu hop.
+              </div>
             )}
 
             {/*
@@ -342,19 +377,21 @@ export function Blogs() {
           <div className="vblog-widget">
             <h4 className="vblog-widget-title">Chu de</h4>
             <div className="vblog-tag-cloud">
-              {allTags.length
-                ? allTags.map((topic) => (
-                    <button
-                      key={topic}
-                      type="button"
-                      className={`vblog-tag ${activeTopic === topic ? "active" : ""}`}
-                      onClick={() => setActiveTopic(topic)}
-                    >
-                      {TOPIC_LABELS[topic] || topic}
-                      <span>{topicCounts[topic] || 0}</span>
-                    </button>
-                  ))
-                : <span className="vblog-tag">Chua co chu de</span>}
+              {allTags.length ? (
+                allTags.map((topic) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    className={`vblog-tag ${activeTopic === topic ? "active" : ""}`}
+                    onClick={() => setActiveTopic(topic)}
+                  >
+                    {TOPIC_LABELS[topic] || topic}
+                    <span>{topicCounts[topic] || 0}</span>
+                  </button>
+                ))
+              ) : (
+                <span className="vblog-tag">Chua co chu de</span>
+              )}
             </div>
           </div>
 
@@ -363,20 +400,29 @@ export function Blogs() {
             <div className="vblog-recent-list">
               {recentBlogs.length ? (
                 recentBlogs.map((blog) => (
-                  <Link key={blog._id} to={`/blogs/${blog._id}`} className="vblog-recent-item">
+                  <Link
+                    key={blog._id}
+                    to={`/blogs/${blog._id}`}
+                    className="vblog-recent-item"
+                  >
                     <div
                       className="vblog-recent-thumb"
                       style={{ background: blog._visual.gradient }}
                     >
                       {blog.image ? (
-                        <img src={getUploadFullUrl(blog.image)} alt={blog.title} />
+                        <img
+                          src={getUploadFullUrl(blog.image)}
+                          alt={blog.title}
+                        />
                       ) : (
                         <span>{blog._visual.icon}</span>
                       )}
                     </div>
                     <div className="vblog-recent-info">
                       <p className="vblog-recent-title">{blog.title}</p>
-                      <span className="vblog-recent-date">{formatDate(blog.createdAt)}</span>
+                      <span className="vblog-recent-date">
+                        {formatDate(blog.createdAt)}
+                      </span>
                     </div>
                   </Link>
                 ))
