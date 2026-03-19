@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 
 
 
-const DoctorCard = ({ doctor }) => {
+const DoctorCard = ({ doctor, onBookClick }) => {
 
     const navigate = useNavigate();
 
@@ -46,7 +46,15 @@ const DoctorCard = ({ doctor }) => {
 
 
             {/* Button */}
-            <button className="mt-4 border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition">
+            <button
+                type="button"
+                onClick={() => {
+                    if (typeof onBookClick === "function") {
+                        onBookClick(doctor);
+                    }
+                }}
+                className="mt-4 border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition"
+            >
                 Đặt lịch khám
             </button>
         </div>
