@@ -269,7 +269,7 @@ export function Header() {
         <a href="/services">Dịch vụ</a>
         <a href="/blogs">Bài viết</a>
         <a href="/doctors">Bác sĩ</a>
-        <a href="/appointments">Bảng điều khiển</a>
+        <a href="/appointments">Đặt lịch khám</a>
         <a href="/medical-records">Hồ sơ bệnh án</a>
         <a href="/feedbacks">Đánh giá</a>
         <NotificationIcon />
