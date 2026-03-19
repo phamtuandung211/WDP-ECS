@@ -17,6 +17,8 @@ function NotificationIcon() {
   } = useAppointmentNotification() || {};
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const ariaLabel =
+    unreadCount > 0 ? `Thong bao, ${unreadCount} chua doc` : "Thong bao";
 
   useEffect(() => {
     const onOutside = (e) => {
@@ -32,7 +34,7 @@ function NotificationIcon() {
         type="button"
         className="header-notification-icon"
         title="Thông báo lịch hẹn"
-        aria-label={`Thông báo${unreadCount > 0 ? `, ${unreadCount} chưa đọc` : ""}`}
+        aria-label={ariaLabel}
         aria-expanded={open}
         onClick={(e) => {
           e.stopPropagation();
@@ -133,12 +135,19 @@ export function Header() {
   const role = user?.role;
   const isSaleStaff = role === ROLE_NAME.SALE_STAFF;
   const isCustomerSupport = role === ROLE_NAME.CUSTOMER_SUPPORT;
-  const isAdmin = role === "ADMIN";
+  const isAdmin = role === ROLE_NAME.ADMIN;
   const isDoctor = role === ROLE_NAME.DOCTOR;
+
+  const getLogoHref = () => {
+    if (isSaleStaff) return "/staff/dashboard";
+    if (isAdmin) return "/admin/statistics";
+    if (isDoctor) return "/appointments";
+    return "/";
+  };
 
   const handleLogout = () => {
     logout();
-    window.location.href = "/";
+    globalThis.location.href = "/";
   };
 
   const getUserName = () => user?.fullName || user?.name || user?.email || "U";
@@ -147,104 +156,160 @@ export function Header() {
     ? user.avatar
     : `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
 
+  const renderUserMenu = () => {
+    if (isSaleStaff) {
+      return (
+        <>
+          <a href="/staff/manage-services">Quản lý dịch vụ</a>
+          <a href="/staff/manage-blogs">Quản lý bài viết</a>
+          <a href="/staff/manage-specializations">Quản lý chuyên khoa</a>
+          <a href="/staff/review-approvals">Duyệt hồ sơ</a>
+          <a href="/appointments">Bảng điều khiển</a>
+          <NotificationIcon />
+          <Link to="/profile" className="header-user-link">
+            <span className="user-info">
+              <img
+                src={avatarSrc}
+                alt="avatar"
+                className="header-avatar"
+                onError={(e) => {
+                  e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                }}
+              />
+              Xin chào, {getUserName()} ({user.role})
+            </span>
+          </Link>
+          <button onClick={handleLogout} className="btn-logout">
+            Đăng xuất
+          </button>
+        </>
+      );
+    }
+
+    if (isCustomerSupport) {
+      return (
+        <>
+          <a href="/support/chat">Chat hỗ trợ</a>
+          <Link to="/profile" className="header-user-link">
+            <span className="user-info">
+              <img
+                src={avatarSrc}
+                alt="avatar"
+                className="header-avatar"
+                onError={(e) => {
+                  e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                }}
+              />
+              Xin chào, {getUserName()} ({user.role})
+            </span>
+          </Link>
+          <button onClick={handleLogout} className="btn-logout">
+            Đăng xuất
+          </button>
+        </>
+      );
+    }
+
+    if (isAdmin) {
+      return (
+        <>
+          <a href="/admin/statistics">Thống kê</a>
+          <a href="/appointments">Bảng điều khiển</a>
+          <NotificationIcon />
+          <Link to="/profile" className="header-user-link">
+            <span className="user-info">
+              <img
+                src={avatarSrc}
+                alt="avatar"
+                className="header-avatar"
+                onError={(e) => {
+                  e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                }}
+              />
+              Xin chào, {getUserName()}
+            </span>
+          </Link>
+          <button onClick={handleLogout} className="btn-logout">
+            Đăng xuất
+          </button>
+        </>
+      );
+    }
+
+    if (isDoctor) {
+      return (
+        <>
+          <a href="/appointments">Bảng điều khiển</a>
+          <a href="/doctor/certificates">Chứng chỉ</a>
+          <a href="/doctor/degrees">Bằng cấp</a>
+          <NotificationIcon />
+          <Link to="/profile" className="header-user-link">
+            <span className="user-info">
+              <img
+                src={avatarSrc}
+                alt="avatar"
+                className="header-avatar"
+                onError={(e) => {
+                  e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+                }}
+              />
+              Xin chào, {getUserName()}
+            </span>
+          </Link>
+          <button onClick={handleLogout} className="btn-logout">
+            Đăng xuất
+          </button>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <a href="/">Trang chủ</a>
+        <a href="/services">Dịch vụ</a>
+        <a href="/blogs">Bài viết</a>
+        <a href="/doctors">Bác sĩ</a>
+        <a href="/appointments">Bảng điều khiển</a>
+        <a href="/medical-records">Hồ sơ bệnh án</a>
+        <a href="/feedbacks">Đánh giá</a>
+        <NotificationIcon />
+        <Link to="/profile" className="header-user-link">
+          <span className="user-info">
+            <img
+              src={avatarSrc}
+              alt="avatar"
+              className="header-avatar"
+              onError={(e) => {
+                e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
+              }}
+            />
+            Xin chào, {getUserName()}
+          </span>
+        </Link>
+        <button onClick={handleLogout} className="btn-logout">
+          Đăng xuất
+        </button>
+      </>
+    );
+  };
+
   return (
     <header className="header">
       <div className="container">
-        <a href={isSaleStaff ? "/staff/dashboard" : "/"} className="logo">
+        <a href={getLogoHref()} className="logo">
           WDP-ECS
         </a>
         <nav className="nav">
           {user ? (
-            // TRƯỜNG HỢP: ĐÃ ĐĂNG NHẬP
-            isSaleStaff ? (
-              /* 1. Giao diện dành riêng cho SALE STAFF */
-              <>
-                <a href="/staff/manage-services">Manage Services</a>
-                <a href="/staff/manage-blogs">Manage Blogs</a>
-                <a href="/staff/manage-specializations">
-                  Manage Specializations
-                </a>
-                <a href="/staff/review-approvals">✅ Duyệt hồ sơ</a>
-
-                <a href="/appointments">📋 My Dashboard</a>
-
-                <NotificationIcon />
-                <Link to="/profile" className="header-user-link">
-                  <span className="user-info">
-                    <img
-                      src={avatarSrc}
-                      alt="avatar"
-                      className="header-avatar"
-                      onError={(e) => {
-                        e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
-                      }}
-                    />
-                    Xin chào, {getUserName()} ({user.role})
-                  </span>
-                </Link>
-                <button onClick={handleLogout} className="btn-logout">
-                  Logout
-                </button>
-              </>
-            ) : isCustomerSupport ? (
-              /* 2. Giao diện dành riêng cho CUSTOMER SUPPORT */
-              <>
-                <a href="/support/chat">Chat Ho Tro</a>
-                <Link to="/profile" className="header-user-link">
-                  <span className="user-info">
-                    <img
-                      src={avatarSrc}
-                      alt="avatar"
-                      className="header-avatar"
-                      onError={(e) => {
-                        e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
-                      }}
-                    />
-                    Xin chào, {getUserName()} ({user.role})
-                  </span>
-                </Link>
-                <button onClick={handleLogout} className="btn-logout">
-                  Logout
-                </button>
-              </>
-            ) : (
-              /* 2. Giao diện dành cho USER THƯỜNG hoặc DOCTOR hoặc ADMIN */
-              <>
-                <a href="/">Home</a>
-                <a href="/services">Services</a>
-                <a href="/blogs">Blogs</a>
-                <a href="/doctors">Doctors</a>
-                <a href="/appointments">📋 My Dashboard</a>
-                <a href="/medical-records">Hồ sơ bệnh án</a>
-                <a href="/feedbacks">Đánh giá</a>
-                {isAdmin && <a href="/admin/statistics">📊 Thống kê</a>}
-                <NotificationIcon />
-                <Link to="/profile" className="header-user-link">
-                  <span className="user-info">
-                    <img
-                      src={avatarSrc}
-                      alt="avatar"
-                      className="header-avatar"
-                      onError={(e) => {
-                        e.currentTarget.src = `${DEFAULT_AVATAR}&name=${encodeURIComponent(getUserName())}`;
-                      }}
-                    />
-                    Xin chào, {getUserName()}
-                  </span>
-                </Link>
-                <button onClick={handleLogout} className="btn-logout">
-                  Logout
-                </button>
-              </>
-            )
+            renderUserMenu()
           ) : (
             // TRƯỜNG HỢP: CHƯA ĐĂNG NHẬP (GUEST)
             <>
-              <a href="/">Home</a>
-              <a href="/services">Services</a>
-              <a href="/blogs">Blogs</a>
-              <a href="/doctors">Doctors</a>
-              <a href="/login">Login</a>
+              <a href="/">Trang chủ</a>
+              <a href="/services">Dịch vụ</a>
+              <a href="/blogs">Bài viết</a>
+              <a href="/doctors">Bác sĩ</a>
+              <a href="/login">Đăng nhập</a>
             </>
           )}
         </nav>
