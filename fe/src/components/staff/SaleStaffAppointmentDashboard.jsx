@@ -21,6 +21,7 @@ export function SaleStaffAppointmentDashboard() {
   });
   const [availableSlots, setAvailableSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const today = new Date().toISOString().split("T")[0];
 
   // Fetch waiting assignments and doctors
   useEffect(() => {
@@ -89,11 +90,19 @@ export function SaleStaffAppointmentDashboard() {
   }, [assignmentData.date, assignmentData.doctorId, selectedAppointment]);
 
   const handleSelectAppointment = (appointment) => {
+    const desiredDate = appointment.desiredDate?.split("T")[0] || "";
+    const selectedDate =
+      appointment.type === APPOINTMENT_TYPE.BASIC &&
+      desiredDate &&
+      desiredDate < today
+        ? today
+        : desiredDate;
+
     setSelectedAppointment(appointment);
     setAssignmentData({
       doctorId: "",
       slotId: "",
-      date: appointment.desiredDate?.split("T")[0] || "",
+      date: selectedDate,
     });
     setAvailableSlots([]);
   };
@@ -113,6 +122,15 @@ export function SaleStaffAppointmentDashboard() {
 
     if (!assignmentData.doctorId || !assignmentData.slotId) {
       alert("Please select both doctor and time slot");
+      return;
+    }
+
+    if (
+      selectedAppointment?.type === APPOINTMENT_TYPE.BASIC &&
+      assignmentData.date &&
+      assignmentData.date < today
+    ) {
+      alert("Cannot assign a past date for BASIC appointment");
       return;
     }
 
@@ -289,6 +307,7 @@ export function SaleStaffAppointmentDashboard() {
                       id="date"
                       name="date"
                       value={assignmentData.date}
+                      min={today}
                       onChange={handleAssignmentChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
