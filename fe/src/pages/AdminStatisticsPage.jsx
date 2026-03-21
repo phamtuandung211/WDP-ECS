@@ -20,6 +20,21 @@ function SectionTitle({ children }) {
   return <h3 className="stats-section-title">{children}</h3>;
 }
 
+function formatPeriodLabel(period, groupBy) {
+  if (groupBy !== "day" || typeof period !== "string") {
+    return period;
+  }
+
+  const datePattern = /^(\d{4})[/-](\d{2})[/-](\d{2})$/;
+  const match = datePattern.exec(period);
+  if (!match) {
+    return period;
+  }
+
+  const [, year, month, day] = match;
+  return `${day}/${month}/${year}`;
+}
+
 function DateFilter({ from, to, groupBy, onChange }) {
   return (
     <div className="filter-bar stats-filter">
@@ -226,7 +241,7 @@ function RevenueTab() {
                 {data.length ? (
                   data.map((r) => (
                     <tr key={r.period}>
-                      <td>{r.period}</td>
+                      <td>{formatPeriodLabel(r.period, filter.groupBy)}</td>
                       <td>{Number(r.totalRevenue).toLocaleString("vi-VN")}</td>
                       <td>{r.count}</td>
                     </tr>
@@ -310,7 +325,7 @@ function AppointmentsStatsTab() {
                   });
                   return (
                     <tr key={row.period}>
-                      <td>{row.period}</td>
+                      <td>{formatPeriodLabel(row.period, filter.groupBy)}</td>
                       <td>
                         <strong>{row.total}</strong>
                       </td>
