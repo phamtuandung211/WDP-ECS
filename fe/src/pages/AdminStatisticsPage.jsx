@@ -7,7 +7,9 @@ import { PageHeader } from "../components/PageHeader";
 function StatCard({ label, value, sub, color = "#4361ee" }) {
   return (
     <div className="stat-card" style={{ borderTop: `4px solid ${color}` }}>
-      <div className="stat-value" style={{ color }}>{value ?? "—"}</div>
+      <div className="stat-value" style={{ color }}>
+        {value ?? "—"}
+      </div>
       <div className="stat-label">{label}</div>
       {sub && <div className="stat-sub">{sub}</div>}
     </div>
@@ -57,15 +59,11 @@ function OverviewTab() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState({ from: "", to: "" });
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await statisticsService.getOverview({
-        from: filter.from || undefined,
-        to: filter.to || undefined,
-      });
+      const res = await statisticsService.getOverview();
       setData(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || "Lỗi tải dữ liệu");
@@ -74,31 +72,70 @@ function OverviewTab() {
     }
   };
 
-  useEffect(() => { load(); }, [filter]);
-
-  const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
     <div>
-      <DateFilter from={filter.from} to={filter.to} onChange={handleFilter} />
-      {loading ? <Loading /> : error ? <Alert type="error">{error}</Alert> : (
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
         <>
           <SectionTitle>Tài khoản</SectionTitle>
           <div className="stat-grid">
-            <StatCard label="Tổng tài khoản" value={data.totalAccounts.total} color="#4361ee" />
-            <StatCard label="Đang hoạt động" value={data.totalAccounts.active} color="#2ecc71" />
-            <StatCard label="Bác sĩ" value={data.totalDoctors} color="#9b59b6" />
-            <StatCard label="Khách hàng" value={data.totalCustomers} color="#3498db" />
+            <StatCard
+              label="Tổng tài khoản"
+              value={data.totalAccounts.total}
+              color="#4361ee"
+            />
+            <StatCard
+              label="Đang hoạt động"
+              value={data.totalAccounts.active}
+              color="#2ecc71"
+            />
+            <StatCard
+              label="Bác sĩ"
+              value={data.totalDoctors}
+              color="#9b59b6"
+            />
+            <StatCard
+              label="Khách hàng"
+              value={data.totalCustomers}
+              color="#3498db"
+            />
           </div>
 
           <SectionTitle>Cuộc hẹn</SectionTitle>
           <div className="stat-grid">
-            <StatCard label="Tổng cuộc hẹn" value={data.totalAppointments} color="#4361ee" />
-            <StatCard label="Đã xác nhận" value={data.confirmedAppointments} color="#27ae60" />
-            <StatCard label="Đã hủy" value={data.canceledCount} color="#e74c3c" />
-            <StatCard label="Chờ thanh toán" value={data.pendingPaymentCount} color="#e67e22" />
+            <StatCard
+              label="Tổng cuộc hẹn"
+              value={data.totalAppointments}
+              color="#4361ee"
+            />
+            <StatCard
+              label="Đã xác nhận"
+              value={data.confirmedAppointments}
+              color="#27ae60"
+            />
+            <StatCard
+              label="Đã hủy"
+              value={data.canceledCount}
+              color="#e74c3c"
+            />
+            <StatCard
+              label="Chờ thanh toán"
+              value={data.pendingPaymentCount}
+              color="#e67e22"
+            />
             <StatCard label="BASIC" value={data.basicRevenue} color="#3498db" />
-            <StatCard label="ADVANCED" value={data.advancedRevenue} color="#9b59b6" />
+            <StatCard
+              label="ADVANCED"
+              value={data.advancedRevenue}
+              color="#9b59b6"
+            />
           </div>
 
           <SectionTitle>Doanh thu & Hồ sơ</SectionTitle>
@@ -108,11 +145,19 @@ function OverviewTab() {
               value={Number(data.totalRevenue).toLocaleString("vi-VN") + " ₫"}
               color="#27ae60"
             />
-            <StatCard label="Hồ sơ bệnh án" value={data.medicalRecords.total} color="#16a085" />
+            <StatCard
+              label="Hồ sơ bệnh án"
+              value={data.medicalRecords.total}
+              color="#16a085"
+            />
             <StatCard
               label="Tổng đánh giá"
               value={data.feedbacks.total}
-              sub={data.feedbacks.avgRating ? `Avg: ${data.feedbacks.avgRating} ★` : null}
+              sub={
+                data.feedbacks.avgRating
+                  ? `Avg: ${data.feedbacks.avgRating} ★`
+                  : null
+              }
               color="#f39c12"
             />
           </div>
@@ -145,7 +190,9 @@ function RevenueTab() {
     }
   };
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    load();
+  }, [filter]);
 
   const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
 
@@ -154,7 +201,11 @@ function RevenueTab() {
   return (
     <div>
       <DateFilter {...filter} onChange={handleFilter} />
-      {loading ? <Loading /> : error ? <Alert type="error">{error}</Alert> : (
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
         <>
           <div className="stat-card highlight-card">
             <span className="stat-sub">Tổng doanh thu kỳ đã chọn</span>
@@ -172,14 +223,20 @@ function RevenueTab() {
                 </tr>
               </thead>
               <tbody>
-                {data.length ? data.map((r) => (
-                  <tr key={r.period}>
-                    <td>{r.period}</td>
-                    <td>{Number(r.totalRevenue).toLocaleString("vi-VN")}</td>
-                    <td>{r.count}</td>
+                {data.length ? (
+                  data.map((r) => (
+                    <tr key={r.period}>
+                      <td>{r.period}</td>
+                      <td>{Number(r.totalRevenue).toLocaleString("vi-VN")}</td>
+                      <td>{r.count}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="cell-empty">
+                      Không có dữ liệu.
+                    </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan={3} className="cell-empty">Không có dữ liệu.</td></tr>
                 )}
               </tbody>
             </table>
@@ -213,14 +270,20 @@ function AppointmentsStatsTab() {
     }
   };
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    load();
+  }, [filter]);
 
   const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
 
   return (
     <div>
       <DateFilter {...filter} onChange={handleFilter} />
-      {loading ? <Loading /> : error ? <Alert type="error">{error}</Alert> : (
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -235,26 +298,36 @@ function AppointmentsStatsTab() {
               </tr>
             </thead>
             <tbody>
-              {data.length ? data.map((row) => {
-                const byStatus = {};
-                const byType = {};
-                row.breakdown.forEach((b) => {
-                  if (b.status) byStatus[b.status] = (byStatus[b.status] || 0) + b.count;
-                  if (b.type) byType[b.type] = (byType[b.type] || 0) + b.count;
-                });
-                return (
-                  <tr key={row.period}>
-                    <td>{row.period}</td>
-                    <td><strong>{row.total}</strong></td>
-                    <td>{byStatus.CONFIRMED ?? 0}</td>
-                    <td>{byStatus.CANCELED ?? 0}</td>
-                    <td>{byStatus.PENDING_PAYMENT ?? 0}</td>
-                    <td>{byType.BASIC ?? 0}</td>
-                    <td>{byType.ADVANCED ?? 0}</td>
-                  </tr>
-                );
-              }) : (
-                <tr><td colSpan={7} className="cell-empty">Không có dữ liệu.</td></tr>
+              {data.length ? (
+                data.map((row) => {
+                  const byStatus = {};
+                  const byType = {};
+                  row.breakdown.forEach((b) => {
+                    if (b.status)
+                      byStatus[b.status] = (byStatus[b.status] || 0) + b.count;
+                    if (b.type)
+                      byType[b.type] = (byType[b.type] || 0) + b.count;
+                  });
+                  return (
+                    <tr key={row.period}>
+                      <td>{row.period}</td>
+                      <td>
+                        <strong>{row.total}</strong>
+                      </td>
+                      <td>{byStatus.CONFIRMED ?? 0}</td>
+                      <td>{byStatus.CANCELED ?? 0}</td>
+                      <td>{byStatus.PENDING_PAYMENT ?? 0}</td>
+                      <td>{byType.BASIC ?? 0}</td>
+                      <td>{byType.ADVANCED ?? 0}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="cell-empty">
+                    Không có dữ liệu.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -290,15 +363,24 @@ function DoctorsStatsTab() {
     }
   };
 
-  useEffect(() => { load(); }, [filter, page]);
+  useEffect(() => {
+    load();
+  }, [filter, page]);
 
-  const handleFilter = (key, val) => { setPage(1); setFilter((f) => ({ ...f, [key]: val })); };
+  const handleFilter = (key, val) => {
+    setPage(1);
+    setFilter((f) => ({ ...f, [key]: val }));
+  };
   const { data: doctors, metadata } = result;
 
   return (
     <div>
       <DateFilter from={filter.from} to={filter.to} onChange={handleFilter} />
-      {loading ? <Loading /> : error ? <Alert type="error">{error}</Alert> : (
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
         <>
           <div className="table-wrap">
             <table className="data-table">
@@ -313,26 +395,48 @@ function DoctorsStatsTab() {
                 </tr>
               </thead>
               <tbody>
-                {doctors.length ? doctors.map((d, i) => (
-                  <tr key={d.doctorId}>
-                    <td>{(page - 1) * limit + i + 1}</td>
-                    <td>{d.fullName || "—"}</td>
-                    <td><strong>{d.totalAppointments}</strong></td>
-                    <td>{d.confirmed}</td>
-                    <td>{d.completed}</td>
-                    <td>{d.canceled}</td>
+                {doctors.length ? (
+                  doctors.map((d, i) => (
+                    <tr key={d.doctorId}>
+                      <td>{(page - 1) * limit + i + 1}</td>
+                      <td>{d.fullName || "—"}</td>
+                      <td>
+                        <strong>{d.totalAppointments}</strong>
+                      </td>
+                      <td>{d.confirmed}</td>
+                      <td>{d.completed}</td>
+                      <td>{d.canceled}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="cell-empty">
+                      Không có dữ liệu.
+                    </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan={6} className="cell-empty">Không có dữ liệu.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
           {metadata?.totalPages > 1 && (
             <div className="pagination">
-              <button className="btn btn-secondary" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button>
-              <span className="pagination-info">Trang {page}/{metadata.totalPages}</span>
-              <button className="btn btn-secondary" disabled={page >= metadata.totalPages} onClick={() => setPage(p => p + 1)}>Sau</button>
+              <button
+                className="btn btn-secondary"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Trước
+              </button>
+              <span className="pagination-info">
+                Trang {page}/{metadata.totalPages}
+              </span>
+              <button
+                className="btn btn-secondary"
+                disabled={page >= metadata.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </button>
             </div>
           )}
         </>
@@ -363,48 +467,81 @@ function FeedbackStatsTab() {
     }
   };
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    load();
+  }, [filter]);
 
   const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
-  const STAR_COLORS = ["", "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#27ae60"];
+  const STAR_COLORS = [
+    "",
+    "#e74c3c",
+    "#e67e22",
+    "#f1c40f",
+    "#2ecc71",
+    "#27ae60",
+  ];
 
   return (
     <div>
       <DateFilter from={filter.from} to={filter.to} onChange={handleFilter} />
-      {loading ? <Loading /> : error ? <Alert type="error">{error}</Alert> : data && (
-        <>
-          <div className="stat-grid">
-            <StatCard label="Tổng đánh giá" value={data.totalFeedbacks} color="#f39c12" />
-            <StatCard label="Chưa review" value={data.unreviewedCount} color="#e74c3c" />
-            <StatCard
-              label="Rating trung bình"
-              value={data.avgRating ? `${data.avgRating} ★` : "—"}
-              color="#27ae60"
-            />
-          </div>
-          <SectionTitle>Phân bổ số sao</SectionTitle>
-          <div className="rating-distribution">
-            {[5, 4, 3, 2, 1].map((star) => {
-              const item = data.distribution.find((d) => d.point === star);
-              const count = item?.count ?? 0;
-              const pct = data.totalFeedbacks ? Math.round((count / data.totalFeedbacks) * 100) : 0;
-              return (
-                <div key={star} className="rating-bar-row">
-                  <span className="rating-star" style={{ color: STAR_COLORS[star] }}>
-                    {star} ★
-                  </span>
-                  <div className="rating-bar-track">
-                    <div
-                      className="rating-bar-fill"
-                      style={{ width: `${pct}%`, background: STAR_COLORS[star] }}
-                    />
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
+        data && (
+          <>
+            <div className="stat-grid">
+              <StatCard
+                label="Tổng đánh giá"
+                value={data.totalFeedbacks}
+                color="#f39c12"
+              />
+              <StatCard
+                label="Chưa review"
+                value={data.unreviewedCount}
+                color="#e74c3c"
+              />
+              <StatCard
+                label="Rating trung bình"
+                value={data.avgRating ? `${data.avgRating} ★` : "—"}
+                color="#27ae60"
+              />
+            </div>
+            <SectionTitle>Phân bổ số sao</SectionTitle>
+            <div className="rating-distribution">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const item = data.distribution.find((d) => d.point === star);
+                const count = item?.count ?? 0;
+                const pct = data.totalFeedbacks
+                  ? Math.round((count / data.totalFeedbacks) * 100)
+                  : 0;
+                return (
+                  <div key={star} className="rating-bar-row">
+                    <span
+                      className="rating-star"
+                      style={{ color: STAR_COLORS[star] }}
+                    >
+                      {star} ★
+                    </span>
+                    <div className="rating-bar-track">
+                      <div
+                        className="rating-bar-fill"
+                        style={{
+                          width: `${pct}%`,
+                          background: STAR_COLORS[star],
+                        }}
+                      />
+                    </div>
+                    <span className="rating-count">
+                      {count} ({pct}%)
+                    </span>
                   </div>
-                  <span className="rating-count">{count} ({pct}%)</span>
-                </div>
-              );
-            })}
-          </div>
-        </>
+                );
+              })}
+            </div>
+          </>
+        )
       )}
     </div>
   );
@@ -433,14 +570,20 @@ function AccountsStatsTab() {
     }
   };
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    load();
+  }, [filter]);
 
   const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
 
   return (
     <div>
       <DateFilter {...filter} onChange={handleFilter} />
-      {loading ? <Loading /> : error ? <Alert type="error">{error}</Alert> : (
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -454,21 +597,31 @@ function AccountsStatsTab() {
               </tr>
             </thead>
             <tbody>
-              {data.length ? data.map((row) => {
-                const byRole = {};
-                row.byRole.forEach((r) => { byRole[r.role] = r.count; });
-                return (
-                  <tr key={row.period}>
-                    <td>{row.period}</td>
-                    <td><strong>{row.total}</strong></td>
-                    <td>{byRole.CUSTOMER ?? 0}</td>
-                    <td>{byRole.DOCTOR ?? 0}</td>
-                    <td>{byRole.SALE_STAFF ?? 0}</td>
-                    <td>{byRole.CUSTOMER_SUPPORT ?? 0}</td>
-                  </tr>
-                );
-              }) : (
-                <tr><td colSpan={6} className="cell-empty">Không có dữ liệu.</td></tr>
+              {data.length ? (
+                data.map((row) => {
+                  const byRole = {};
+                  row.byRole.forEach((r) => {
+                    byRole[r.role] = r.count;
+                  });
+                  return (
+                    <tr key={row.period}>
+                      <td>{row.period}</td>
+                      <td>
+                        <strong>{row.total}</strong>
+                      </td>
+                      <td>{byRole.CUSTOMER ?? 0}</td>
+                      <td>{byRole.DOCTOR ?? 0}</td>
+                      <td>{byRole.SALE_STAFF ?? 0}</td>
+                      <td>{byRole.CUSTOMER_SUPPORT ?? 0}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="cell-empty">
+                    Không có dữ liệu.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
