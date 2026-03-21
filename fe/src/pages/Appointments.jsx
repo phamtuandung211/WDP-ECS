@@ -91,10 +91,7 @@ function getCalendarColor(appointment, existingFeedback) {
       txt: "var(--apt-color-pending-review-txt)",
     };
   }
-  if (
-    appointment.status === APPOINTMENT_STATUS.COMPLETED &&
-    existingFeedback
-  ) {
+  if (appointment.status === APPOINTMENT_STATUS.COMPLETED && existingFeedback) {
     return {
       bg: "var(--apt-color-completed)",
       bd: "var(--apt-color-completed-bd)",
@@ -271,7 +268,9 @@ export function Appointments() {
   };
 
   const handleCancel = async (appointmentId) => {
-    if (!globalThis.confirm("Are you sure you want to cancel this appointment?")) {
+    if (
+      !globalThis.confirm("Are you sure you want to cancel this appointment?")
+    ) {
       return;
     }
     try {
@@ -381,7 +380,10 @@ export function Appointments() {
           {/* Filters */}
           <div className="flex gap-4 mb-4 flex-wrap">
             <div>
-              <label htmlFor="appointment-status-filter" className="block text-sm font-medium mb-1">
+              <label
+                htmlFor="appointment-status-filter"
+                className="block text-sm font-medium mb-1"
+              >
                 Filter by Status
               </label>
               <select
@@ -400,7 +402,10 @@ export function Appointments() {
             </div>
 
             <div>
-              <label htmlFor="appointment-type-filter" className="block text-sm font-medium mb-1">
+              <label
+                htmlFor="appointment-type-filter"
+                className="block text-sm font-medium mb-1"
+              >
                 Filter by Type
               </label>
               <select
@@ -496,7 +501,9 @@ export function Appointments() {
                                 <button
                                   type="button"
                                   key={apt._id}
-                                  onClick={() => setSelectedAppointmentId(apt._id)}
+                                  onClick={() =>
+                                    setSelectedAppointmentId(apt._id)
+                                  }
                                   className="apt-calendar__block"
                                   style={{
                                     background: c.bg,
@@ -505,22 +512,28 @@ export function Appointments() {
                                   }}
                                 >
                                   <div className="apt-calendar__block-type">
-                                    {apt.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}
+                                    {apt.type === APPOINTMENT_TYPE.BASIC
+                                      ? "Basic"
+                                      : "Advanced"}
                                   </div>
                                   <div className="apt-calendar__block-doctor">
                                     {doctorLastName || "Assigned"}
                                   </div>
 
-                                  {apt.status === APPOINTMENT_STATUS.COMPLETED &&
+                                  {apt.status ===
+                                    APPOINTMENT_STATUS.COMPLETED &&
                                     existing && (
                                       <div className="apt-calendar__block-review">
                                         {[1, 2, 3, 4, 5].map((s) => (
-                                          <span key={s}>{s <= existing.point ? "★" : "☆"}</span>
+                                          <span key={s}>
+                                            {s <= existing.point ? "★" : "☆"}
+                                          </span>
                                         ))}
                                       </div>
                                     )}
 
-                                  {apt.status === APPOINTMENT_STATUS.COMPLETED &&
+                                  {apt.status ===
+                                    APPOINTMENT_STATUS.COMPLETED &&
                                     !existing && (
                                       <div className="apt-calendar__block-review-pending">
                                         ✍ Đánh giá ngay
@@ -535,14 +548,22 @@ export function Appointments() {
                     </React.Fragment>
                   ))}
 
-                  {weekDates.some((day) => calendarData.noTime[toDateKey(day)]?.length) && (
+                  {weekDates.some(
+                    (day) => calendarData.noTime[toDateKey(day)]?.length,
+                  ) && (
                     <>
-                      <div className="apt-calendar__no-time-label">Chưa có giờ</div>
+                      <div className="apt-calendar__no-time-label">
+                        Chưa có giờ
+                      </div>
                       {weekDates.map((day) => {
                         const dayKey = toDateKey(day);
-                        const noTimeAppointments = calendarData.noTime[dayKey] || [];
+                        const noTimeAppointments =
+                          calendarData.noTime[dayKey] || [];
                         return (
-                          <div key={`${dayKey}__no-time`} className="apt-calendar__no-time-cell">
+                          <div
+                            key={`${dayKey}__no-time`}
+                            className="apt-calendar__no-time-cell"
+                          >
                             {noTimeAppointments.map((apt) => {
                               const existing = feedbackMap[apt._id?.toString()];
                               const c = getCalendarColor(apt, existing);
@@ -550,7 +571,9 @@ export function Appointments() {
                                 <button
                                   type="button"
                                   key={apt._id}
-                                  onClick={() => setSelectedAppointmentId(apt._id)}
+                                  onClick={() =>
+                                    setSelectedAppointmentId(apt._id)
+                                  }
                                   className="apt-calendar__block"
                                   style={{
                                     background: c.bg,
@@ -559,7 +582,9 @@ export function Appointments() {
                                   }}
                                 >
                                   <div className="apt-calendar__block-type">
-                                    {apt.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}
+                                    {apt.type === APPOINTMENT_TYPE.BASIC
+                                      ? "Basic"
+                                      : "Advanced"}
                                   </div>
                                   <div className="apt-calendar__block-id">
                                     #{apt._id?.slice(0, 6)}
@@ -580,19 +605,24 @@ export function Appointments() {
                   <span className="apt-calendar__legend-dot is-basic" /> Basic
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-advanced" /> Advanced
+                  <span className="apt-calendar__legend-dot is-advanced" />{" "}
+                  Advanced
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-completed" /> Completed - Da danh gia
+                  <span className="apt-calendar__legend-dot is-completed" />{" "}
+                  Completed - Da danh gia
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-pending-review" /> Completed - Cho danh gia
+                  <span className="apt-calendar__legend-dot is-pending-review" />{" "}
+                  Completed - Cho danh gia
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-waiting-assign" /> Waiting for Assignment
+                  <span className="apt-calendar__legend-dot is-waiting-assign" />{" "}
+                  Waiting for Assignment
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-waiting-pay" /> Waiting for Payment
+                  <span className="apt-calendar__legend-dot is-waiting-pay" />{" "}
+                  Waiting for Payment
                 </div>
               </div>
 
@@ -601,12 +631,16 @@ export function Appointments() {
                   appointment={selectedAppointment}
                   existingFeedback={selectedFeedback}
                   isPayLoading={payingAppointmentId === selectedAppointment._id}
-                  isExpired={Boolean(expiredAppointmentIds[selectedAppointment._id])}
+                  isExpired={Boolean(
+                    expiredAppointmentIds[selectedAppointment._id],
+                  )}
                   onClose={() => setSelectedAppointmentId(null)}
                   onCancel={() => handleCancel(selectedAppointment._id)}
                   onPayNow={() => handlePayNow(selectedAppointment._id)}
                   onGoFeedback={() =>
-                    navigate(`/feedback?appointmentId=${selectedAppointment._id}`)
+                    navigate(
+                      `/feedback?appointmentId=${selectedAppointment._id}`,
+                    )
                   }
                   onPaymentExpired={handlePaymentExpired}
                 />
@@ -681,7 +715,11 @@ function AppointmentDetailPanel({
           <h3 className="font-semibold text-lg">Chi tiet lich hen</h3>
           <p className="text-sm text-gray-500">{appointment._id}</p>
         </div>
-        <button type="button" className="apt-calendar__detail-close" onClick={onClose}>
+        <button
+          type="button"
+          className="apt-calendar__detail-close"
+          onClick={onClose}
+        >
           x
         </button>
       </div>
@@ -702,13 +740,17 @@ function AppointmentDetailPanel({
 
       <div className="apt-calendar__detail-row">
         <span className="apt-calendar__detail-label">Ngay</span>
-        <span className="apt-calendar__detail-value">{formatDate(dateValue)}</span>
+        <span className="apt-calendar__detail-value">
+          {formatDate(dateValue)}
+        </span>
       </div>
 
       {startTime && endTime && (
         <div className="apt-calendar__detail-row">
           <span className="apt-calendar__detail-label">Gio</span>
-          <span className="apt-calendar__detail-value">{formatTime(startTime, endTime)}</span>
+          <span className="apt-calendar__detail-value">
+            {formatTime(startTime, endTime)}
+          </span>
         </div>
       )}
 
@@ -771,7 +813,9 @@ function AppointmentDetailPanel({
       )}
 
       {!hasReview && isCompleted && (
-        <div className="apt-calendar__review-prompt">Lich hen nay chua duoc danh gia.</div>
+        <div className="apt-calendar__review-prompt">
+          Lich hen nay chua duoc danh gia.
+        </div>
       )}
 
       <div className="apt-card-actions">
