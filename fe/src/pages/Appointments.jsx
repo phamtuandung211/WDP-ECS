@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { appointmentService, feedbackService } from "../services";
@@ -10,20 +10,202 @@ import {
   APPOINTMENT_STATUS,
   APPOINTMENT_TYPE,
   STATUS_LABELS,
-  STATUS_COLORS,
 } from "../constants/appointment";
 import { useAppointmentNotificationRefresh } from "../context/AppointmentNotificationContext";
+
+const HOUR_START = 7;
+const HOUR_END = 18;
+const STEP_MIN = 30;
+
+function buildSlots() {
+  const slots = [];
+  for (let h = HOUR_START; h < HOUR_END; h += 1) {
+    for (let m = 0; m < 60; m += STEP_MIN) {
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+  }
+  slots.push(`${String(HOUR_END).padStart(2, "0")}:00`);
+  return slots;
+}
+
+const SLOTS = buildSlots();
+
+function toDateKey(dateInput) {
+  if (!dateInput) return null;
+  const d = new Date(dateInput);
+  if (Number.isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDayLabel(date) {
+  return date.toLocaleDateString("vi-VN", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
+function getWeekDates(anchor) {
+  const d = new Date(anchor);
+  const dow = d.getDay();
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  return Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(monday);
+    x.setDate(monday.getDate() + i);
+    return x;
+  });
+}
+
+function getAppointmentDateValue(appointment) {
+  return appointment.desiredDate || appointment.slotId?.startTime || null;
+}
+
+function getAppointmentStartTime(appointment) {
+  const slotStart = appointment.slotId?.startTime;
+  if (!slotStart) return null;
+  const d = new Date(slotStart);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function getAppointmentEndTime(appointment) {
+  const slotEnd = appointment.slotId?.endTime;
+  if (!slotEnd) return null;
+  const d = new Date(slotEnd);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function getCalendarColor(appointment, existingFeedback) {
+  if (
+    appointment.status === APPOINTMENT_STATUS.COMPLETED &&
+    !existingFeedback
+  ) {
+    return {
+      bg: "var(--apt-color-pending-review)",
+      bd: "var(--apt-color-pending-review-bd)",
+      txt: "var(--apt-color-pending-review-txt)",
+    };
+  }
+  if (
+    appointment.status === APPOINTMENT_STATUS.COMPLETED &&
+    existingFeedback
+  ) {
+    return {
+      bg: "var(--apt-color-completed)",
+      bd: "var(--apt-color-completed-bd)",
+      txt: "var(--apt-color-completed-txt)",
+    };
+  }
+  if (appointment.status === APPOINTMENT_STATUS.WAITING_ASSIGN) {
+    return {
+      bg: "var(--apt-color-waiting-assign)",
+      bd: "var(--apt-color-waiting-assign-bd)",
+      txt: "var(--apt-color-waiting-assign-txt)",
+    };
+  }
+  if (appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT) {
+    return {
+      bg: "var(--apt-color-waiting-pay)",
+      bd: "var(--apt-color-waiting-pay-bd)",
+      txt: "var(--apt-color-waiting-pay-txt)",
+    };
+  }
+  if (appointment.type === APPOINTMENT_TYPE.ADVANCED) {
+    return {
+      bg: "var(--apt-color-advanced)",
+      bd: "var(--apt-color-advanced-bd)",
+      txt: "var(--apt-color-advanced-txt)",
+    };
+  }
+  return {
+    bg: "var(--apt-color-basic)",
+    bd: "var(--apt-color-basic-bd)",
+    txt: "var(--apt-color-basic-txt)",
+  };
+}
+
+function getStatusBadgeStyle(status, hasReview) {
+  if (status === APPOINTMENT_STATUS.COMPLETED && !hasReview) {
+    return { background: "#FAEEDA", color: "#633806" };
+  }
+  if (status === APPOINTMENT_STATUS.COMPLETED && hasReview) {
+    return { background: "#D3D1C7", color: "#444441" };
+  }
+
+  switch (status) {
+    case APPOINTMENT_STATUS.CONFIRMED:
+      return { background: "#B5D4F4", color: "#0C447C" };
+    case APPOINTMENT_STATUS.WAITING_ASSIGN:
+      return { background: "#F4C0D1", color: "#72243E" };
+    case APPOINTMENT_STATUS.PENDING_PAYMENT:
+      return { background: "#FAC775", color: "#633806" };
+    case APPOINTMENT_STATUS.CANCELED:
+      return { background: "#eee", color: "#666" };
+    default:
+      return { background: "#eee", color: "#333" };
+  }
+}
 
 export function Appointments() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
-  const [feedbackMap, setFeedbackMap] = useState({}); // { appointmentId: feedback }
+  const [feedbackMap, setFeedbackMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("list");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [anchorDate, setAnchorDate] = useState(new Date());
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const [payingAppointmentId, setPayingAppointmentId] = useState(null);
+  const [expiredAppointmentIds, setExpiredAppointmentIds] = useState({});
+
+  const weekDates = useMemo(() => getWeekDates(anchorDate), [anchorDate]);
+  const todayKey = toDateKey(new Date());
+
+  const appointmentMap = useMemo(() => {
+    const map = {};
+    appointments.forEach((apt) => {
+      map[apt._id] = apt;
+    });
+    return map;
+  }, [appointments]);
+
+  const selectedAppointment = selectedAppointmentId
+    ? appointmentMap[selectedAppointmentId]
+    : null;
+
+  const selectedFeedback = selectedAppointment
+    ? feedbackMap[selectedAppointment._id?.toString()]
+    : null;
+
+  const calendarData = useMemo(() => {
+    const bySlot = {};
+    const noTime = {};
+
+    appointments.forEach((apt) => {
+      const day = toDateKey(getAppointmentDateValue(apt));
+      if (!day) return;
+
+      const start = getAppointmentStartTime(apt);
+      if (start) {
+        const key = `${day}__${start}`;
+        if (!bySlot[key]) bySlot[key] = [];
+        bySlot[key].push(apt);
+      } else {
+        if (!noTime[day]) noTime[day] = [];
+        noTime[day].push(apt);
+      }
+    });
+
+    return { bySlot, noTime };
+  }, [appointments]);
 
   const refreshAppointments = async () => {
     const params = {};
@@ -85,6 +267,7 @@ export function Appointments() {
   const handleBookingSuccess = (newAppointment) => {
     setAppointments((prev) => [newAppointment, ...prev]);
     setActiveTab("list");
+    setSelectedAppointmentId(newAppointment?._id || null);
   };
 
   const handleCancel = async (appointmentId) => {
@@ -107,10 +290,42 @@ export function Appointments() {
   };
 
   const handlePaymentExpired = (expiredAppointment) => {
+    setExpiredAppointmentIds((prev) => ({
+      ...prev,
+      [expiredAppointment._id]: true,
+    }));
     setAppointments((prev) =>
       prev.filter((apt) => apt._id !== expiredAppointment._id),
     );
+    setSelectedAppointmentId((prev) =>
+      prev === expiredAppointment._id ? null : prev,
+    );
   };
+
+  const handlePayNow = async (appointmentId) => {
+    setPayingAppointmentId(appointmentId);
+    try {
+      navigate(`/payment?appointmentId=${appointmentId}`);
+    } finally {
+      setPayingAppointmentId(null);
+    }
+  };
+
+  const changeWeek = (direction) => {
+    const next = new Date(anchorDate);
+    next.setDate(next.getDate() + direction * 7);
+    setAnchorDate(next);
+    setSelectedAppointmentId(null);
+  };
+
+  useEffect(() => {
+    if (
+      selectedAppointmentId &&
+      !appointments.some((apt) => apt._id === selectedAppointmentId)
+    ) {
+      setSelectedAppointmentId(null);
+    }
+  }, [appointments, selectedAppointmentId]);
 
   if (!user) {
     return (
@@ -166,10 +381,11 @@ export function Appointments() {
           {/* Filters */}
           <div className="flex gap-4 mb-4 flex-wrap">
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="appointment-status-filter" className="block text-sm font-medium mb-1">
                 Filter by Status
               </label>
               <select
+                id="appointment-status-filter"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md"
@@ -184,10 +400,11 @@ export function Appointments() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="appointment-type-filter" className="block text-sm font-medium mb-1">
                 Filter by Type
               </label>
               <select
+                id="appointment-type-filter"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md"
@@ -222,17 +439,179 @@ export function Appointments() {
               </div>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-              {appointments.map((apt) => (
-                <AppointmentCard
-                  key={apt._id}
-                  appointment={apt}
-                  existingFeedback={feedbackMap[apt._id?.toString()]}
-                  onCancel={() => handleCancel(apt._id)}
+            <>
+              <div className="apt-calendar__top-bar">
+                <h3 className="apt-calendar__week-label">
+                  {weekDates[0].toLocaleDateString("vi-VN")} -{" "}
+                  {weekDates.at(-1)?.toLocaleDateString("vi-VN")}
+                </h3>
+                <div className="apt-calendar__nav-btns">
+                  <button type="button" onClick={() => changeWeek(-1)}>
+                    ← Tuần trước
+                  </button>
+                  <button type="button" onClick={() => changeWeek(1)}>
+                    Tuần sau →
+                  </button>
+                </div>
+              </div>
+
+              <div className="apt-calendar__wrapper">
+                <div
+                  className="apt-calendar__grid"
+                  style={{
+                    gridTemplateColumns: `56px repeat(${weekDates.length}, 1fr)`,
+                  }}
+                >
+                  <div className="apt-calendar__col-header">Giờ</div>
+                  {weekDates.map((day) => {
+                    const key = toDateKey(day);
+                    return (
+                      <div
+                        key={key}
+                        className={`apt-calendar__col-header ${
+                          key === todayKey ? "is-today" : ""
+                        }`}
+                      >
+                        {formatDayLabel(day)}
+                      </div>
+                    );
+                  })}
+
+                  {SLOTS.slice(0, -1).map((slotTime) => (
+                    <React.Fragment key={slotTime}>
+                      <div className="apt-calendar__time-label">{slotTime}</div>
+                      {weekDates.map((day) => {
+                        const key = `${toDateKey(day)}__${slotTime}`;
+                        const slotAppointments = calendarData.bySlot[key] || [];
+                        return (
+                          <div key={key} className="apt-calendar__slot-cell">
+                            {slotAppointments.map((apt) => {
+                              const existing = feedbackMap[apt._id?.toString()];
+                              const c = getCalendarColor(apt, existing);
+                              const doctorLastName = apt.doctorId?.fullName
+                                ? apt.doctorId.fullName.trim().split(" ").pop()
+                                : "";
+
+                              return (
+                                <button
+                                  type="button"
+                                  key={apt._id}
+                                  onClick={() => setSelectedAppointmentId(apt._id)}
+                                  className="apt-calendar__block"
+                                  style={{
+                                    background: c.bg,
+                                    borderColor: c.bd,
+                                    color: c.txt,
+                                  }}
+                                >
+                                  <div className="apt-calendar__block-type">
+                                    {apt.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}
+                                  </div>
+                                  <div className="apt-calendar__block-doctor">
+                                    {doctorLastName || "Assigned"}
+                                  </div>
+
+                                  {apt.status === APPOINTMENT_STATUS.COMPLETED &&
+                                    existing && (
+                                      <div className="apt-calendar__block-review">
+                                        {[1, 2, 3, 4, 5].map((s) => (
+                                          <span key={s}>{s <= existing.point ? "★" : "☆"}</span>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                  {apt.status === APPOINTMENT_STATUS.COMPLETED &&
+                                    !existing && (
+                                      <div className="apt-calendar__block-review-pending">
+                                        ✍ Đánh giá ngay
+                                      </div>
+                                    )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+
+                  {weekDates.some((day) => calendarData.noTime[toDateKey(day)]?.length) && (
+                    <>
+                      <div className="apt-calendar__no-time-label">Chưa có giờ</div>
+                      {weekDates.map((day) => {
+                        const dayKey = toDateKey(day);
+                        const noTimeAppointments = calendarData.noTime[dayKey] || [];
+                        return (
+                          <div key={`${dayKey}__no-time`} className="apt-calendar__no-time-cell">
+                            {noTimeAppointments.map((apt) => {
+                              const existing = feedbackMap[apt._id?.toString()];
+                              const c = getCalendarColor(apt, existing);
+                              return (
+                                <button
+                                  type="button"
+                                  key={apt._id}
+                                  onClick={() => setSelectedAppointmentId(apt._id)}
+                                  className="apt-calendar__block"
+                                  style={{
+                                    background: c.bg,
+                                    borderColor: c.bd,
+                                    color: c.txt,
+                                  }}
+                                >
+                                  <div className="apt-calendar__block-type">
+                                    {apt.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}
+                                  </div>
+                                  <div className="apt-calendar__block-id">
+                                    #{apt._id?.slice(0, 6)}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="apt-calendar__legend">
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-basic" /> Basic
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-advanced" /> Advanced
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-completed" /> Completed - Da danh gia
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-pending-review" /> Completed - Cho danh gia
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-waiting-assign" /> Waiting for Assignment
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-waiting-pay" /> Waiting for Payment
+                </div>
+              </div>
+
+              {selectedAppointment && (
+                <AppointmentDetailPanel
+                  appointment={selectedAppointment}
+                  existingFeedback={selectedFeedback}
+                  isPayLoading={payingAppointmentId === selectedAppointment._id}
+                  isExpired={Boolean(expiredAppointmentIds[selectedAppointment._id])}
+                  onClose={() => setSelectedAppointmentId(null)}
+                  onCancel={() => handleCancel(selectedAppointment._id)}
+                  onPayNow={() => handlePayNow(selectedAppointment._id)}
+                  onGoFeedback={() =>
+                    navigate(`/feedback?appointmentId=${selectedAppointment._id}`)
+                  }
                   onPaymentExpired={handlePaymentExpired}
                 />
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -254,147 +633,135 @@ export function Appointments() {
   );
 }
 
-// ─── Appointment Card ────────────────────────────────────────────────────────
-function AppointmentCard({ appointment, existingFeedback, onCancel, onPaymentExpired }) {
-  const [isPayLoading, setIsPayLoading] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
-  const navigate = useNavigate();
-  const statusLabel = STATUS_LABELS[appointment.status] || appointment.status;
-  const statusColor = STATUS_COLORS[appointment.status] || "bg-gray-100";
+function AppointmentDetailPanel({
+  appointment,
+  existingFeedback,
+  isPayLoading,
+  isExpired,
+  onClose,
+  onCancel,
+  onPayNow,
+  onGoFeedback,
+  onPaymentExpired,
+}) {
+  let statusLabel = STATUS_LABELS[appointment.status] || appointment.status;
+  if (appointment.status === APPOINTMENT_STATUS.COMPLETED) {
+    statusLabel = existingFeedback
+      ? "Completed · Da danh gia"
+      : "Completed · Cho danh gia";
+  }
 
   const formatDate = (date) => {
     if (!date) return "TBD";
-    return new Date(date).toLocaleDateString("en-US", {
-      weekday: "short",
+    return new Date(date).toLocaleDateString("vi-VN", {
+      weekday: "long",
       year: "numeric",
-      month: "short",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
   };
 
-  const formatTime = (slot) => {
-    if (!slot) return "TBD";
-    const start = new Date(slot.startTime);
-    const end = new Date(slot.endTime);
-    return `${start.getHours().toString().padStart(2, "0")}:${start
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")} - ${end.getHours().toString().padStart(2, "0")}:${end
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
+  const formatTime = (startTime, endTime) => {
+    if (!startTime || !endTime) return "TBD";
+    return `${startTime} - ${endTime}`;
   };
 
   const canCancel = appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT;
   const isCompleted = appointment.status === APPOINTMENT_STATUS.COMPLETED;
-
-  const handlePayNow = async () => {
-    setIsPayLoading(true);
-    try {
-      navigate(`/payment?appointmentId=${appointment._id}`);
-    } finally {
-      setIsPayLoading(false);
-    }
-  };
-
-  const renderStars = (point) =>
-    [1, 2, 3, 4, 5].map((s) => (
-      <span key={s} style={{ color: s <= point ? "#f59e0b" : "#d1d5db", fontSize: "16px" }}>
-        ★
-      </span>
-    ));
+  const hasReview = Boolean(existingFeedback);
+  const startTime = getAppointmentStartTime(appointment);
+  const endTime = getAppointmentEndTime(appointment);
+  const dateValue = getAppointmentDateValue(appointment);
+  const badgeStyle = getStatusBadgeStyle(appointment.status, hasReview);
 
   return (
-    <div className="appointment-card border border-gray-200 rounded-lg p-4 hover:shadow-lg transition">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
+    <div className="apt-calendar__detail-panel show">
+      <div className="apt-calendar__detail-header">
         <div>
-          <h3 className="font-semibold text-lg">
-            {appointment.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}{" "}
-            Appointment
-          </h3>
-          <p className="text-sm text-gray-500">
-            ID: {appointment._id?.slice(-8)}
-          </p>
+          <h3 className="font-semibold text-lg">Chi tiet lich hen</h3>
+          <p className="text-sm text-gray-500">{appointment._id}</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>
+        <button type="button" className="apt-calendar__detail-close" onClick={onClose}>
+          x
+        </button>
+      </div>
+
+      <div className="apt-calendar__detail-row">
+        <span className="apt-calendar__detail-label">Loai</span>
+        <span className="apt-calendar__detail-value">
+          {appointment.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}
+        </span>
+      </div>
+
+      <div className="apt-calendar__detail-row">
+        <span className="apt-calendar__detail-label">Trang thai</span>
+        <span className="apt-calendar__badge" style={badgeStyle}>
           {statusLabel}
         </span>
       </div>
 
-      {/* Payment Countdown */}
+      <div className="apt-calendar__detail-row">
+        <span className="apt-calendar__detail-label">Ngay</span>
+        <span className="apt-calendar__detail-value">{formatDate(dateValue)}</span>
+      </div>
+
+      {startTime && endTime && (
+        <div className="apt-calendar__detail-row">
+          <span className="apt-calendar__detail-label">Gio</span>
+          <span className="apt-calendar__detail-value">{formatTime(startTime, endTime)}</span>
+        </div>
+      )}
+
+      <div className="apt-calendar__detail-row">
+        <span className="apt-calendar__detail-label">Bac si</span>
+        <span className="apt-calendar__detail-value">
+          {appointment.doctorId?.fullName || "Chua phan cong"}
+        </span>
+      </div>
+
+      {appointment.note && (
+        <div className="apt-calendar__detail-row">
+          <span className="apt-calendar__detail-label">Ghi chu</span>
+          <span className="apt-calendar__detail-value">{appointment.note}</span>
+        </div>
+      )}
+
+      {appointment.approvedAt && (
+        <div className="apt-calendar__detail-row">
+          <span className="apt-calendar__detail-label">Xac nhan luc</span>
+          <span className="apt-calendar__detail-value">
+            {new Date(appointment.approvedAt).toLocaleString("vi-VN")}
+          </span>
+        </div>
+      )}
+
       {appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT && (
-        <div className="mb-3">
+        <div className="apt-calendar__countdown-box">
           <AppointmentPaymentCountdown
             appointment={appointment}
             showCountdown={true}
             onExpire={(expiredApt) => {
-              setIsExpired(true);
-              if (onPaymentExpired) onPaymentExpired(expiredApt);
+              onPaymentExpired?.(expiredApt);
             }}
           />
         </div>
       )}
 
-      {/* Content */}
-      <div className="space-y-2 mb-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Date:</span>
-          <span className="font-medium">
-            {formatDate(appointment.desiredDate || appointment.slotId?.startTime)}
-          </span>
-        </div>
-
-        {appointment.slotId && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Time:</span>
-            <span className="font-medium">{formatTime(appointment.slotId)}</span>
-          </div>
-        )}
-
-        {appointment.doctorId && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Doctor:</span>
-            <span className="font-medium">
-              {appointment.doctorId?.fullName || "Assigned"}
-            </span>
-          </div>
-        )}
-
-        {appointment.approvedAt && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Confirmed:</span>
-            <span className="font-medium">
-              {new Date(appointment.approvedAt).toLocaleDateString()}
-            </span>
-          </div>
-        )}
-
-        {appointment.paymentExpireAt &&
-          appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Pay by:</span>
-              <span className="font-medium text-red-600">
-                {new Date(appointment.paymentExpireAt).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-          )}
-
-        {appointment.note && (
-          <div className="text-sm">
-            <span className="text-gray-600">Notes: </span>
-            <span className="italic">{appointment.note}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Feedback inline preview (nếu đã đánh giá) */}
-      {isCompleted && existingFeedback && (
+      {isCompleted && hasReview && (
         <div className="apt-feedback-preview">
-          <span>{renderStars(existingFeedback.point)}</span>
+          <span>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <span
+                key={s}
+                style={{
+                  color: s <= existingFeedback.point ? "#f59e0b" : "#d1d5db",
+                  fontSize: "16px",
+                }}
+              >
+                ★
+              </span>
+            ))}
+          </span>
           {existingFeedback.comment && (
             <span className="apt-feedback-preview__comment">
               "{existingFeedback.comment}"
@@ -403,11 +770,14 @@ function AppointmentCard({ appointment, existingFeedback, onCancel, onPaymentExp
         </div>
       )}
 
-      {/* Actions */}
+      {!hasReview && isCompleted && (
+        <div className="apt-calendar__review-prompt">Lich hen nay chua duoc danh gia.</div>
+      )}
+
       <div className="apt-card-actions">
         {appointment.status === APPOINTMENT_STATUS.PENDING_PAYMENT && (
           <button
-            onClick={handlePayNow}
+            onClick={onPayNow}
             disabled={isPayLoading || isExpired}
             className="flex-1 min-w-24 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium"
           >
@@ -425,13 +795,16 @@ function AppointmentCard({ appointment, existingFeedback, onCancel, onPaymentExp
           </button>
         )}
 
-        {/* Nút feedback — luôn render khi COMPLETED */}
         {isCompleted && (
           <button
-            onClick={() => navigate(`/feedback?appointmentId=${appointment._id}`)}
-            className={existingFeedback ? "apt-feedback-btn apt-feedback-btn--viewed" : "apt-feedback-btn apt-feedback-btn--new"}
+            onClick={onGoFeedback}
+            className={
+              hasReview
+                ? "apt-feedback-btn apt-feedback-btn--viewed"
+                : "apt-feedback-btn apt-feedback-btn--new"
+            }
           >
-            {existingFeedback ? "⭐ Xem đánh giá" : "✍️ Đánh giá ngay"}
+            {hasReview ? "Xem danh gia" : "Danh gia ngay"}
           </button>
         )}
       </div>
