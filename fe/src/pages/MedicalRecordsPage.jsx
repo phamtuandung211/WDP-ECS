@@ -606,9 +606,9 @@ export function MedicalRecordsPage() {
   if (!role) {
     return (
       <div className="page medical-records-page">
-        <div className="header">
-          <div className="header-brand">
-            <div className="header-icon">
+        <div className="mr-header">
+          <div className="mr-header-brand">
+            <div className="mr-header-icon">
               <svg viewBox="0 0 24 24">
                 <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
                 <rect x="9" y="3" width="6" height="4" rx="1" />
@@ -617,8 +617,8 @@ export function MedicalRecordsPage() {
               </svg>
             </div>
             <div>
-              <div className="header-title">Hồ sơ bệnh án</div>
-              <div className="header-sub">Quản lý lịch sử khám bệnh</div>
+              <div className="mr-header-title">Hồ sơ bệnh án</div>
+              <div className="mr-header-sub">Quản lý lịch sử khám bệnh</div>
             </div>
           </div>
         </div>
@@ -629,9 +629,9 @@ export function MedicalRecordsPage() {
 
   return (
     <div className="page medical-records-page">
-      <div className="header">
-        <div className="header-brand">
-          <div className="header-icon">
+      <div className="mr-header">
+        <div className="mr-header-brand">
+          <div className="mr-header-icon">
             <svg viewBox="0 0 24 24">
               <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
               <rect x="9" y="3" width="6" height="4" rx="1" />
@@ -640,8 +640,8 @@ export function MedicalRecordsPage() {
             </svg>
           </div>
           <div>
-            <div className="header-title">Hồ sơ bệnh án</div>
-            <div className="header-sub">Quản lý lịch sử khám bệnh</div>
+            <div className="mr-header-title">Hồ sơ bệnh án</div>
+            <div className="mr-header-sub">Quản lý lịch sử khám bệnh</div>
           </div>
         </div>
       </div>
