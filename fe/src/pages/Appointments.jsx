@@ -112,13 +112,22 @@ function getCalendarColor(appointment, existingFeedback) {
       txt: "var(--apt-color-waiting-pay-txt)",
     };
   }
-  if (appointment.type === APPOINTMENT_TYPE.ADVANCED) {
+  if (appointment.status === APPOINTMENT_STATUS.CANCELED) {
     return {
-      bg: "var(--apt-color-advanced)",
-      bd: "var(--apt-color-advanced-bd)",
-      txt: "var(--apt-color-advanced-txt)",
+      bg: "var(--apt-color-canceled)",
+      bd: "var(--apt-color-canceled-bd)",
+      txt: "var(--apt-color-canceled-txt)",
     };
   }
+
+  if (appointment.status === APPOINTMENT_STATUS.CONFIRMED) {
+    return {
+      bg: "var(--apt-color-basic)",
+      bd: "var(--apt-color-basic-bd)",
+      txt: "var(--apt-color-basic-txt)",
+    };
+  }
+
   return {
     bg: "var(--apt-color-basic)",
     bd: "var(--apt-color-basic-bd)",
@@ -142,7 +151,7 @@ function getStatusBadgeStyle(status, hasReview) {
     case APPOINTMENT_STATUS.PENDING_PAYMENT:
       return { background: "#FAC775", color: "#633806" };
     case APPOINTMENT_STATUS.CANCELED:
-      return { background: "#eee", color: "#666" };
+      return { background: "#b91c1c", color: "#e5e7eb" };
     default:
       return { background: "#eee", color: "#333" };
   }
@@ -158,7 +167,6 @@ export function Appointments() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("list");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterType, setFilterType] = useState("all");
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [payingAppointmentId, setPayingAppointmentId] = useState(null);
@@ -214,7 +222,6 @@ export function Appointments() {
   const refreshAppointments = async () => {
     const params = {};
     if (filterStatus !== "all") params.status = filterStatus;
-    if (filterType !== "all") params.type = filterType;
 
     const response = await appointmentService.getAll(params);
     const apts = response.data?.data || response.data || [];
@@ -258,7 +265,7 @@ export function Appointments() {
     };
 
     fetchAll();
-  }, [user, filterStatus, filterType]);
+  }, [user, filterStatus]);
 
   useAppointmentNotificationRefresh({
     onAssigned: () =>
@@ -465,7 +472,7 @@ export function Appointments() {
               </select>
             </div>
 
-            <div>
+            {/* <div>
               <label
                 htmlFor="appointment-type-filter"
                 className="block text-sm font-medium mb-1"
@@ -482,7 +489,7 @@ export function Appointments() {
                 <option value={APPOINTMENT_TYPE.BASIC}>Basic</option>
                 <option value={APPOINTMENT_TYPE.ADVANCED}>Advanced</option>
               </select>
-            </div>
+            </div> */}
           </div>
 
           {error && <Alert type="error">{error}</Alert>}
@@ -666,27 +673,28 @@ export function Appointments() {
 
               <div className="apt-calendar__legend">
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-basic" /> Basic
+                  <span className="apt-calendar__legend-dot is-confirmed" />{" "}
+                  Confirmed
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-advanced" />{" "}
-                  Advanced
-                </div>
-                <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-completed" />{" "}
-                  Completed - Da danh gia
-                </div>
-                <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-pending-review" />{" "}
-                  Completed - Cho danh gia
+                  <span className="apt-calendar__legend-dot is-waiting-pay" />{" "}
+                  Waiting for Payment
                 </div>
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-waiting-assign" />{" "}
                   Waiting for Assignment
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-waiting-pay" />{" "}
-                  Waiting for Payment
+                  <span className="apt-calendar__legend-dot is-canceled" />{" "}
+                  Cancel
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-pending-review" />{" "}
+                  Completed - Cho danh gia
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-completed" />{" "}
+                  Completed - Da danh gia
                 </div>
               </div>
 

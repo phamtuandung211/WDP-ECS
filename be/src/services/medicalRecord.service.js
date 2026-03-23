@@ -2,6 +2,7 @@ import MedicalRecord from "../models/MedicalRecord.js";
 import Appointment from "../models/Appointment.js";
 import Doctor from "../models/Doctor.js";
 import Customer from "../models/Customer.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { APPOINTMENT_STATUS } from "../constants/Appointment.enum.js";
 import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
 
@@ -9,6 +10,50 @@ function throwErr(status, message) {
   const err = new Error(message);
   err.status = status;
   throw err;
+}
+
+const GEMINI_API_KEY = process.env.API_KEY;
+
+const summaryGenAI = GEMINI_API_KEY
+  ? new GoogleGenerativeAI(GEMINI_API_KEY)
+  : null;
+
+async function generateMedicalRecordAISummary({
+  symptoms,
+  diagnosis,
+  prescription,
+  notes,
+}) {
+  if (!summaryGenAI) return null;
+
+  const prompt = `Bạn là trợ lý y khoa hỗ trợ bác sĩ viết tóm tắt hồ sơ bệnh án.
+Hãy tóm tắt ngắn gọn, dễ hiểu bằng tiếng Việt (3-5 câu), không bịa thêm thông tin.
+Chỉ dựa trên dữ liệu được cung cấp.
+
+Triệu chứng: ${symptoms}
+Chẩn đoán: ${diagnosis}
+Đơn thuốc: ${prescription}
+Ghi chú: ${notes || "Không có"}
+
+Yêu cầu đầu ra:
+- Văn bản thuần, không markdown.
+- Nêu đầy đủ: triệu chứng chính, kết luận chẩn đoán.`;
+
+  try {
+    const model = summaryGenAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    });
+
+    const result = await model.generateContent(prompt);
+    const text = result.response?.text?.()?.trim();
+    return text || null;
+  } catch (error) {
+    console.error(
+      "[MedicalRecord AI Summary] Gemini API error:",
+      error.message,
+    );
+    return null;
+  }
 }
 
 export const createMedicalRecord = async ({
@@ -63,6 +108,13 @@ export const createMedicalRecord = async ({
     throwErr(409, "Medical record already exists for this appointment");
   }
 
+  const generatedSummary = await generateMedicalRecordAISummary({
+    symptoms,
+    diagnosis,
+    prescription,
+    notes,
+  });
+
   const record = await MedicalRecord.create({
     appointmentId,
     doctorId: doctor._id,
@@ -71,7 +123,7 @@ export const createMedicalRecord = async ({
     diagnosis,
     prescription,
     notes,
-    aiSummary,
+    aiSummary: generatedSummary || aiSummary,
   });
 
   return record.toObject();

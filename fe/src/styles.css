@@ -6659,9 +6659,9 @@ button {
   --apt-color-basic-bd: #85b7eb;
   --apt-color-basic-txt: #0c447c;
 
-  --apt-color-advanced: #c0dd97;
-  --apt-color-advanced-bd: #97c459;
-  --apt-color-advanced-txt: #27500a;
+  --apt-color-canceled: #b91c1c;
+  --apt-color-canceled-bd: #991b1b;
+  --apt-color-canceled-txt: #fff1f2;
 
   --apt-color-completed: #d3d1c7;
   --apt-color-completed-bd: #b4b2a9;
@@ -6860,14 +6860,14 @@ button {
   flex-shrink: 0;
 }
 
-.apt-calendar__legend-dot.is-basic {
+.apt-calendar__legend-dot.is-confirmed {
   background: var(--apt-color-basic);
   border-color: var(--apt-color-basic-bd);
 }
 
-.apt-calendar__legend-dot.is-advanced {
-  background: var(--apt-color-advanced);
-  border-color: var(--apt-color-advanced-bd);
+.apt-calendar__legend-dot.is-canceled {
+  background: var(--apt-color-canceled);
+  border-color: var(--apt-color-canceled-bd);
 }
 
 .apt-calendar__legend-dot.is-completed {
