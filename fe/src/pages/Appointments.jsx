@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { appointmentService, feedbackService } from "../services";
@@ -163,6 +163,7 @@ export function Appointments() {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [payingAppointmentId, setPayingAppointmentId] = useState(null);
   const [expiredAppointmentIds, setExpiredAppointmentIds] = useState({});
+  const detailPanelRef = useRef(null);
 
   const weekDates = useMemo(() => getWeekDates(anchorDate), [anchorDate]);
   const todayKey = toDateKey(new Date());
@@ -349,6 +350,45 @@ export function Appointments() {
       setAnchorDate(new Date(matchedDate));
     }
   }, [preselectAppointmentId, appointments]);
+
+  useEffect(() => {
+    if (!selectedAppointment || loading || activeTab !== "list") return;
+
+    let rafId = null;
+    const timer = globalThis.setTimeout(() => {
+      const panelEl = detailPanelRef.current;
+      if (!panelEl) return;
+
+      const startY = globalThis.scrollY;
+      const targetY =
+        panelEl.getBoundingClientRect().top + globalThis.scrollY - 12;
+      const distance = targetY - startY;
+      const duration = 900;
+      const startTime = performance.now();
+
+      const easeInOutCubic = (t) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const step = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeInOutCubic(progress);
+
+        globalThis.scrollTo(0, startY + distance * eased);
+
+        if (progress < 1) {
+          rafId = globalThis.requestAnimationFrame(step);
+        }
+      };
+
+      rafId = globalThis.requestAnimationFrame(step);
+    }, 120);
+
+    return () => {
+      globalThis.clearTimeout(timer);
+      if (rafId) globalThis.cancelAnimationFrame(rafId);
+    };
+  }, [selectedAppointment, loading, activeTab]);
 
   if (!user) {
     return (
@@ -651,23 +691,27 @@ export function Appointments() {
               </div>
 
               {selectedAppointment && (
-                <AppointmentDetailPanel
-                  appointment={selectedAppointment}
-                  existingFeedback={selectedFeedback}
-                  isPayLoading={payingAppointmentId === selectedAppointment._id}
-                  isExpired={Boolean(
-                    expiredAppointmentIds[selectedAppointment._id],
-                  )}
-                  onClose={() => setSelectedAppointmentId(null)}
-                  onCancel={() => handleCancel(selectedAppointment._id)}
-                  onPayNow={() => handlePayNow(selectedAppointment._id)}
-                  onGoFeedback={() =>
-                    navigate(
-                      `/feedback?appointmentId=${selectedAppointment._id}`,
-                    )
-                  }
-                  onPaymentExpired={handlePaymentExpired}
-                />
+                <div ref={detailPanelRef}>
+                  <AppointmentDetailPanel
+                    appointment={selectedAppointment}
+                    existingFeedback={selectedFeedback}
+                    isPayLoading={
+                      payingAppointmentId === selectedAppointment._id
+                    }
+                    isExpired={Boolean(
+                      expiredAppointmentIds[selectedAppointment._id],
+                    )}
+                    onClose={() => setSelectedAppointmentId(null)}
+                    onCancel={() => handleCancel(selectedAppointment._id)}
+                    onPayNow={() => handlePayNow(selectedAppointment._id)}
+                    onGoFeedback={() =>
+                      navigate(
+                        `/feedback?appointmentId=${selectedAppointment._id}`,
+                      )
+                    }
+                    onPaymentExpired={handlePaymentExpired}
+                  />
+                </div>
               )}
             </>
           )}
