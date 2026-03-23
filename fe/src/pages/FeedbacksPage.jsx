@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { feedbackService } from "../services";
 import { Loading, Alert } from "../components/UI";
@@ -43,6 +44,13 @@ function getDateSubLabel(createdAt) {
   if (diffDays === 1) return "Hôm qua";
   if (diffDays < 7) return `${diffDays} ngày trước`;
   return "";
+}
+
+function getAppointmentId(feedback) {
+  if (!feedback?.appointmentId) return null;
+  return typeof feedback.appointmentId === "object"
+    ? feedback.appointmentId?._id
+    : feedback.appointmentId;
 }
 
 function SummaryStrip({ feedbacks }) {
@@ -117,6 +125,7 @@ function TemplatePagination({ page, totalPages, totalItems, onPrev, onNext }) {
 
 // ─── Customer: danh sách feedback của mình ────────────────────────────────────
 function MyFeedbacks() {
+  const navigate = useNavigate();
   const [result, setResult] = useState({ data: [], metadata: {} });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -197,8 +206,12 @@ function MyFeedbacks() {
           filteredFeedbacks.map((fb) => {
             const doctorName = fb.appointmentId?.doctorId?.fullName || "--";
             const subDate = getDateSubLabel(fb.createdAt);
+            const appointmentId = getAppointmentId(fb);
             return (
-              <div key={fb._id} className="review-row fb-cols-my">
+              <div
+                key={fb._id}
+                className="review-row fb-cols-my"
+              >
                 <div>
                   <div className="cell-date">
                     {new Date(fb.createdAt).toLocaleDateString("vi-VN")}
@@ -218,7 +231,20 @@ function MyFeedbacks() {
                   </div>
                 </div>
 
-                <div className="cell-comment">{fb.comment || "--"}</div>
+                <div className="cell-comment">
+                  <div>{fb.comment || "--"}</div>
+                  {appointmentId && (
+                    <button
+                      className="row-link-btn"
+                      type="button"
+                      onClick={() =>
+                        navigate(`/appointments?appointmentId=${appointmentId}`)
+                      }
+                    >
+                      Xem lịch hẹn
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })
@@ -405,7 +431,10 @@ function AllFeedbacks() {
             const doctorName = fb.appointmentId?.doctorId?.fullName || "--";
             const subDate = getDateSubLabel(fb.createdAt);
             return (
-              <div key={fb._id} className={`review-row ${tableColsClass}`}>
+              <div
+                key={fb._id}
+                className={`review-row ${tableColsClass}`}
+              >
                 <div>
                   <div className="cell-date">
                     {new Date(fb.createdAt).toLocaleDateString("vi-VN")}
@@ -450,7 +479,10 @@ function AllFeedbacks() {
                       <button
                         className="review-btn"
                         disabled={reviewing === fb._id}
-                        onClick={() => handleReview(fb._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReview(fb._id);
+                        }}
                       >
                         {reviewing === fb._id ? "..." : "Review"}
                       </button>

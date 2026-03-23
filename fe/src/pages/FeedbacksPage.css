@@ -290,6 +290,32 @@
   background: var(--surface-2);
 }
 
+.fb-review-clickable {
+  cursor: pointer;
+}
+
+.fb-review-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.row-link-btn {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.row-link-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-lt);
+}
+
 .cell-date {
   font-size: 13px;
   font-weight: 500;

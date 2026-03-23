@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { appointmentService, feedbackService } from "../services";
 import { Loading, Alert } from "../components/UI";
@@ -150,6 +150,7 @@ function getStatusBadgeStyle(status, hasReview) {
 
 export function Appointments() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [feedbackMap, setFeedbackMap] = useState({});
@@ -181,6 +182,11 @@ export function Appointments() {
   const selectedFeedback = selectedAppointment
     ? feedbackMap[selectedAppointment._id?.toString()]
     : null;
+
+  const preselectAppointmentId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("appointmentId");
+  }, [location.search]);
 
   const calendarData = useMemo(() => {
     const bySlot = {};
@@ -325,6 +331,24 @@ export function Appointments() {
       setSelectedAppointmentId(null);
     }
   }, [appointments, selectedAppointmentId]);
+
+  useEffect(() => {
+    if (!preselectAppointmentId || !appointments.length) return;
+
+    const matchedAppointment = appointments.find(
+      (apt) => apt._id?.toString() === preselectAppointmentId,
+    );
+
+    if (!matchedAppointment) return;
+
+    setActiveTab("list");
+    setSelectedAppointmentId(matchedAppointment._id);
+
+    const matchedDate = getAppointmentDateValue(matchedAppointment);
+    if (matchedDate) {
+      setAnchorDate(new Date(matchedDate));
+    }
+  }, [preselectAppointmentId, appointments]);
 
   if (!user) {
     return (

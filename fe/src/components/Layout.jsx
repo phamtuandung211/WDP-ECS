@@ -216,6 +216,7 @@ export function Header() {
         <>
           <a href="/admin/statistics">Thống kê</a>
           <a href="/appointments">Bảng điều khiển</a>
+          <a href="/feedbacks">Đánh giá</a>
           <NotificationIcon />
           <Link to="/profile" className="header-user-link">
             <span className="user-info">
