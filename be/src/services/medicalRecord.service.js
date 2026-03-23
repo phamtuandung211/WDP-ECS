@@ -90,6 +90,7 @@ export const getMyMedicalRecords = async ({
   const [records, totalItems] = await Promise.all([
     MedicalRecord.find({ customerId: customer._id })
       .populate("doctorId", "fullName specializations")
+      .populate("customerId", "fullName phone")
       .populate("appointmentId", "desiredDate type status slotId")
       .sort({ createdAt: -1 })
       .skip(offset)
