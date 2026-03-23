@@ -190,6 +190,7 @@ export function Header() {
       return (
         <>
           <a href="/support/chat">Chat hỗ trợ</a>
+          <a href="/feedbacks">Đánh giá</a>
           <Link to="/profile" className="header-user-link">
             <span className="user-info">
               <img
