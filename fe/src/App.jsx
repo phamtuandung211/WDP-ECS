@@ -24,7 +24,6 @@ import { Forbidden } from "./pages/Forbidden";
 import { ManageSpecializations } from "./pages/ManageSpecializations";
 import { PaymentPage } from "./pages/PaymentPage";
 import { PaymentReturnPage } from "./pages/PaymentReturnPage";
-import { Appointments } from "./pages/Appointments";
 import { AdminStatisticsPage } from "./pages/AdminStatisticsPage";
 import { ROLE_NAME } from "./constants/role";
 import RoleBasedDashboard from "./components/RoleBasedDashboard";
@@ -92,6 +91,23 @@ function RoleProtectedRoute({ element, allowedRoles }) {
   return allowedRoles.includes(role) ? element : <Navigate to="/403" />;
 }
 
+function HomeRoute() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="p-4 text-center">Đang tải...</div>;
+  }
+
+  const role = user?.role;
+  if (role === ROLE_NAME.ADMIN)
+    return <Navigate to="/admin/statistics" replace />;
+  if (role === ROLE_NAME.DOCTOR) return <Navigate to="/appointments" replace />;
+  if (role === ROLE_NAME.SALE_STAFF)
+    return <Navigate to="/staff/dashboard" replace />;
+
+  return <Home />;
+}
+
 function App() {
   const staffRoles = [ROLE_NAME.SALE_STAFF];
   const supportRoles = [ROLE_NAME.CUSTOMER_SUPPORT];
@@ -99,220 +115,220 @@ function App() {
     <AuthProvider>
       <ChatProvider>
         <AppointmentNotificationProvider>
-        <div className="app">
-          <Header />
-          <main className="main-content">
-            <Routes>
-              {/* ========== Public Routes ========== */}
-              <Route path="/" element={<Home />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify" element={<Verify />} />
-              <Route path="/verify/success" element={<VerifySuccess />} />
-              <Route path="/services/:id" element={<ServiceDetail />} />
-              <Route path="/blogs" element={<Blogs />} />
-              <Route path="/blogs/:id" element={<BlogDetail />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/doctors" element={<DoctorListPage />} />
-              <Route path="/doctors/:id" element={<DoctorDetailPage />} />
-              <Route path="/403" element={<Forbidden />} />
+          <div className="app">
+            <Header />
+            <main className="main-content">
+              <Routes>
+                {/* ========== Public Routes ========== */}
+                <Route path="/" element={<HomeRoute />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify" element={<Verify />} />
+                <Route path="/verify/success" element={<VerifySuccess />} />
+                <Route path="/services/:id" element={<ServiceDetail />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blogs/:id" element={<BlogDetail />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/doctors" element={<DoctorListPage />} />
+                <Route path="/doctors/:id" element={<DoctorDetailPage />} />
+                <Route path="/403" element={<Forbidden />} />
 
-              {/* ========== Protected Routes - Staff Management ========== */}
-              <Route
-                path="/staff/dashboard"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<SaleStaffDashboard />}
-                  />
-                }
-              />
-              <Route
-                path="/staff/manage-services"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<ManageServiceList />}
-                  />
-                }
-              />
-              <Route
-                path="/staff/manage-services/:id"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<ManageServiceForm />}
-                  />
-                }
-              />
-              <Route
-                path="/staff/manage-blogs"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<ManageBlogList />}
-                  />
-                }
-              />
-              <Route
-                path="/staff/manage-blogs/:id"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<ManageBlogForm />}
-                  />
-                }
-              />
-              <Route
-                path="/staff/manage-specializations"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<ManageSpecializations />}
-                  />
-                }
-              />
+                {/* ========== Protected Routes - Staff Management ========== */}
+                <Route
+                  path="/staff/dashboard"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<SaleStaffDashboard />}
+                    />
+                  }
+                />
+                <Route
+                  path="/staff/manage-services"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<ManageServiceList />}
+                    />
+                  }
+                />
+                <Route
+                  path="/staff/manage-services/:id"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<ManageServiceForm />}
+                    />
+                  }
+                />
+                <Route
+                  path="/staff/manage-blogs"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<ManageBlogList />}
+                    />
+                  }
+                />
+                <Route
+                  path="/staff/manage-blogs/:id"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<ManageBlogForm />}
+                    />
+                  }
+                />
+                <Route
+                  path="/staff/manage-specializations"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<ManageSpecializations />}
+                    />
+                  }
+                />
 
-              {/* ========== Protected Routes - User Features ========== */}
-              <Route
-                path="/profile"
-                element={<ProtectedRoute element={<ProfilePage />} />}
-              />
-              <Route
-                path="/medical-records"
-                element={<ProtectedRoute element={<MedicalRecordsPage />} />}
-              />
-              <Route
-                path="/feedbacks"
-                element={<ProtectedRoute element={<FeedbacksPage />} />}
-              />
-              <Route
-                path="/feedback"
-                element={
-                  <PrivateRoute>
-                    <SubmitFeedbackPage />
-                  </PrivateRoute>
-                }
-              />
+                {/* ========== Protected Routes - User Features ========== */}
+                <Route
+                  path="/profile"
+                  element={<ProtectedRoute element={<ProfilePage />} />}
+                />
+                <Route
+                  path="/medical-records"
+                  element={<ProtectedRoute element={<MedicalRecordsPage />} />}
+                />
+                <Route
+                  path="/feedbacks"
+                  element={<ProtectedRoute element={<FeedbacksPage />} />}
+                />
+                <Route
+                  path="/feedback"
+                  element={
+                    <PrivateRoute>
+                      <SubmitFeedbackPage />
+                    </PrivateRoute>
+                  }
+                />
 
-              {/* ========== Role-Based Dashboard (Option 3) ========== */}
-              {/* 
+                {/* ========== Role-Based Dashboard (Option 3) ========== */}
+                {/* 
               Tất cả 4 roles (CUSTOMER, SALE_STAFF, DOCTOR, ADMIN)
               dùng chung URL /appointments
               RoleBasedDashboard sẽ tự detect role và render dashboard phù hợp
             */}
-              <Route
-                path="/appointments"
-                element={
-                  <PrivateRoute>
-                    <RoleBasedDashboard />
-                  </PrivateRoute>
-                }
-              />
+                <Route
+                  path="/appointments"
+                  element={
+                    <PrivateRoute>
+                      <RoleBasedDashboard />
+                    </PrivateRoute>
+                  }
+                />
 
-              {/* Alias route để tiện */}
-              <Route
-                path="/dashboard"
-                element={
-                  <PrivateRoute>
-                    <RoleBasedDashboard />
-                  </PrivateRoute>
-                }
-              />
+                {/* Alias route để tiện */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <PrivateRoute>
+                      <RoleBasedDashboard />
+                    </PrivateRoute>
+                  }
+                />
 
-              {/* ========== Payment Routes ========== */}
-              <Route
-                path="/payment"
-                element={
-                  <PrivateRoute>
-                    <PaymentPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/payment/return"
-                element={
-                  <PrivateRoute>
-                    <PaymentReturnPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/payment/success"
-                element={
-                  <PrivateRoute>
-                    <PaymentReturnPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/payment/cancel"
-                element={
-                  <PrivateRoute>
-                    <PaymentReturnPage />
-                  </PrivateRoute>
-                }
-              />
+                {/* ========== Payment Routes ========== */}
+                <Route
+                  path="/payment"
+                  element={
+                    <PrivateRoute>
+                      <PaymentPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/payment/return"
+                  element={
+                    <PrivateRoute>
+                      <PaymentReturnPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/payment/success"
+                  element={
+                    <PrivateRoute>
+                      <PaymentReturnPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/payment/cancel"
+                  element={
+                    <PrivateRoute>
+                      <PaymentReturnPage />
+                    </PrivateRoute>
+                  }
+                />
 
-              {/* ========== Admin Statistics ========== */}
-              <Route
-                path="/admin/statistics"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={["ADMIN"]}
-                    element={<AdminStatisticsPage />}
-                  />
-                }
-              />
+                {/* ========== Admin Statistics ========== */}
+                <Route
+                  path="/admin/statistics"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={["ADMIN"]}
+                      element={<AdminStatisticsPage />}
+                    />
+                  }
+                />
 
-              {/* ========== Support Chat ========== */}
-              <Route
-                path="/support/chat"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={supportRoles}
-                    element={<StaffChatPage />}
-                  />
-                }
-              />
+                {/* ========== Support Chat ========== */}
+                <Route
+                  path="/support/chat"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={supportRoles}
+                      element={<StaffChatPage />}
+                    />
+                  }
+                />
 
-              <Route
-                path="/doctor/certificates"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={[ROLE_NAME.DOCTOR]}
-                    element={<ManageCertificatesDoctor />}
-                  />
-                }
-              />
-              <Route
-                path="/doctor/degrees"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={[ROLE_NAME.DOCTOR]}
-                    element={<ManageDegreesDoctor />}
-                  />
-                }
-              />
+                <Route
+                  path="/doctor/certificates"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={[ROLE_NAME.DOCTOR]}
+                      element={<ManageCertificatesDoctor />}
+                    />
+                  }
+                />
+                <Route
+                  path="/doctor/degrees"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={[ROLE_NAME.DOCTOR]}
+                      element={<ManageDegreesDoctor />}
+                    />
+                  }
+                />
 
-              {/* ========== Staff: Review Certificates & Degrees ========== */}
-              <Route
-                path="/staff/review-approvals"
-                element={
-                  <RoleProtectedRoute
-                    allowedRoles={staffRoles}
-                    element={<StaffReviewApprovals />}
-                  />
-                }
-              />
+                {/* ========== Staff: Review Certificates & Degrees ========== */}
+                <Route
+                  path="/staff/review-approvals"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<StaffReviewApprovals />}
+                    />
+                  }
+                />
 
-              {/* 404 */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
-          <Footer />
-          <ChatWidget />
-        </div>
+                {/* 404 */}
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </main>
+            <Footer />
+            <ChatWidget />
+          </div>
         </AppointmentNotificationProvider>
       </ChatProvider>
     </AuthProvider>

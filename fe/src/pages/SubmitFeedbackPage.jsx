@@ -2,9 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { feedbackService, appointmentService } from "../services";
 import { Loading, Alert } from "../components/UI";
-import { PageHeader } from "../components/PageHeader";
 
 const STAR_LABELS = ["", "Rất tệ", "Tệ", "Bình thường", "Tốt", "Xuất sắc"];
+const FORM_STAR_LABELS = {
+  1: "Rất tệ",
+  2: "Không hài lòng",
+  3: "Bình thường",
+  4: "Hài lòng",
+  5: "Xuất sắc",
+};
 
 // ─── Star Rating Input ────────────────────────────────────────────────────────
 function StarRating({ value, onChange, disabled }) {
@@ -12,24 +18,33 @@ function StarRating({ value, onChange, disabled }) {
   const active = hovered || value;
 
   return (
-    <div className="star-rating-input">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          className={`star-btn ${active >= star ? "star-active" : ""}`}
-          onMouseEnter={() => !disabled && setHovered(star)}
-          onMouseLeave={() => !disabled && setHovered(0)}
-          onClick={() => !disabled && onChange(star)}
-          disabled={disabled}
-          aria-label={`${star} sao`}
-        >
-          ★
-        </button>
-      ))}
-      {active > 0 && (
-        <span className="star-label">{STAR_LABELS[active]}</span>
-      )}
+    <div>
+      <div className="feedback-submit-stars" aria-label="Chọn số sao">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            className={`feedback-submit-star-btn ${
+              value >= star ? "is-active" : ""
+            } ${hovered >= star ? "is-hovered" : ""}`}
+            onMouseEnter={() => !disabled && setHovered(star)}
+            onMouseLeave={() => !disabled && setHovered(0)}
+            onClick={() => !disabled && onChange(star)}
+            disabled={disabled}
+            aria-label={`${star} sao`}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+        ))}
+      </div>
+
+      <div
+        className={`feedback-submit-rating-desc ${active > 0 ? "" : "is-empty"}`}
+      >
+        {active > 0 ? FORM_STAR_LABELS[active] : "-"}
+      </div>
     </div>
   );
 }
@@ -38,36 +53,138 @@ function StarRating({ value, onChange, disabled }) {
 function AlreadyReviewed({ feedback, appointment }) {
   const navigate = useNavigate();
   const doctorName = appointment?.doctorId?.fullName || "Bác sĩ";
+  const rating = Number(feedback?.point || 0);
 
   return (
-    <div className="card feedback-done">
-      <div className="feedback-done__icon">✅</div>
-      <h3 className="feedback-done__title">Bạn đã đánh giá buổi khám này</h3>
-      <p className="feedback-done__doctor">Bác sĩ: <strong>{doctorName}</strong></p>
+    <div className="feedback-view-card">
+      <div className="feedback-view-card__header">
+        <div className="feedback-view-card__check-circle" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h2>Đánh giá bác sĩ</h2>
+        <p>Bạn đã đánh giá buổi khám này</p>
+        <div className="feedback-view-card__header-divider" />
+      </div>
 
-      <div className="feedback-done__stars">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <span key={s} className={s <= feedback.point ? "star-filled" : "star-empty"}>★</span>
-        ))}
-        <span className="star-label">{STAR_LABELS[feedback.point]}</span>
+      <div className="feedback-view-card__body">
+        <div className="feedback-view-card__info-row">
+          <div className="feedback-view-card__info-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#5a7a50"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div className="feedback-view-card__info-text">
+            <div className="feedback-view-card__info-label">Bác sĩ</div>
+            <div className="feedback-view-card__info-value">{doctorName}</div>
+          </div>
+        </div>
+
+        <div className="feedback-view-card__info-row">
+          <div className="feedback-view-card__info-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="#EF9F27"
+              stroke="#EF9F27"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <div className="feedback-view-card__info-text">
+            <div className="feedback-view-card__info-label">Xếp hạng</div>
+            <div className="feedback-view-card__info-value">
+              <div className="feedback-view-card__stars-wrap">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <svg
+                    className="feedback-view-card__star-svg"
+                    key={s}
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <polygon
+                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                      fill={s <= rating ? "#EF9F27" : "none"}
+                      stroke={s <= rating ? "#EF9F27" : "#D4CFC8"}
+                      strokeWidth="1.2"
+                    />
+                  </svg>
+                ))}
+                <span className="feedback-view-card__rating-label">
+                  {STAR_LABELS[rating] || "Chưa đánh giá"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {feedback.comment && (
-        <blockquote className="feedback-done__comment">
-          "{feedback.comment}"
-        </blockquote>
+        <div className="feedback-view-card__comment-block">
+          <div className="feedback-view-card__comment-quote">
+            {feedback.comment}
+          </div>
+        </div>
       )}
 
-      <p className="feedback-done__date">
-        Đã gửi ngày {new Date(feedback.createdAt).toLocaleDateString("vi-VN")}
-      </p>
+      <div className="feedback-view-card__sent-date">
+        <span>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          Đã gửi ngày {new Date(feedback.createdAt).toLocaleDateString("vi-VN")}
+        </span>
+      </div>
 
-      <button
-        className="btn btn-primary mt-3"
-        onClick={() => navigate("/appointments")}
-      >
-        Quay lại lịch hẹn
-      </button>
+      <div className="feedback-view-card__footer">
+        <button
+          className="feedback-view-card__back-btn"
+          onClick={() => navigate("/appointments")}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          Quay lại lịch hẹn
+        </button>
+      </div>
     </div>
   );
 }
@@ -118,7 +235,9 @@ export function SubmitFeedbackPage() {
           }
         }
       } catch (err) {
-        setError(err.response?.data?.message || "Không tải được thông tin cuộc hẹn.");
+        setError(
+          err.response?.data?.message || "Không tải được thông tin cuộc hẹn.",
+        );
       } finally {
         setLoading(false);
       }
@@ -145,7 +264,10 @@ export function SubmitFeedbackPage() {
       // Redirect after short delay
       setTimeout(() => navigate("/appointments"), 2500);
     } catch (err) {
-      setError(err.response?.data?.message || "Gửi đánh giá thất bại. Vui lòng thử lại.");
+      setError(
+        err.response?.data?.message ||
+          "Gửi đánh giá thất bại. Vui lòng thử lại.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -159,7 +281,10 @@ export function SubmitFeedbackPage() {
       <div className="page submit-feedback-page">
         <Alert type="error">
           Thiếu thông tin cuộc hẹn.{" "}
-          <button className="btn-link" onClick={() => navigate("/appointments")}>
+          <button
+            className="btn-link"
+            onClick={() => navigate("/appointments")}
+          >
             Quay lại
           </button>
         </Alert>
@@ -171,16 +296,17 @@ export function SubmitFeedbackPage() {
   const desiredDate = appointment?.desiredDate
     ? new Date(appointment.desiredDate).toLocaleDateString("vi-VN")
     : appointment?.slotId?.startTime
-    ? new Date(appointment.slotId.startTime).toLocaleDateString("vi-VN")
-    : "—";
+      ? new Date(appointment.slotId.startTime).toLocaleDateString("vi-VN")
+      : "—";
 
   return (
     <div className="page submit-feedback-page">
-      <PageHeader title="Đánh giá bác sĩ" />
-
       {/* Already submitted */}
       {existingFeedback && (
-        <AlreadyReviewed feedback={existingFeedback} appointment={appointment} />
+        <AlreadyReviewed
+          feedback={existingFeedback}
+          appointment={appointment}
+        />
       )}
 
       {/* Success state */}
@@ -195,62 +321,96 @@ export function SubmitFeedbackPage() {
 
       {/* Form */}
       {!existingFeedback && !success && (
-        <div className="card feedback-form-card">
-          {/* Appointment info summary */}
-          <div className="feedback-appt-info">
-            <div className="feedback-appt-info__row">
-              <span className="detail-label">Bác sĩ</span>
-              <span className="font-semibold">{doctorName}</span>
-            </div>
-            <div className="feedback-appt-info__row">
-              <span className="detail-label">Ngày khám</span>
-              <span>{desiredDate}</span>
-            </div>
-            {appointment?.type && (
-              <div className="feedback-appt-info__row">
-                <span className="detail-label">Loại khám</span>
-                <span>{appointment.type === "BASIC" ? "Cơ bản" : "Nâng cao"}</span>
+        <div className="feedback-submit-card">
+          <form onSubmit={handleSubmit}>
+            <div className="feedback-submit-card__header">
+              <h2>Đánh giá bác sĩ</h2>
+
+              <div className="feedback-submit-appt-info">
+                <div className="feedback-submit-chip">
+                  <div className="feedback-submit-chip__label">Bác sĩ</div>
+                  <div className="feedback-submit-chip__value">
+                    {doctorName}
+                  </div>
+                </div>
+                <div className="feedback-submit-chip">
+                  <div className="feedback-submit-chip__label">Ngày khám</div>
+                  <div className="feedback-submit-chip__value">
+                    {desiredDate}
+                  </div>
+                </div>
+                {appointment?.type && (
+                  <div className="feedback-submit-chip feedback-submit-chip--full">
+                    <div className="feedback-submit-chip__label">Loại khám</div>
+                    <div className="feedback-submit-chip__value">
+                      {appointment.type === "BASIC" ? "Cơ bản" : "Nâng cao"}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-
-          <div className="divider" />
-
-          <form onSubmit={handleSubmit} className="feedback-form">
-            <h3 className="section-title">Bạn cảm thấy thế nào về buổi khám?</h3>
-
-            {error && <Alert type="error">{error}</Alert>}
-
-            {/* Star rating */}
-            <div className="form-group">
-              <label className="form-label">
-                Đánh giá <span className="required">*</span>
-              </label>
-              <StarRating value={point} onChange={setPoint} disabled={submitting} />
             </div>
 
-            {/* Comment */}
-            <div className="form-group">
-              <label className="form-label" htmlFor="feedback-comment">
-                Nhận xét <span className="text-muted">(tuỳ chọn)</span>
-              </label>
-              <textarea
-                id="feedback-comment"
-                className="form-input"
-                rows={4}
-                maxLength={1000}
-                placeholder="Chia sẻ trải nghiệm của bạn về bác sĩ và buổi khám..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
+            <div className="feedback-submit-card__body">
+              <p className="feedback-submit-question">
+                Bạn cảm thấy thế nào về buổi khám?
+              </p>
+
+              <div className="feedback-submit-field-label">
+                Đánh giá <span className="req">*</span>
+              </div>
+
+              <StarRating
+                value={point}
+                onChange={setPoint}
                 disabled={submitting}
               />
-              <p className="form-hint">{comment.length}/1000 ký tự</p>
+
+              {error && (
+                <div className="feedback-submit-error-msg">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className="feedback-submit-field-label">
+                Nhận xét <span className="optional">(tuỳ chọn)</span>
+              </div>
+
+              <div className="feedback-submit-textarea-wrap">
+                <textarea
+                  id="feedback-comment"
+                  className="feedback-submit-textarea"
+                  rows={4}
+                  maxLength={1000}
+                  placeholder="Chia sẻ trải nghiệm của bạn về buổi khám..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+              <div
+                className={`feedback-submit-char-count ${comment.length >= 900 ? "near-limit" : ""}`}
+              >
+                {comment.length} / 1000 ký tự
+              </div>
             </div>
 
-            <div className="form-actions">
+            <div className="feedback-submit-card__footer">
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="feedback-submit-btn feedback-submit-btn--cancel"
                 onClick={() => navigate("/appointments")}
                 disabled={submitting}
               >
@@ -258,9 +418,21 @@ export function SubmitFeedbackPage() {
               </button>
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="feedback-submit-btn feedback-submit-btn--submit"
                 disabled={submitting || point === 0}
               >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
                 {submitting ? "Đang gửi..." : "Gửi đánh giá"}
               </button>
             </div>

@@ -3,6 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { Input, Button, Alert } from "../components/UI";
+import { ROLE_NAME } from "../constants/role";
+
+function getLandingPathByRole(role) {
+  switch (role) {
+    case ROLE_NAME.SALE_STAFF:
+      return "/staff/dashboard";
+    case ROLE_NAME.ADMIN:
+      return "/admin/statistics";
+    case ROLE_NAME.DOCTOR:
+      return "/appointments";
+    default:
+      return "/";
+  }
+}
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,11 +28,7 @@ export function LoginPage() {
     e.preventDefault();
     try {
       const user = await login(email, password);
-      if (user?.role === "SALE_STAFF") {
-        navigate("/staff/dashboard");
-      } else {
-        navigate("/");
-      }
+      navigate(getLandingPathByRole(user?.role));
     } catch (err) {
       console.error("Login error:", err);
     }
@@ -61,11 +71,7 @@ export function LoginPage() {
           onSuccess={async (credentialResponse) => {
             try {
               const user = await googleLogin(credentialResponse.credential);
-              if (user?.role === "SALE_STAFF") {
-                navigate("/staff/dashboard");
-              } else {
-                navigate("/");
-              }
+              navigate(getLandingPathByRole(user?.role));
             } catch (err) {
               console.error("Google login error:", err);
             }
