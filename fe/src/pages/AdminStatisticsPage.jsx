@@ -145,10 +145,19 @@ function OverviewTab() {
               value={data.pendingPaymentCount}
               color="#e67e22"
             />
-            <StatCard label="BASIC" value={data.basicRevenue} color="#3498db" />
+            <StatCard
+              label="Chờ phân công"
+              value={data.waitingAssignCount}
+              color="#f39c12"
+            />
+            <StatCard
+              label="BASIC"
+              value={data.basicCount ?? data.basicRevenue}
+              color="#3498db"
+            />
             <StatCard
               label="ADVANCED"
-              value={data.advancedRevenue}
+              value={data.advancedCount ?? data.advancedRevenue}
               color="#9b59b6"
             />
           </div>

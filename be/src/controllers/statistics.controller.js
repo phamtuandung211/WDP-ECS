@@ -51,9 +51,12 @@ export const getOverviewStatsController = async (req, res) => {
         result.appointments?.byStatus?.["PENDING_PAYMENT"] || 0,
       waitingAssignCount:
         result.appointments?.byStatus?.["WAITING_ASSIGN"] || 0,
+      basicCount: result.appointments?.byType?.["BASIC"] || 0,
+      advancedCount: result.appointments?.byType?.["ADVANCED"] || 0,
       totalRevenue: result.revenue?.total || 0,
-      basicRevenue: 0,
-      advancedRevenue: 0,
+      // Keep legacy keys for older frontend usage.
+      basicRevenue: result.appointments?.byType?.["BASIC"] || 0,
+      advancedRevenue: result.appointments?.byType?.["ADVANCED"] || 0,
       totalDoctors: result.accounts?.doctors || 0,
       totalCustomers: result.accounts?.customers || 0,
       totalAccounts: result.accounts || 0,
