@@ -125,7 +125,7 @@ export function ChatWidget() {
   // Floating button
   if (!open) {
     return (
-      <button className="chat-fab" onClick={handleOpen} title="Chat ho tro">
+      <button className="chat-fab" onClick={handleOpen} title="Chat hỗ trợ">
         <svg
           width="24"
           height="24"
@@ -149,7 +149,7 @@ export function ChatWidget() {
           <span
             className={`chat-widget-status ${connected ? "online" : "offline"}`}
           >
-            {mode === "AI_MODE" ? "Tro ly AI" : "Nhan vien ho tro"}
+            {mode === "AI_MODE" ? "Trợ lý AI" : "Nhân viên hỗ trợ"}
           </span>
         </div>
         <div className="chat-widget-header-actions">
@@ -157,7 +157,7 @@ export function ChatWidget() {
             <button
               className="chat-widget-btn-small"
               onClick={handleBackToAI}
-              title="Chuyen ve AI"
+              title="Chuyển về AI"
             >
               <svg
                 width="16"
@@ -177,7 +177,7 @@ export function ChatWidget() {
             <button
               className="chat-widget-btn-small"
               onClick={handleTransfer}
-              title="Ket noi nhan vien"
+              title="Kết nối nhân viên"
             >
               <svg
                 width="16"
@@ -197,7 +197,7 @@ export function ChatWidget() {
           <button
             className="chat-widget-btn-small"
             onClick={() => setOpen(false)}
-            title="Thu nho"
+            title="Thu nhỏ"
           >
             <svg
               width="16"
@@ -213,7 +213,7 @@ export function ChatWidget() {
           <button
             className="chat-widget-btn-small chat-widget-btn-danger"
             onClick={handleClose}
-            title="Dong chat"
+            title="Đóng chat"
           >
             <svg
               width="16"
@@ -233,12 +233,12 @@ export function ChatWidget() {
       {/* Messages */}
       <div className="chat-widget-messages">
         {loading && messages.length === 0 && (
-          <div className="chat-widget-loading">Dang ket noi...</div>
+          <div className="chat-widget-loading">Đang kết nối...</div>
         )}
         {messages.length === 0 && !loading && (
           <div className="chat-widget-welcome">
-            Xin chao! Toi la tro ly cua phong kham mat EyesCare. Toi co the giup
-            gi cho ban?
+            Xin chào! Tôi là trợ lý của phòng khám mắt EyesCare. Tôi có thể giúp
+            gì cho bạn?
           </div>
         )}
         {messages.map((msg, idx) => (
@@ -248,10 +248,10 @@ export function ChatWidget() {
           >
             <div className="chat-msg-label">
               {msg.sender === "CUSTOMER"
-                ? "Ban"
+                ? "Bạn"
                 : msg.sender === "AI"
                   ? "AI"
-                  : "Nhan vien"}
+                  : "Nhân viên"}
             </div>
             <div className="chat-msg-bubble">{msg.content}</div>
             {msg.createdAt && (
@@ -262,7 +262,7 @@ export function ChatWidget() {
         {(showTyping || otherTyping) && (
           <div className="chat-msg chat-msg-other">
             <div className="chat-msg-label">
-              {mode === "AI_MODE" ? "AI" : "Nhan vien"}
+              {mode === "AI_MODE" ? "AI" : "Nhân viên"}
             </div>
             <div className="chat-msg-bubble chat-typing-indicator">
               <span className="chat-typing-dot" />
@@ -282,8 +282,8 @@ export function ChatWidget() {
           onChange={handleInputChange}
           placeholder={
             mode === "SUPPORT_MODE" && !sending
-              ? "Nhan tin cho nhan vien..."
-              : "Nhap tin nhan..."
+              ? "Nhắn tin cho nhân viên..."
+              : "Nhập tin nhắn..."
           }
           disabled={sending || !session}
         />

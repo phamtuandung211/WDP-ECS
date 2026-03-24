@@ -25,8 +25,8 @@ function parseGender(gender) {
 
 function genderLabel(gender) {
   if (gender === "nam") return "Nam";
-  if (gender === "nu") return "Nu";
-  return "Khac";
+  if (gender === "nu") return "Nữ";
+  return "Khác";
 }
 
 function genderIcon(gender) {
@@ -179,8 +179,8 @@ const DoctorListPage = () => {
   let doctorsContent = (
     <div className="vdoc-empty-state" id="empty-state">
       <div className="vdoc-empty-icon">🔍</div>
-      <h3>Khong tim thay bac si</h3>
-      <p>Thu thay doi bo loc hoac reset de xem tat ca bac si.</p>
+      <h3>Không tìm thấy bác sĩ</h3>
+      <p>Thử thay đổi bộ lọc hoặc reset để xem tất cả bác sĩ.</p>
     </div>
   );
 
@@ -188,7 +188,7 @@ const DoctorListPage = () => {
     doctorsContent = (
       <div className="vdoc-empty-state">
         <div className="vdoc-empty-icon">⏳</div>
-        <h3>Dang tai du lieu...</h3>
+        <h3>Đang tải dữ liệu...</h3>
       </div>
     );
   } else if (visibleDoctors.length) {
@@ -207,14 +207,14 @@ const DoctorListPage = () => {
             <div className="vdoc-img">
               <img src={doctor._avatar} alt={doctor.fullName || "Doctor"} />
               <span className="vdoc-spec-badge">
-                {doctor._specList[0]?.name || "Chuyen khoa"}
+                {doctor._specList[0]?.name || "Chuyên khoa"}
               </span>
               <span className="vdoc-gender">{doctor._genderIcon}</span>
             </div>
 
             <div className="vdoc-body">
               <h3 className="vdoc-name">
-                {doctor.fullName || "Dang cap nhat"}
+                {doctor.fullName || "Đang cập nhật"}
               </h3>
 
               <div className="vdoc-specs">
@@ -225,23 +225,23 @@ const DoctorListPage = () => {
                     </span>
                   ))
                 ) : (
-                  <span className="vdoc-spec-tag">Dang cap nhat</span>
+                  <span className="vdoc-spec-tag">Đang cập nhật</span>
                 )}
               </div>
 
               <div className="vdoc-info">
                 <div className="vdoc-info-row">
-                  <span className="vdoc-info-label">Nam kinh nghiem:</span>
-                  <span className="vdoc-info-val">{doctor._dataExp} nam</span>
+                  <span className="vdoc-info-label">Năm kinh nghiệm:</span>
+                  <span className="vdoc-info-val">{doctor._dataExp} năm</span>
                 </div>
                 <div className="vdoc-info-row">
-                  <span className="vdoc-info-label">Gioi tinh:</span>
+                  <span className="vdoc-info-label">Giới tính:</span>
                   <span className="vdoc-info-val">{doctor._genderLabel}</span>
                 </div>
                 <div className="vdoc-info-row">
-                  <span className="vdoc-info-label">Hoc vi:</span>
+                  <span className="vdoc-info-label">Học vị:</span>
                   <span className="vdoc-info-val">
-                    {doctor._degreeList[0] || "Dang cap nhat"}
+                    {doctor._degreeList[0] || "Đang cập nhật"}
                   </span>
                 </div>
               </div>
@@ -250,13 +250,13 @@ const DoctorListPage = () => {
 
               <div className="vdoc-footer">
                 <Link to="/appointments" className="vdoc-btn-book">
-                  Dat lich kham
+                  Đặt lịch khám
                 </Link>
                 <Link
                   to={`/doctors/${doctor._id}`}
                   className="vdoc-btn-profile"
                 >
-                  Xem ho so
+                  Xem hồ sơ
                 </Link>
               </div>
             </div>
@@ -264,9 +264,9 @@ const DoctorListPage = () => {
         ))}
 
         {/*
-                    TEMPLATE: Them bac si moi
-                    - Dien data-spec, data-degree, data-gender, data-exp tren vdoc-card
-                    - Neu data attributes hop le, filter/sort tu dong hoat dong
+              TEMPLATE: Thêm bác sĩ mới
+              - Điền data-spec, data-degree, data-gender, data-exp trên vdoc-card
+              - Nếu data attributes hợp lệ, filter/sort tự động hoạt động
                 */}
       </div>
     );
@@ -276,26 +276,26 @@ const DoctorListPage = () => {
     <div className="page vdoc-page">
       <section className="vdoc-hero">
         <div className="vdoc-breadcrumb">
-          <Link to="/">Trang chu</Link>
+          <Link to="/">Trang chủ</Link>
           <span>/</span>
-          <span>Bac si</span>
+          <span>Bác sĩ</span>
         </div>
         <h1 className="vdoc-title">
-          Doi ngu <em>chuyen gia</em>
+          Đội ngũ <em>chuyên gia</em>
         </h1>
         <p className="vdoc-sub">
-          Gap go doi ngu bac si nhan khoa giau kinh nghiem, tan tam va duoc dao
-          tao bai ban.
+          Gặp gỡ đội ngũ bác sĩ nhãn khoa giàu kinh nghiệm, tận tâm và được đào
+          tạo bài bản.
         </p>
       </section>
 
       <section className="vdoc-main-layout">
         <aside className="vdoc-filter-panel">
-          <h3 className="vdoc-filter-title">Bo loc</h3>
+          <h3 className="vdoc-filter-title">Bộ lọc</h3>
 
           <div className="vdoc-filter-group">
             <label className="vdoc-filter-label" htmlFor="filter-spec">
-              Chon chuyen khoa
+              Chọn chuyên khoa
             </label>
             <select
               id="filter-spec"
@@ -303,7 +303,7 @@ const DoctorListPage = () => {
               value={filterSpec}
               onChange={(e) => setFilterSpec(e.target.value)}
             >
-              <option value="">Tat ca chuyen khoa</option>
+              <option value="">Tất cả chuyên khoa</option>
               {specializations.map((spec) => (
                 <option key={spec._id} value={spec._id}>
                   {spec.name}
@@ -314,7 +314,7 @@ const DoctorListPage = () => {
 
           <div className="vdoc-filter-group">
             <label className="vdoc-filter-label" htmlFor="filter-degree">
-              Chon hoc vi
+              Chọn học vị
             </label>
             <select
               id="filter-degree"
@@ -322,7 +322,7 @@ const DoctorListPage = () => {
               value={filterDegree}
               onChange={(e) => setFilterDegree(e.target.value)}
             >
-              <option value="">Tat ca hoc vi</option>
+              <option value="">Tất cả học vị</option>
               {degrees.map((degree) => {
                 const value = slugify(degree);
                 return (
@@ -335,7 +335,7 @@ const DoctorListPage = () => {
           </div>
 
           <div className="vdoc-filter-group">
-            <span className="vdoc-filter-label">Gioi tinh</span>
+            <span className="vdoc-filter-label">Giới tính</span>
             <label className="vdoc-check-item">
               <input
                 type="checkbox"
@@ -352,26 +352,26 @@ const DoctorListPage = () => {
                 onChange={() => toggleGender("nu")}
               />
               <span className="vdoc-check-box" />
-              <span className="vdoc-check-label">Nu</span>
+              <span className="vdoc-check-label">Nữ</span>
             </label>
           </div>
 
           <div className="vdoc-filter-group">
-            <span className="vdoc-filter-label">Sap xep kinh nghiem</span>
+            <span className="vdoc-filter-label">Sắp xếp kinh nghiệm</span>
             <div className="vdoc-sort-group">
               <button
                 type="button"
                 className={`vdoc-sort-btn ${sortDir === "asc" ? "active" : ""}`}
                 onClick={() => setSortDir("asc")}
               >
-                Tang dan
+                Tăng dần
               </button>
               <button
                 type="button"
                 className={`vdoc-sort-btn ${sortDir === "desc" ? "active" : ""}`}
                 onClick={() => setSortDir("desc")}
               >
-                Giam dan
+                Giảm dần
               </button>
             </div>
           </div>
@@ -381,14 +381,14 @@ const DoctorListPage = () => {
             className="vdoc-btn-reset"
             onClick={resetFilters}
           >
-            ↺ Reset bo loc
+            ↺ Reset bộ lọc
           </button>
         </aside>
 
         <div className="vdoc-doctors-area">
           <div className="vdoc-toolbar">
             <p className="vdoc-count">
-              Hien thi <strong>{filteredDoctors.length}</strong> bac si
+              Hiển thị <strong>{filteredDoctors.length}</strong> bác sĩ
             </p>
           </div>
 

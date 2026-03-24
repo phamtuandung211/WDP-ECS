@@ -509,7 +509,7 @@ export function DoctorAppointmentDashboard() {
           </svg>
           <span className="ddoc-header-title">My Appointments</span>
         </div>
-        <div className="ddoc-header-sub">Bac si . {formatHeaderDate()}</div>
+        <div className="ddoc-header-sub">Bác sĩ . {formatHeaderDate()}</div>
       </div>
 
       {error && <Alert type="error">{error}</Alert>}
@@ -537,12 +537,12 @@ export function DoctorAppointmentDashboard() {
       <div className="ddoc-layout">
         <div className="ddoc-panel">
           <div className="ddoc-panel-head">
-            <span>Danh sach lich hen</span>
+            <span>Danh sách lịch hẹn</span>
           </div>
 
           <div className="ddoc-appt-scroll">
             {groupKeys.length === 0 ? (
-              <div className="ddoc-empty-list">Khong co lich hen nao</div>
+              <div className="ddoc-empty-list">Không có lịch hẹn nào</div>
             ) : (
               groupKeys.map((key) => (
                 <div key={key}>
@@ -579,7 +579,7 @@ export function DoctorAppointmentDashboard() {
         <div className="ddoc-panel">
           <div className="ddoc-panel-head">
             <span>
-              {selectedAppointment?.customerId?.fullName || "Chi tiet lich hen"}
+              {selectedAppointment?.customerId?.fullName || "Chi tiết lịch hẹn"}
             </span>
             <span className="pill pill-confirmed">
               {STATUS_LABELS[APPOINTMENT_STATUS.CONFIRMED]}

@@ -19,7 +19,7 @@ function NotificationIcon() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const ariaLabel =
-    unreadCount > 0 ? `Thong bao, ${unreadCount} chua doc` : "Thong bao";
+    unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : "Thông báo";
 
   useEffect(() => {
     const onOutside = (e) => {

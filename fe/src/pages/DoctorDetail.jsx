@@ -66,7 +66,7 @@ const DoctorDetailPage = () => {
       return;
     }
 
-    alert("Chuc nang dat lich chi danh cho tai khoan khach hang");
+    alert("Chức năng đặt lịch chỉ dành cho tài khoản khách hàng");
   };
 
   if (loading) return <div className="p-20 text-center">Đang tải...</div>;

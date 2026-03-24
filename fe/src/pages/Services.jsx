@@ -5,11 +5,11 @@ import { Loading, Alert } from "../components/UI";
 import { Pagination } from "../components/Pagination";
 
 const CATEGORY_LABELS = {
-  all: "Tat ca",
-  kham: "Kham & tam soat",
-  dieutri: "Dieu tri",
-  phauthu: "Phau thuat",
-  treem: "Tre em",
+  all: "Tất cả",
+  kham: "Khám & tầm soát",
+  dieutri: "Điều trị",
+  phauthu: "Phẫu thuật",
+  treem: "Trẻ em",
 };
 
 function normalizeText(value) {
@@ -56,10 +56,10 @@ function categoryVisual(primary) {
 }
 
 function estimateDuration(categories) {
-  if (categories.includes("phauthu")) return "60 phut";
-  if (categories.includes("dieutri")) return "45-60 phut";
-  if (categories.includes("treem")) return "30-45 phut";
-  return "20-40 phut";
+  if (categories.includes("phauthu")) return "60 phút";
+  if (categories.includes("dieutri")) return "45-60 phút";
+  if (categories.includes("treem")) return "30-45 phút";
+  return "20-40 phút";
 }
 
 export function Services() {
@@ -139,7 +139,7 @@ export function Services() {
   }, [activeCategory, servicesWithMeta]);
 
   const formatCurrency = (amount) => {
-    if (amount == null || Number.isNaN(Number(amount))) return "Lien he";
+    if (amount == null || Number.isNaN(Number(amount))) return "Liên hệ";
     return `${Number(amount).toLocaleString("vi-VN")} VND`;
   };
 
@@ -155,16 +155,16 @@ export function Services() {
     <div className="page vsvc-page">
       <section className="vsvc-hero">
         <div className="vsvc-breadcrumb">
-          <Link to="/">Trang chu</Link>
+          <Link to="/">Trang chủ</Link>
           <span>/</span>
-          <span>Dich vu</span>
+          <span>Dịch vụ</span>
         </div>
         <h1 className="vsvc-title">
-          Dich vu <em>kham mat</em>
+          Dịch vụ <em>khám mắt</em>
         </h1>
         <p className="vsvc-sub">
-          Chung toi cung cap day du cac dich vu nhan khoa tu co ban den chuyen
-          sau, ung dung cong nghe tien tien nhat.
+          Chúng tôi cung cấp đầy đủ các dịch vụ nhãn khoa từ cơ bản đến chuyên
+          sâu, ứng dụng công nghệ tiên tiến nhất.
         </p>
 
         <form
@@ -178,15 +178,15 @@ export function Services() {
           <input
             type="text"
             name="search"
-            placeholder="Tim theo ten hoac mo ta..."
+            placeholder="Tìm theo tên hoặc mô tả..."
             defaultValue={search}
           />
-          <button type="submit">Tim kiem</button>
+          <button type="submit">Tìm kiếm</button>
         </form>
       </section>
 
       <section className="vsvc-filter-bar">
-        <span className="vsvc-filter-label">Loc theo:</span>
+        <span className="vsvc-filter-label">Lọc theo:</span>
         {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
           <button
             type="button"
@@ -198,7 +198,7 @@ export function Services() {
           </button>
         ))}
         <span className="vsvc-filter-count">
-          {filteredServices.length} dich vu
+          {filteredServices.length} dịch vụ
         </span>
       </section>
 
@@ -232,7 +232,7 @@ export function Services() {
                   <span
                     className={`vsvc-badge ${service._isFeatured ? "popular" : ""}`}
                   >
-                    {CATEGORY_LABELS[service._primaryCategory] || "Dich vu"}
+                    {CATEGORY_LABELS[service._primaryCategory] || "Dịch vụ"}
                   </span>
                 </div>
 
@@ -242,7 +242,7 @@ export function Services() {
                     {stripHtml(service.description).slice(
                       0,
                       service._isFeatured ? 220 : 140,
-                    ) || "Thong tin dang duoc cap nhat."}
+                    ) || "Thông tin đang được cập nhật."}
                   </p>
                   <div className="vsvc-meta">
                     <span className="vsvc-duration">{service._duration}</span>
@@ -252,9 +252,9 @@ export function Services() {
                       <span className="vsvc-price-num">
                         {formatCurrency(service.price)}
                       </span>
-                      <span className="vsvc-price-unit">/ luot kham</span>
+                      <span className="vsvc-price-unit">/ lượt khám</span>
                     </div>
-                    <span className="vsvc-btn-detail">Xem chi tiet</span>
+                    <span className="vsvc-btn-detail">Xem chi tiết</span>
                   </div>
                 </div>
               </Link>
@@ -262,9 +262,9 @@ export function Services() {
           ) : (
             <div className="vsvc-empty-state">
               <div className="empty-icon">🔎</div>
-              <h3>Khong tim thay dich vu phu hop</h3>
+              <h3>Không tìm thấy dịch vụ phù hợp</h3>
               <p>
-                Hay thu doi bo loc hoac tu khoa tim kiem de xem them ket qua.
+                Hãy thử đổi bộ lọc hoặc từ khóa tìm kiếm để xem thêm kết quả.
               </p>
             </div>
           )}

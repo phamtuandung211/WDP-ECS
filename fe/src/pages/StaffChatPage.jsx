@@ -68,7 +68,7 @@ export function StaffChatPage() {
   };
 
   const handleClose = async () => {
-    if (!window.confirm("Ban co chac muon dong phien chat nay?")) return;
+    if (!window.confirm("Bạn có chắc muốn đóng phiên chat này?")) return;
     try {
       await closeStaffSession();
     } catch (err) {
@@ -91,21 +91,21 @@ export function StaffChatPage() {
 
   return (
     <div className="staff-chat-page">
-      <h1 className="staff-chat-title">Chat Ho Tro Khach Hang</h1>
+      <h1 className="staff-chat-title">Chat Hỗ Trợ Khách Hàng</h1>
       <div className="staff-chat-status">
         <span className={`status-dot ${connected ? "online" : "offline"}`} />
-        {connected ? "Da ket noi" : "Mat ket noi"}
+        {connected ? "Đã kết nối" : "Mất kết nối"}
       </div>
 
       <div className="staff-chat-layout">
         {/* Session list */}
         <div className="staff-chat-sidebar">
           <div className="staff-chat-sidebar-header">
-            <h3>Phien chat ({staffSessions.length})</h3>
+            <h3>Phiên chat ({staffSessions.length})</h3>
             <button
               className="staff-chat-refresh"
               onClick={loadStaffSessions}
-              title="Lam moi"
+              title="Làm mới"
             >
               <svg
                 width="16"
@@ -122,7 +122,7 @@ export function StaffChatPage() {
           </div>
 
           {staffSessions.length === 0 ? (
-            <div className="staff-chat-empty">Khong co phien chat nao</div>
+            <div className="staff-chat-empty">Không có phiên chat nào</div>
           ) : (
             <div className="staff-chat-list">
               {staffSessions.map((s) => (
@@ -132,7 +132,7 @@ export function StaffChatPage() {
                   onClick={() => openStaffSession(s._id)}
                 >
                   <div className="staff-chat-item-name">
-                    {s.customerId?.fullName || "Khach hang"}
+                    {s.customerId?.fullName || "Khách hàng"}
                   </div>
                   <div className="staff-chat-item-info">
                     {s.customerId?.phone || ""}
@@ -141,7 +141,7 @@ export function StaffChatPage() {
                     <span
                       className={`staff-chat-badge ${s.assignedStaffId ? "assigned" : "unassigned"}`}
                     >
-                      {s.assignedStaffId ? "Da nhan" : "Cho xu ly"}
+                      {s.assignedStaffId ? "Đã nhận" : "Chờ xử lý"}
                     </span>
                     <span className="staff-chat-item-time">
                       {formatDate(s.updatedAt)}
@@ -157,14 +157,14 @@ export function StaffChatPage() {
         <div className="staff-chat-main">
           {!activeStaffSession ? (
             <div className="staff-chat-placeholder">
-              Chon mot phien chat de bat dau ho tro
+              Chọn một phiên chat để bắt đầu hỗ trợ
             </div>
           ) : (
             <>
               <div className="staff-chat-main-header">
-                <span>Phien chat</span>
+                <span>Phiên chat</span>
                 <button className="staff-chat-close-btn" onClick={handleClose}>
-                  Dong phien
+                  Đóng phiên
                 </button>
               </div>
 
@@ -176,10 +176,10 @@ export function StaffChatPage() {
                   >
                     <div className="chat-msg-label">
                       {msg.sender === "CUSTOMER"
-                        ? "Khach hang"
+                        ? "Khách hàng"
                         : msg.sender === "AI"
                           ? "AI"
-                          : "Ban"}
+                          : "Bạn"}
                     </div>
                     <div className="chat-msg-bubble">{msg.content}</div>
                     {msg.createdAt && (
@@ -191,7 +191,7 @@ export function StaffChatPage() {
                 ))}
                 {staffOtherTyping && (
                   <div className="chat-msg chat-msg-other">
-                    <div className="chat-msg-label">Khach hang</div>
+                    <div className="chat-msg-label">Khách hàng</div>
                     <div className="chat-msg-bubble chat-typing-indicator">
                       <span className="chat-typing-dot" />
                       <span className="chat-typing-dot" />
@@ -207,7 +207,7 @@ export function StaffChatPage() {
                   type="text"
                   value={input}
                   onChange={handleInputChange}
-                  placeholder="Nhap tin nhan phan hoi..."
+                  placeholder="Nhập tin nhắn phản hồi..."
                   disabled={sending}
                 />
                 <button
@@ -215,7 +215,7 @@ export function StaffChatPage() {
                   disabled={!input.trim() || sending}
                   className="staff-chat-send"
                 >
-                  Gui
+                  Gửi
                 </button>
               </form>
             </>

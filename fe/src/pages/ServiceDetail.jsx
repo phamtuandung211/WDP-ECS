@@ -53,34 +53,34 @@ export function ServiceDetail() {
   if (!service) return null;
 
   const plainDesc = stripHtml(service.description || "");
-  const shortDesc = plainDesc.slice(0, 220) || "Thong tin dang duoc cap nhat.";
+  const shortDesc = plainDesc.slice(0, 220) || "Thông tin đang được cập nhật.";
   const htmlDesc = toHtml(service.description || "");
   const hasPrice = service.price != null;
 
   const servicePrice = hasPrice
     ? `${Number(service.price).toLocaleString("vi-VN")} VND`
-    : "Lien he";
+    : "Liên hệ";
 
-  let estimatedDuration = "20-40 phut";
+  let estimatedDuration = "20-40 phút";
   const durationText = `${service.name || ""} ${plainDesc}`;
   if (/phau thuat|laser|lasik|smile/i.test(durationText)) {
-    estimatedDuration = "45-60 phut";
+    estimatedDuration = "45-60 phút";
   } else if (/tre em|nhi|hoc sinh/i.test(durationText)) {
-    estimatedDuration = "30-45 phut";
+    estimatedDuration = "30-45 phút";
   }
 
   const serviceAudience = /tre em|nhi|hoc sinh/i.test(
     `${service.name || ""} ${plainDesc}`,
   )
-    ? "Tre tu 3 tuoi tro len"
-    : "Moi do tuoi";
+    ? "Trẻ từ 3 tuổi trở lên"
+    : "Mọi độ tuổi";
 
   return (
     <div className="page vsdetail-page">
       <div className="vsdetail-back-bar">
         <Link to="/services" className="vsdetail-back-link">
           <span>←</span>
-          <span>Danh sach dich vu</span>
+          <span>Danh sách dịch vụ</span>
         </Link>
       </div>
 
@@ -88,14 +88,14 @@ export function ServiceDetail() {
         <div className="vsdetail-content">
           <div className="vsdetail-eyebrow">
             <span className="vsdetail-eyebrow-dot" />
-            <span>Dich vu kham mat</span>
+            <span>Dịch vụ khám mắt</span>
           </div>
 
-          <h1 className="vsdetail-title">{service.name || "Dich vu"}</h1>
+          <h1 className="vsdetail-title">{service.name || "Dịch vụ"}</h1>
 
           <div className="vsdetail-price-inline">
             <span className="vsdetail-price-num">{servicePrice}</span>
-            <span className="vsdetail-price-unit">/ luot kham</span>
+            <span className="vsdetail-price-unit">/ lượt khám</span>
           </div>
 
           {service.image ? (
@@ -121,71 +121,71 @@ export function ServiceDetail() {
           <div className="vsdetail-tags">
             <span className="vsdetail-tag">⏱ {estimatedDuration}</span>
             <span className="vsdetail-tag">👥 {serviceAudience}</span>
-            <span className="vsdetail-tag">✅ Khong xam lan</span>
-            <span className="vsdetail-tag">🛡 An toan</span>
+            <span className="vsdetail-tag">✅ Không xâm lấn</span>
+            <span className="vsdetail-tag">🛡 An toàn</span>
           </div>
 
           <div className="vsdetail-divider" />
 
           <div className="vsdetail-cta-strip">
             <Link to="/appointments" className="vsdetail-btn-book-lg">
-              Dat lich kham ngay
+              Đặt lịch khám ngay
             </Link>
             <Link to="/appointments" className="vsdetail-btn-ask">
-              Tu van mien phi
+              Tư vấn miễn phí
             </Link>
           </div>
 
-          <p className="vsdetail-cta-note">
-            ℹ Huy lich mien phi truoc 24 gio · Khong phat sinh phu phi
-          </p>
+          {/* <p className="vsdetail-cta-note">
+            ℹ Hủy lịch miễn phí trước 24 giờ · Không phát sinh phụ phí
+          </p> */}
 
           <Link to="/services" className="vsdetail-back-bottom">
-            ← Quay lai danh sach dich vu
+            ← Quay lại danh sách dịch vụ
           </Link>
         </div>
 
         <aside className="vsdetail-sidebar">
           <div className="vsdetail-cta-card">
-            <p className="vsdetail-cta-label">Chi phi dich vu</p>
+            <p className="vsdetail-cta-label">Chi phí dịch vụ</p>
             <p className="vsdetail-cta-price">{servicePrice}</p>
             <p className="vsdetail-cta-unit">
-              / luot kham · Chua bao gom thuoc
+              / lượt khám · Chưa bao gồm thuốc
             </p>
             <div className="vsdetail-cta-divider" />
             <Link to="/appointments" className="vsdetail-btn-book-cta">
-              Dat lich kham ngay
+              Đặt lịch khám ngay
             </Link>
             <Link to="/appointments" className="vsdetail-btn-ask-cta">
-              Tu van mien phi
+              Tư vấn miễn phí
             </Link>
-            <p className="vsdetail-cta-note-dark">
-              Huy lich mien phi truoc 24 gio
-            </p>
+            {/* <p className="vsdetail-cta-note-dark">
+              Hủy lịch miễn phí trước 24 giờ
+            </p> */}
           </div>
 
           <div className="vsdetail-s-card">
-            <h3 className="vsdetail-s-card-head">Thong tin dich vu</h3>
+            <h3 className="vsdetail-s-card-head">Thông tin dịch vụ</h3>
             <div className="vsdetail-meta-list">
               <div className="vsdetail-meta-row">
                 <span className="vsdetail-meta-icon">⏱️</span>
                 <div>
-                  <span className="vsdetail-meta-label">Thoi gian</span>
+                  <span className="vsdetail-meta-label">Thời gian</span>
                   <span className="vsdetail-meta-val">{estimatedDuration}</span>
                 </div>
               </div>
               <div className="vsdetail-meta-row">
                 <span className="vsdetail-meta-icon">📅</span>
                 <div>
-                  <span className="vsdetail-meta-label">Lich gan nhat</span>
-                  <span className="vsdetail-meta-val">Hom nay</span>
+                  <span className="vsdetail-meta-label">Lịch gần nhất</span>
+                  <span className="vsdetail-meta-val">Hôm nay</span>
                 </div>
               </div>
               <div className="vsdetail-meta-row">
                 <span className="vsdetail-meta-icon">🏥</span>
                 <div>
-                  <span className="vsdetail-meta-label">Dia diem</span>
-                  <span className="vsdetail-meta-val">Co so VisionCare</span>
+                  <span className="vsdetail-meta-label">Địa điểm</span>
+                  <span className="vsdetail-meta-val">Cơ sở VisionCare</span>
                 </div>
               </div>
               <div className="vsdetail-meta-row">

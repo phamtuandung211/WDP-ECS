@@ -5,12 +5,12 @@ import { Loading, Alert } from "../components/UI";
 import { Pagination } from "../components/Pagination";
 
 const TOPIC_LABELS = {
-  all: "Tat ca",
-  benhly: "Benh ly mat",
-  phongngua: "Phong ngua",
-  phauthu: "Phau thuat",
-  treem: "Mat tre em",
-  congnghe: "Cong nghe",
+  all: "Tất cả",
+  benhly: "Bệnh lý mắt",
+  phongngua: "Phòng ngừa",
+  phauthu: "Phẫu thuật",
+  treem: "Mắt trẻ em",
+  congnghe: "Công nghệ",
 };
 
 function normalizeText(value) {
@@ -197,9 +197,9 @@ export function Blogs() {
   }, [blogsWithMeta]);
 
   const formatDate = (value) => {
-    if (!value) return "Moi cap nhat";
+    if (!value) return "Mới cập nhật";
     const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return "Moi cap nhat";
+    if (Number.isNaN(d.getTime())) return "Mới cập nhật";
     return d.toLocaleDateString("vi-VN");
   };
 
@@ -214,25 +214,25 @@ export function Blogs() {
     <div className="page vblog-page">
       <section className="vblog-hero">
         <div className="vblog-breadcrumb">
-          <Link to="/">Trang chu</Link>
+          <Link to="/">Trang chủ</Link>
           <span>/</span>
-          <span>Bai viet</span>
+          <span>Bài viết</span>
         </div>
         <div className="vblog-hero-row">
           <div>
             <h1 className="vblog-title">
-              Bai viet <em>suc khoe</em>
+              Bài viết <em>sức khỏe</em>
             </h1>
             <p className="vblog-sub">
-              Cac bai viet chuyen sau ve cham soc mat va suc khoe, duoc bien
-              soan boi doi ngu nhan khoa VisionCare.
+              Các bài viết chuyên sâu về chăm sóc mắt và sức khỏe, được biên
+              soạn bởi đội ngũ nhãn khoa VisionCare.
             </p>
           </div>
           <div className="vblog-search-wrap">
             <input
               type="text"
               className="vblog-search-input"
-              placeholder="Tim kiem bai viet..."
+              placeholder="Tìm kiếm bài viết..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -244,7 +244,7 @@ export function Blogs() {
       </section>
 
       <section className="vblog-filter-bar">
-        <span className="vblog-filter-label">Chu de:</span>
+        <span className="vblog-filter-label">Chủ đề:</span>
         {Object.entries(TOPIC_LABELS).map(([key, label]) => (
           <button
             type="button"
@@ -256,7 +256,7 @@ export function Blogs() {
           </button>
         ))}
         <span className="vblog-filter-count">
-          {filteredBlogs.length} bai viet
+          {filteredBlogs.length} bài viết
         </span>
       </section>
 
@@ -286,19 +286,19 @@ export function Blogs() {
               </div>
               <div className="vblog-featured-body">
                 <span className="vblog-art-cat">
-                  {TOPIC_LABELS[featuredBlog._primaryTopic] || "Bai viet"}
+                  {TOPIC_LABELS[featuredBlog._primaryTopic] || "Bài viết"}
                 </span>
                 <h2 className="vblog-featured-title">{featuredBlog.title}</h2>
                 <p className="vblog-excerpt">
                   {stripHtml(featuredBlog.content).slice(0, 220) ||
-                    "Noi dung dang duoc cap nhat."}
+                    "Nội dung đang được cập nhật."}
                 </p>
                 <div className="vblog-meta-row">
                   <span>{formatDate(featuredBlog.createdAt)}</span>
                   <span>•</span>
-                  <span>{readTime(featuredBlog.content)} phut doc</span>
+                  <span>{readTime(featuredBlog.content)} phút đọc</span>
                 </div>
-                <span className="vblog-btn-read">Xem chi tiet →</span>
+                <span className="vblog-btn-read">Xem chi tiết →</span>
               </div>
             </Link>
           ) : null}
@@ -329,22 +329,22 @@ export function Blogs() {
                   <div className="vblog-row-body">
                     <div>
                       <span className="vblog-art-cat vblog-art-cat-inline">
-                        {TOPIC_LABELS[blog._primaryTopic] || "Bai viet"}
+                        {TOPIC_LABELS[blog._primaryTopic] || "Bài viết"}
                       </span>
                       <h3 className="vblog-row-title">{blog.title}</h3>
                       <p className="vblog-row-excerpt">
                         {stripHtml(blog.content).slice(0, 170) ||
-                          "Noi dung dang duoc cap nhat."}
+                          "Nội dung đang được cập nhật."}
                       </p>
                     </div>
                     <div className="vblog-row-footer">
                       <div className="vblog-meta-mini">
                         <span>{formatDate(blog.createdAt)}</span>
                         <span>•</span>
-                        <span>{readTime(blog.content)} phut doc</span>
+                        <span>{readTime(blog.content)} phút đọc</span>
                       </div>
                       <span className="vblog-btn-read-ghost">
-                        Xem chi tiet →
+                        Xem chi tiết →
                       </span>
                     </div>
                   </div>
@@ -352,15 +352,15 @@ export function Blogs() {
               ))
             ) : (
               <div className="vblog-empty">
-                Khong tim thay bai viet phu hop.
+                Không tìm thấy bài viết phù hợp.
               </div>
             )}
 
             {/*
-              TEMPLATE: Them bai viet moi
-              - Them the Link className="vblog-row"
-              - Gan data-cat="benhly phongngua phauthu treem congnghe"
-              - data-title chua keywords lowercase de tim kiem nhanh
+              TEMPLATE: Thêm bài viết mới
+              - Thêm thẻ Link className="vblog-row"
+              - Gán data-cat="benhly phongngua phauthu treem congnghe"
+              - data-title chứa keywords lowercase để tìm kiếm nhanh
             */}
           </div>
 
@@ -375,7 +375,7 @@ export function Blogs() {
 
         <aside className="vblog-sidebar">
           <div className="vblog-widget">
-            <h4 className="vblog-widget-title">Chu de</h4>
+            <h4 className="vblog-widget-title">Chủ đề</h4>
             <div className="vblog-tag-cloud">
               {allTags.length ? (
                 allTags.map((topic) => (
@@ -390,13 +390,13 @@ export function Blogs() {
                   </button>
                 ))
               ) : (
-                <span className="vblog-tag">Chua co chu de</span>
+                <span className="vblog-tag">Chưa có chủ đề</span>
               )}
             </div>
           </div>
 
           <div className="vblog-widget">
-            <h4 className="vblog-widget-title">Bai viet moi</h4>
+            <h4 className="vblog-widget-title">Bài viết mới</h4>
             <div className="vblog-recent-list">
               {recentBlogs.length ? (
                 recentBlogs.map((blog) => (
@@ -427,16 +427,16 @@ export function Blogs() {
                   </Link>
                 ))
               ) : (
-                <p className="vblog-recent-empty">Chua co bai viet moi.</p>
+                <p className="vblog-recent-empty">Chưa có bài viết mới.</p>
               )}
             </div>
           </div>
 
           <div className="vblog-cta-widget">
-            <h4>Can tu van tu bac si?</h4>
-            <p>Dat lich kham truc tuyen nhanh chong, khong can cho doi.</p>
+            <h4>Cần tư vấn từ bác sĩ?</h4>
+            <p>Đặt lịch khám trực tuyến nhanh chóng, không cần chờ đợi.</p>
             <Link to="/appointments" className="vblog-btn-cta-widget">
-              Dat lich ngay
+              Đặt lịch ngay
             </Link>
           </div>
         </aside>

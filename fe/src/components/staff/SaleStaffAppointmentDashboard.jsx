@@ -289,19 +289,19 @@ export function SaleStaffAppointmentDashboard() {
 
   let slotContent = (
     <div className="ssad-slot-placeholder">
-      Chon bac si va ngay de xem slot trong
+      Chọn bác sĩ và ngày để xem slot trống
     </div>
   );
 
   if (assignmentData.date && assignmentData.doctorId) {
     if (slotsLoading) {
       slotContent = (
-        <div className="ssad-slot-placeholder">Dang tai slot...</div>
+        <div className="ssad-slot-placeholder">Đang tải slot...</div>
       );
     } else if (availableSlots.length === 0) {
       slotContent = (
         <div className="ssad-slot-placeholder error">
-          Khong co slot trong cho bac si va ngay da chon
+          Không có slot trống cho bác sĩ và ngày đã chọn
         </div>
       );
     } else {
@@ -348,7 +348,7 @@ export function SaleStaffAppointmentDashboard() {
         </div>
         <div className="ssad-stat">
           <div className="ssad-val green">{doctors.length}</div>
-          <div className="ssad-lbl">Bac si hoat dong</div>
+          <div className="ssad-lbl">Bác sĩ hoạt động</div>
         </div>
       </div>
 
@@ -366,34 +366,34 @@ export function SaleStaffAppointmentDashboard() {
               className={`ssad-filter-btn ${filterMode === "all" ? "active" : ""}`}
               onClick={() => setFilterMode("all")}
             >
-              Tat ca
+              Tất cả
             </button>
             <button
               type="button"
               className={`ssad-filter-btn ${filterMode === "day" ? "active" : ""}`}
               onClick={() => setFilterMode("day")}
             >
-              Ngay
+              Ngày
             </button>
             <button
               type="button"
               className={`ssad-filter-btn ${filterMode === "week" ? "active" : ""}`}
               onClick={() => setFilterMode("week")}
             >
-              Tuan
+              Tuần
             </button>
             <button
               type="button"
               className={`ssad-filter-btn ${filterMode === "month" ? "active" : ""}`}
               onClick={() => setFilterMode("month")}
             >
-              Thang
+              Tháng
             </button>
           </div>
 
           {filterMode === "day" && (
             <div className="ssad-filter-extra show">
-              <label htmlFor="filterDay">Ngay:</label>
+              <label htmlFor="filterDay">Ngày:</label>
               <input
                 id="filterDay"
                 type="date"
@@ -405,7 +405,7 @@ export function SaleStaffAppointmentDashboard() {
 
           {filterMode === "week" && (
             <div className="ssad-filter-extra show">
-              <label htmlFor="filterWeekFrom">Tu:</label>
+              <label htmlFor="filterWeekFrom">Từ:</label>
               <input
                 id="filterWeekFrom"
                 type="date"
@@ -424,7 +424,7 @@ export function SaleStaffAppointmentDashboard() {
 
           {filterMode === "month" && (
             <div className="ssad-filter-extra show">
-              <label htmlFor="filterMonth">Thang:</label>
+              <label htmlFor="filterMonth">Tháng:</label>
               <input
                 id="filterMonth"
                 type="month"
@@ -436,14 +436,14 @@ export function SaleStaffAppointmentDashboard() {
 
           {filterMode !== "all" && (
             <div className="ssad-filter-info">
-              Hien thi {visibleAppointments.length} lich hen
+              Hiển thị {visibleAppointments.length} lịch hẹn
             </div>
           )}
 
           <div className="ssad-queue-scroll">
             {visibleAppointments.length === 0 ? (
               <div className="ssad-empty-state">
-                Khong co lich hen nao trong khoang nay
+                Không có lịch hẹn nào trong khoảng này
               </div>
             ) : (
               visibleAppointments.map((apt) => (
@@ -473,20 +473,20 @@ export function SaleStaffAppointmentDashboard() {
         </div>
 
         <div className="ssad-panel">
-          <div className="ssad-panel-head">Chi tiet va Gan lich</div>
+          <div className="ssad-panel-head">Chi tiết và Gán lịch</div>
           <div className="ssad-form-section">
             {selectedAppointment ? (
               <>
-                <div className="ssad-section-title">Thong tin khach hang</div>
+                <div className="ssad-section-title">Thông tin khách hàng</div>
                 <div className="ssad-info-grid">
                   <div className="ssad-info-item">
-                    <div className="ssad-info-label">Ho ten</div>
+                    <div className="ssad-info-label">Họ tên</div>
                     <span>
                       {selectedAppointment.customerId?.fullName || "-"}
                     </span>
                   </div>
                   <div className="ssad-info-item">
-                    <div className="ssad-info-label">Dien thoai</div>
+                    <div className="ssad-info-label">Điện thoại</div>
                     <span>{selectedAppointment.customerId?.phone || "-"}</span>
                   </div>
                   <div className="ssad-info-item">
@@ -494,28 +494,28 @@ export function SaleStaffAppointmentDashboard() {
                     <span>{selectedAppointment.customerId?.email || "-"}</span>
                   </div>
                   <div className="ssad-info-item">
-                    <div className="ssad-info-label">Loai</div>
+                    <div className="ssad-info-label">Loại</div>
                     <span>
                       {selectedAppointment.type === APPOINTMENT_TYPE.BASIC
-                        ? "BASIC - Chon ngay"
-                        : "ADVANCED - Chon bac si va slot"}
+                        ? "BASIC - Chọn ngày"
+                        : "ADVANCED - Chọn bác sĩ và slot"}
                     </span>
                   </div>
                 </div>
 
-                <div className="ssad-section-title">Ghi chu</div>
+                <div className="ssad-section-title">Ghi chú</div>
                 <div className="ssad-notes-box">
                   {selectedAppointment.note || "-"}
                 </div>
 
                 <hr className="ssad-divider" />
 
-                <div className="ssad-section-title">Gan bac si va slot</div>
+                <div className="ssad-section-title">Gán bác sĩ và slot</div>
 
                 <form onSubmit={handleApprove}>
                   <div className="ssad-form-group">
                     <label htmlFor="doctorId" className="ssad-form-label">
-                      Bac si <span className="required">*</span>
+                      Bác sĩ <span className="required">*</span>
                     </label>
                     {doctors.length === 0 ? (
                       <Alert type="warning">No doctors available</Alert>
@@ -526,11 +526,11 @@ export function SaleStaffAppointmentDashboard() {
                         value={assignmentData.doctorId}
                         onChange={handleAssignmentChange}
                       >
-                        <option value="">-- Chon bac si --</option>
+                        <option value="">-- Chọn bác sĩ --</option>
                         {doctors.map((doctor) => (
                           <option key={doctor._id} value={doctor._id}>
                             {doctor.fullName} -{" "}
-                            {doctor.specialization?.name || "Khong chuyen khoa"}
+                            {doctor.specialization?.name || "Không chuyên khoa"}
                           </option>
                         ))}
                       </select>
@@ -540,7 +540,7 @@ export function SaleStaffAppointmentDashboard() {
                   {selectedAppointment.type === APPOINTMENT_TYPE.BASIC && (
                     <div className="ssad-form-group">
                       <label htmlFor="date" className="ssad-form-label">
-                        Ngay hen <span className="required">*</span>
+                        Ngày hẹn <span className="required">*</span>
                       </label>
                       <input
                         type="date"
@@ -555,7 +555,7 @@ export function SaleStaffAppointmentDashboard() {
 
                   <div className="ssad-form-group">
                     <label htmlFor="slotId" className="ssad-form-label">
-                      Khung gio trong <span className="required">*</span>
+                      Khung giờ trống <span className="required">*</span>
                     </label>
                     {slotContent}
 
@@ -597,21 +597,21 @@ export function SaleStaffAppointmentDashboard() {
                       }
                       className="ssad-btn ssad-btn-primary"
                     >
-                      {loading ? "Dang gan..." : "Duyet va Gan lich"}
+                      {loading ? "Đang gán..." : "Duyệt và Gán lịch"}
                     </button>
                     <button
                       type="button"
                       onClick={handleSkip}
                       className="ssad-btn ssad-btn-ghost"
                     >
-                      Bo qua
+                      Bỏ qua
                     </button>
                   </div>
                 </form>
               </>
             ) : (
               <div className="ssad-empty-state">
-                Chon mot lich hen de gan bac si va khung gio
+                Chọn một lịch hẹn để gán bác sĩ và khung giờ
               </div>
             )}
           </div>
