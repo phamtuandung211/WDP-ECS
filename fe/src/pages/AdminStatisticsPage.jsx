@@ -723,7 +723,9 @@ function AccountManagerTab() {
   return (
     <div>
       <div className="filter-bar stats-filter">
-        <label className="form-label" htmlFor="account-search-input">Tìm email</label>
+        <label className="form-label" htmlFor="account-search-input">
+          Tìm email
+        </label>
         <input
           id="account-search-input"
           className="form-input"
@@ -732,7 +734,9 @@ function AccountManagerTab() {
           placeholder="Nhập email"
           onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
         />
-        <label className="form-label" htmlFor="account-role-select">Vai trò</label>
+        <label className="form-label" htmlFor="account-role-select">
+          Vai trò
+        </label>
         <select
           id="account-role-select"
           className="form-input"
@@ -746,14 +750,14 @@ function AccountManagerTab() {
           <option value="DOCTOR">DOCTOR</option>
           <option value="CUSTOMER">CUSTOMER</option>
         </select>
-        <label className="form-label" htmlFor="account-status-select">Trạng thái</label>
+        <label className="form-label" htmlFor="account-status-select">
+          Trạng thái
+        </label>
         <select
           id="account-status-select"
           className="form-input"
           value={draft.status}
-          onChange={(e) =>
-            setDraft((d) => ({ ...d, status: e.target.value }))
-          }
+          onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
         >
           <option value="ALL">Tất cả</option>
           <option value="ACTIVE">ACTIVE</option>
@@ -803,7 +807,9 @@ function AccountManagerTab() {
                           : "—"}
                       </td>
                       <td>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div
+                          style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                        >
                           {acc.status !== "ACTIVE" && (
                             <button
                               className="btn btn-secondary"
