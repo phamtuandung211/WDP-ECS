@@ -1,6 +1,11 @@
 import Account from "../models/Account.js";
 import { PROFILE_MODEL_BY_ROLE } from "../constants/ProfileModel.enum.js";
 import { comparePassword, hashPassword} from "../utils/password.js";
+import { getAccountsWithProfiles } from "./account.service.js";
+import Role from "../models/Role.js";
+import { ACCOUNT_STATUS } from "../constants/Account.enum.js";
+import { ROLE_NAME } from "../constants/Role.enum.js";
+import { buildPagination, getPaginationMetadata } from "../utils/pagination.js";
 
 
 function throwErr(status, message) {
@@ -105,5 +110,81 @@ export const changePasswordByAccountId = async ({ accountId, oldPassword, newPas
     account.passwordHash = newPasswordHash;
     await account.save();
     return;
+};
+
+export const getAccountsForAdmin = async ({ page, limit, status, role, search }) => {
+    const query = {};
+
+    if (status && status !== "ALL") {
+        if (!Object.values(ACCOUNT_STATUS).includes(status)) {
+            throwErr(400, "Invalid account status");
+        }
+        query.status = status;
+    }
+
+    if (search?.trim()) {
+        query.email = { $regex: search.trim(), $options: "i" };
+    }
+
+    if (role && role !== "ALL") {
+        if (!Object.values(ROLE_NAME).includes(role)) {
+            throwErr(400, "Invalid role");
+        }
+        const roleDoc = await Role.findOne({ name: role }).select("_id").lean();
+        if (!roleDoc) {
+            const { limit: safeLimit, offset } = buildPagination({ page, limit });
+            return {
+                data: [],
+                metadata: getPaginationMetadata(0, 0, safeLimit, offset),
+            };
+        }
+        query.role = roleDoc._id;
+    }
+
+    const result = await getAccountsWithProfiles({
+        query,
+        roleNames: Object.values(ROLE_NAME),
+        page,
+        limit,
+    });
+
+    return {
+        data: result.data.map((acc) => ({
+            _id: acc._id,
+            email: acc.email,
+            status: acc.status,
+            isVerified: acc.isVerified,
+            createdAt: acc.createdAt,
+            role: acc.role,
+            fullName: acc.profile?.fullName || null,
+            phone: acc.profile?.phone || null,
+        })),
+        metadata: result.metadata,
+    };
+};
+
+export const updateAccountStatusByAdmin = async ({ accountId, status, requesterAccountId }) => {
+    if (!Object.values(ACCOUNT_STATUS).includes(status)) {
+        throwErr(400, "Invalid account status");
+    }
+
+    if (String(accountId) === String(requesterAccountId) && status !== ACCOUNT_STATUS.ACTIVE) {
+        throwErr(400, "You cannot deactivate your own account");
+    }
+
+    const updated = await Account.findByIdAndUpdate(
+        accountId,
+        { $set: { status } },
+        { new: true, runValidators: true },
+    )
+        .select("_id email role status isVerified createdAt")
+        .populate("role", "name")
+        .lean();
+
+    if (!updated) {
+        throwErr(404, "Account not found");
+    }
+
+    return updated;
 };
 

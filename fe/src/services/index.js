@@ -138,6 +138,12 @@ export const profileService = {
   updateMyProfile: (data) => apiClient.patch("/user/me", data),
 };
 
+export const adminAccountService = {
+  getAccounts: (params = {}) => apiClient.get("/user/admin/accounts", { params }),
+  updateStatus: (accountId, status) =>
+    apiClient.patch(`/user/admin/accounts/${accountId}/status`, { status }),
+};
+
 export const medicalRecordService = {
   create: (data) => apiClient.post("/medical-records", data),
   getMy: (params = {}) => apiClient.get("/medical-records/my", { params }),

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { statisticsService } from "../services";
+import { statisticsService, adminAccountService } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
 
@@ -655,6 +655,224 @@ function AccountsStatsTab() {
   );
 }
 
+// ─── Account Manager Tab ─────────────────────────────────────────────────────
+function AccountManagerTab() {
+  const [result, setResult] = useState({ data: [], metadata: {} });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [updatingId, setUpdatingId] = useState("");
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState({
+    search: "",
+    role: "ALL",
+    status: "ALL",
+  });
+  const [draft, setDraft] = useState(filters);
+  const limit = 10;
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminAccountService.getAccounts({
+        page,
+        limit,
+        search: filters.search || undefined,
+        role: filters.role === "ALL" ? undefined : filters.role,
+        status: filters.status === "ALL" ? undefined : filters.status,
+      });
+      setResult({
+        data: res.data?.data || [],
+        metadata: res.data?.metadata || {},
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Lỗi tải danh sách tài khoản");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [filters, page]);
+
+  const applyFilters = () => {
+    setPage(1);
+    setFilters(draft);
+  };
+
+  const updateStatus = async (accountId, status) => {
+    setUpdatingId(accountId);
+    try {
+      await adminAccountService.updateStatus(accountId, status);
+      setResult((prev) => ({
+        ...prev,
+        data: prev.data.map((acc) =>
+          acc._id === accountId ? { ...acc, status } : acc,
+        ),
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || "Không thể cập nhật trạng thái");
+    } finally {
+      setUpdatingId("");
+    }
+  };
+
+  const { data, metadata } = result;
+
+  return (
+    <div>
+      <div className="filter-bar stats-filter">
+        <label className="form-label" htmlFor="account-search-input">Tìm email</label>
+        <input
+          id="account-search-input"
+          className="form-input"
+          type="text"
+          value={draft.search}
+          placeholder="Nhập email"
+          onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
+        />
+        <label className="form-label" htmlFor="account-role-select">Vai trò</label>
+        <select
+          id="account-role-select"
+          className="form-input"
+          value={draft.role}
+          onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
+        >
+          <option value="ALL">Tất cả</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="SALE_STAFF">SALE_STAFF</option>
+          <option value="CUSTOMER_SUPPORT">CUSTOMER_SUPPORT</option>
+          <option value="DOCTOR">DOCTOR</option>
+          <option value="CUSTOMER">CUSTOMER</option>
+        </select>
+        <label className="form-label" htmlFor="account-status-select">Trạng thái</label>
+        <select
+          id="account-status-select"
+          className="form-input"
+          value={draft.status}
+          onChange={(e) =>
+            setDraft((d) => ({ ...d, status: e.target.value }))
+          }
+        >
+          <option value="ALL">Tất cả</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+          <option value="PENDING">PENDING</option>
+          <option value="REJECTED">REJECTED</option>
+          <option value="SUSPENDED">SUSPENDED</option>
+        </select>
+        <button className="btn btn-primary" onClick={applyFilters}>
+          Lọc
+        </button>
+      </div>
+
+      {error && <Alert type="error">{error}</Alert>}
+
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Email</th>
+                  <th>Họ tên</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th>Verified</th>
+                  <th>Ngày tạo</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.length ? (
+                  data.map((acc, i) => (
+                    <tr key={acc._id}>
+                      <td>{(page - 1) * limit + i + 1}</td>
+                      <td>{acc.email}</td>
+                      <td>{acc.fullName || "—"}</td>
+                      <td>{acc.role?.name || "—"}</td>
+                      <td>{acc.status}</td>
+                      <td>{acc.isVerified ? "Yes" : "No"}</td>
+                      <td>
+                        {acc.createdAt
+                          ? new Date(acc.createdAt).toLocaleDateString("vi-VN")
+                          : "—"}
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {acc.status !== "ACTIVE" && (
+                            <button
+                              className="btn btn-secondary"
+                              disabled={updatingId === acc._id}
+                              onClick={() => updateStatus(acc._id, "ACTIVE")}
+                            >
+                              Kích hoạt
+                            </button>
+                          )}
+                          {acc.status !== "SUSPENDED" && (
+                            <button
+                              className="btn btn-secondary"
+                              disabled={updatingId === acc._id}
+                              onClick={() => updateStatus(acc._id, "SUSPENDED")}
+                            >
+                              Tạm khóa
+                            </button>
+                          )}
+                          {acc.status !== "INACTIVE" && (
+                            <button
+                              className="btn btn-secondary"
+                              disabled={updatingId === acc._id}
+                              onClick={() => updateStatus(acc._id, "INACTIVE")}
+                            >
+                              Vô hiệu
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="cell-empty">
+                      Không có dữ liệu.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {metadata?.totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="btn btn-secondary"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Trước
+              </button>
+              <span className="pagination-info">
+                Trang {metadata.currentPage || page}/{metadata.totalPages}
+              </span>
+              <button
+                className="btn btn-secondary"
+                disabled={page >= metadata.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Export ──────────────────────────────────────────────────────────────
 const TABS = [
   { id: "overview", label: "Tổng quan" },
@@ -663,6 +881,7 @@ const TABS = [
   { id: "doctors", label: "Bác sĩ" },
   { id: "feedbacks", label: "Đánh giá" },
   { id: "accounts", label: "Tài khoản" },
+  { id: "account-manager", label: "QL tài khoản" },
 ];
 
 export function AdminStatisticsPage() {
@@ -691,6 +910,7 @@ export function AdminStatisticsPage() {
         {activeTab === "doctors" && <DoctorsStatsTab />}
         {activeTab === "feedbacks" && <FeedbackStatsTab />}
         {activeTab === "accounts" && <AccountsStatsTab />}
+        {activeTab === "account-manager" && <AccountManagerTab />}
       </div>
     </div>
   );
