@@ -48,7 +48,7 @@ export function Home() {
         blogsRes.status === "rejected" &&
         doctorsRes.status === "rejected"
       ) {
-        setError("Khong tai duoc du lieu trang chu. Vui long thu lai sau.");
+        setError("Không tải được dữ liệu trang chủ. Vui lòng thử lại sau.");
       }
 
       setLoading(false);
@@ -65,33 +65,33 @@ export function Home() {
     () => [
       {
         value: `${doctors.length > 0 ? doctors.length : 80}+`,
-        label: "Bac si nhan khoa",
+        label: "Bác sĩ chuyên khoa",
       },
       {
         value: `${services.length > 0 ? services.length : 12}+`,
-        label: "Goi dich vu",
+        label: "Gói dịch vụ",
       },
       {
         value: `${blogs.length > 0 ? blogs.length : 98}%`,
-        label: "Noi dung chuyen sau",
+        label: "Nội dung chuyên sâu",
       },
       {
         value: "15",
-        label: "Nam kinh nghiem",
+        label: "Năm kinh nghiệm",
       },
     ],
     [blogs.length, doctors.length, services.length],
   );
 
   const formatCurrency = (amount) => {
-    if (amount == null || Number.isNaN(Number(amount))) return "Lien he";
+    if (amount == null || Number.isNaN(Number(amount))) return "Liên hệ";
     return `${Number(amount).toLocaleString("vi-VN")} VND`;
   };
 
   const formatDate = (value) => {
-    if (!value) return "Moi cap nhat";
+    if (!value) return "Mới cập nhật";
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Moi cap nhat";
+    if (Number.isNaN(date.getTime())) return "Mới cập nhật";
     return date.toLocaleDateString("vi-VN");
   };
 
@@ -109,9 +109,9 @@ export function Home() {
   };
 
   const getGenderLabel = (gender) => {
-    if (gender === "FEMALE") return "Nu";
+    if (gender === "FEMALE") return "Nữ";
     if (gender === "MALE") return "Nam";
-    return "Khac";
+    return "Khác";
   };
 
   if (
@@ -129,24 +129,24 @@ export function Home() {
         <div className="vc-hero-left">
           <div className="vc-badge">
             <span className="vc-badge-dot" />
-            <span>Trung tam mat chuyen sau</span>
+            <span>Trung tâm đặt lịch</span>
           </div>
           <h1 className="vc-hero-title">
-            <span>Cham soc</span>
-            <em>doi mat</em>
-            <strong>voi tam huyet</strong>
+            <span>Chăm sóc</span>
+            <em>đôi mắt</em>
+            <strong>với tâm huyết</strong>
           </h1>
           <p className="vc-hero-desc">
-            VisionCare ket hop doi ngu bac si nhan khoa va he thong quan ly lich
-            kham hien dai, giup ban dat lich nhanh va theo doi ho so mat de
-            dang.
+            VisionCare kết hợp đội ngũ bác sĩ nhãn khoa và hệ thống quản lý lịch
+            khám hiện đại, giúp bạn đặt lịch nhanh và theo dõi hồ sơ mắt dễ
+            dàng.
           </p>
           <div className="vc-hero-buttons">
             <Link className="vc-btn vc-btn-primary" to="/appointments">
-              Dat lich kham ngay
+              Đặt lịch khám ngay
             </Link>
             <Link className="vc-btn vc-btn-outline" to="/services">
-              Xem dich vu
+              Xem dịch vụ
             </Link>
           </div>
           <div className="vc-hero-stats">
@@ -194,11 +194,11 @@ export function Home() {
               />
             </svg>
             <div className="vc-floating vc-floating-top">
-              <span className="vc-floating-label">Thi luc hom nay</span>
+              <span className="vc-floating-label">Thi lực hôm nay</span>
               <strong>20/20</strong>
             </div>
             <div className="vc-floating vc-floating-bottom">
-              <span className="vc-floating-label">Danh gia</span>
+              <span className="vc-floating-label">Đánh giá</span>
               <strong>4.9/5</strong>
             </div>
           </div>
@@ -210,16 +210,16 @@ export function Home() {
       <section className="vc-section vc-services" id="services">
         <div className="vc-section-head">
           <div>
-            <p className="vc-kicker">Dich vu chuyen khoa</p>
+            <p className="vc-kicker">Dịch vụ chuyên khoa</p>
             <h2 className="vc-title">
-              <span>Kham va dieu tri</span>
-              <em>toan dien</em>
+              <span>Khám và điều trị</span>
+              <em>toàn diện</em>
             </h2>
           </div>
-          <p className="vc-subtitle">
-            Du lieu duoc lay truc tiep tu danh sach dich vu hien tai cua he
-            thong.
-          </p>
+          {/* <p className="vc-subtitle">
+            Dữ liệu được lấy trực tiếp từ danh sách dịch vụ hiện tại của hệ
+            thống.
+          </p> */}
         </div>
 
         <div className="vc-service-grid">
@@ -234,7 +234,7 @@ export function Home() {
                   <div className="vc-service-media">
                     <img
                       src={getUploadFullUrl(service.image)}
-                      alt={service.name || "Service"}
+                      alt={service.name || "Dịch vụ"}
                     />
                   </div>
                 ) : (
@@ -242,51 +242,52 @@ export function Home() {
                     {getServiceIcon(index)}
                   </div>
                 )}
-                <h3>{service.name || "Dich vu"}</h3>
+                <h3>{service.name || "Dịch vụ"}</h3>
                 <p className="vc-service-price">
                   {formatCurrency(service.price)}
                 </p>
                 <p className="vc-service-desc">
                   {stripHtml(service.description).slice(0, 120) ||
-                    "Thong tin dang duoc cap nhat."}
+                    "Thông tin đang được cập nhật."}
                 </p>
               </Link>
             ))
           ) : (
-            <p className="vc-empty">Chua co goi dich vu nao.</p>
+            <p className="vc-empty">Chưa có gói dịch vụ nào.</p>
           )}
         </div>
       </section>
 
       <section className="vc-section vc-how">
         <div className="vc-how-head">
-          <p className="vc-kicker">Quy trinh kham</p>
+          <p className="vc-kicker">Quy trình đặt lịch</p>
           <h2 className="vc-title vc-title-center">
-            <span>Bon buoc</span>
-            <em>don gian</em>
+            <span>Bốn bước</span>
+            <em>đơn giản</em>
           </h2>
         </div>
+
         <div className="vc-step-grid">
           {[
             [
               "01",
-              "Dat lich",
-              "Chon bac si va khung gio phu hop tren he thong.",
+              "Đặt lịch & chọn gói",
+              "Chọn gói khám Basic hoặc Advanced và thời gian phù hợp.",
             ],
             [
               "02",
-              "Dang ky",
-              "Check-in nhanh, thong tin luu dong bo tai khoan.",
+              "Thanh toán",
+              "Basic: thanh toán và chờ hệ thống sắp xếp lịch. Advanced: chọn lịch và xác nhận ngay.",
             ],
             [
               "03",
-              "Tham kham",
-              "Bac si tu van va ghi nhan ket qua theo tung buoc.",
+              "Thăm khám",
+              "Bác sĩ kiểm tra, tư vấn và ghi nhận triệu chứng, chẩn đoán.",
             ],
             [
               "04",
-              "Nhan ket qua",
-              "Theo doi lich su va huong dan dieu tri online.",
+              "Kết quả & đánh giá",
+              "Xem kết quả khám, hướng dẫn điều trị và đánh giá dịch vụ.",
             ],
           ].map(([num, title, desc]) => (
             <article key={num} className="vc-step-card">
@@ -301,14 +302,14 @@ export function Home() {
       <section className="vc-section vc-doctors" id="doctors">
         <div className="vc-section-head">
           <div>
-            <p className="vc-kicker">Doi ngu chuyen gia</p>
+            <p className="vc-kicker">Đội ngũ chuyên khoa</p>
             <h2 className="vc-title">
-              <span>Bac si</span>
-              <em>nhan khoa</em>
+              <span>Bác sĩ</span>
+              <em>nhi khoa</em>
             </h2>
           </div>
           <Link className="vc-btn vc-btn-outline" to="/doctors">
-            Xem tat ca bac si
+            Xem tất cả bác sĩ
           </Link>
         </div>
 
@@ -331,28 +332,28 @@ export function Home() {
                         doctor.avatar ||
                         "https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg"
                       }
-                      alt={doctor.fullName || "Doctor"}
+                      alt={doctor.fullName || "Bác sĩ"}
                     />
-                    <span>{specializations[0] || "Nhan khoa tong quat"}</span>
+                    <span>{specializations[0] || "Nhãn khoa tổng quát"}</span>
                   </div>
                   <div className="vc-doctor-body">
-                    <h3>{doctor.fullName || "Dang cap nhat"}</h3>
+                    <h3>{doctor.fullName || "Đang cập nhật"}</h3>
                     <p>
                       {specializations.join(", ") ||
-                        "Thong tin chuyen khoa dang cap nhat"}
+                        "Thông tin chuyên khoa đang cập nhật"}
                     </p>
                     <div className="vc-doctor-stats">
                       <div>
                         <strong>{doctor.experienceYears || 0}</strong>
-                        <small>Nam KN</small>
+                        <small>Năm KN</small>
                       </div>
                       <div>
                         <strong>{getGenderLabel(doctor.gender)}</strong>
-                        <small>Gioi tinh</small>
+                        <small>Giới tính</small>
                       </div>
                       <div>
                         <strong>4.9</strong>
-                        <small>Danh gia</small>
+                        <small>Đánh giá</small>
                       </div>
                     </div>
                   </div>
@@ -360,7 +361,7 @@ export function Home() {
               );
             })
           ) : (
-            <p className="vc-empty">Chua co du lieu bac si.</p>
+            <p className="vc-empty">Chưa công khai bác sĩ.</p>
           )}
         </div>
       </section>
@@ -368,34 +369,36 @@ export function Home() {
       <section className="vc-section vc-tech">
         <div className="vc-tech-grid">
           <div>
-            <p className="vc-kicker">Cong nghe tien tien</p>
+            <p className="vc-kicker">Công nghệ tiên tiến</p>
             <h2 className="vc-title">
-              <span>Thiet bi</span>
-              <em>the he moi</em>
+              <span>Thiết bị</span>
+              <em>thế hệ mới</em>
             </h2>
             <p className="vc-subtitle">
-              Nen tang huong toi trien khai quy trinh kham toi uu voi du lieu so
-              hoa va ho tro ra quyet dinh nhanh hon.
+              Nền tảng hướng tới triển khai quy trình khám tối ưu với dữ liệu số
+              hóa và hỗ trợ ra quyết định nhanh hơn.
             </p>
+
             <div className="vc-tech-items">
               <div>
                 <strong>OCT Zeiss</strong>
-                <p>Chan doan hinh anh do phan giai cao.</p>
+                <p>Chẩn đoán hình ảnh độ phân giải cao.</p>
               </div>
               <div>
                 <strong>SMILE Pro</strong>
-                <p>Ho tro phau thuat laser it xam lan.</p>
+                <p>Hỗ trợ phẫu thuật laser ít xâm lấn.</p>
               </div>
               <div>
                 <strong>AI Screening</strong>
-                <p>Canh bao nguy co benh ly som.</p>
+                <p>Cảnh báo nguy cơ bệnh lý sớm.</p>
               </div>
               <div>
-                <strong>Ho so dien tu</strong>
-                <p>Theo doi ket qua va lich su dieu tri.</p>
+                <strong>Hồ sơ điện tử</strong>
+                <p>Theo dõi kết quả và lịch sử điều trị.</p>
               </div>
             </div>
           </div>
+
           <div className="vc-tech-orbit" aria-hidden="true">
             <span />
             <span />
@@ -408,14 +411,14 @@ export function Home() {
       <section className="vc-section vc-articles" id="articles">
         <div className="vc-section-head">
           <div>
-            <p className="vc-kicker">Kien thuc nhan khoa</p>
+            <p className="vc-kicker">Kiến thức nhãn khoa</p>
             <h2 className="vc-title">
-              <span>Bai viet</span>
-              <em>chuyen sau</em>
+              <span>Bài viết</span>
+              <em>chuyên sâu</em>
             </h2>
           </div>
           <Link className="vc-btn vc-btn-outline" to="/blogs">
-            Xem tat ca
+            Xem tất cả
           </Link>
         </div>
 
@@ -431,26 +434,26 @@ export function Home() {
                   {blog.image ? (
                     <img
                       src={getUploadFullUrl(blog.image)}
-                      alt={blog.title || "Blog"}
+                      alt={blog.title || "Bài viết"}
                     />
                   ) : (
                     <span aria-hidden="true">💡</span>
                   )}
                 </div>
                 <div className="vc-article-body">
-                  <h3>{blog.title || "Bai viet"}</h3>
+                  <h3>{blog.title || "Bài viết"}</h3>
                   <p>
                     {stripHtml(blog.content).slice(
                       0,
                       index === 0 ? 160 : 110,
-                    ) || "Noi dung dang cap nhat."}
+                    ) || "Nội dung đang cập nhật."}
                   </p>
                   <small>{formatDate(blog.createdAt)}</small>
                 </div>
               </Link>
             ))
           ) : (
-            <p className="vc-empty">Chua co bai viet noi bat.</p>
+            <p className="vc-empty">Chưa có bài viết nổi bật.</p>
           )}
         </div>
       </section>
@@ -458,34 +461,34 @@ export function Home() {
       <section className="vc-section vc-guest" id="login">
         <div className="vc-guest-grid">
           <div>
-            <p className="vc-kicker">Danh cho khach</p>
+            <p className="vc-kicker">Dành cho khách</p>
             <h2 className="vc-title">
-              <span>Dang nhap</span>
-              <em>ngay hom nay</em>
+              <span>Đăng nhập</span>
+              <em>ngay hôm nay</em>
             </h2>
             <p className="vc-subtitle">
-              Quan ly lich kham, xem ket qua va nhan thong bao su kien quan
-              trong tren mot giao dien thong nhat.
+              Quản lý lịch khám, xem kết quả và nhận thông báo sự kiện quan
+              trọng trên một giao diện thống nhất.
             </p>
             <ul className="vc-guest-list">
-              <li>Dat va quan ly lich hen truc tuyen</li>
-              <li>Xem lich su benh an va ket qua kham</li>
-              <li>Nhan thong bao lich hen theo thoi gian thuc</li>
+              <li>Đặt và quản lý lịch hẹn trực tuyến</li>
+              <li>Xem lịch sử bệnh án và kết quả khám</li>
+              <li>Nhận thông báo lịch hẹn theo thời gian thực</li>
             </ul>
           </div>
           <div className="vc-login-box">
-            <h3>Chao mung tro lai</h3>
-            <p>Dang nhap de tiep tuc trai nghiem he thong VisionCare.</p>
+            <h3>Chào mừng trở lại</h3>
+            <p>Đăng nhập để tiếp tục trải nghiệm hệ thống VisionCare.</p>
             <div className="vc-login-tabs" aria-hidden="true">
-              <span className="is-active">Benh nhan</span>
-              <span>Bac si</span>
-              <span>Doi tac</span>
+              <span className="is-active">Bệnh nhân</span>
+              <span>Bác sĩ</span>
+              <span>Đối tác</span>
             </div>
             <Link className="vc-btn vc-btn-primary vc-login-cta" to="/login">
-              Dang nhap
+              Đăng nhập
             </Link>
             <p className="vc-login-note">
-              Chua co tai khoan? <Link to="/register">Dang ky mien phi</Link>
+              Chưa có tài khoản? <Link to="/register">Đăng ký miễn phí</Link>
             </p>
           </div>
         </div>

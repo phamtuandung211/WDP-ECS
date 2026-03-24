@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAppointmentNotification } from "../context/AppointmentNotificationContext";
 import { ROLE_NAME } from "../constants/role";
+import ecsIcon from "../assets/icon/ECS-icon.jpg";
 
 const DEFAULT_AVATAR =
   "https://ui-avatars.com/api/?background=4361ee&color=fff&size=64";
@@ -215,7 +216,7 @@ export function Header() {
       return (
         <>
           <a href="/admin/statistics">Thống kê</a>
-          <a href="/appointments">Bảng điều khiển</a>
+          {/* <a href="/appointments">Bảng điều khiển</a> */}
           <a href="/feedbacks">Đánh giá</a>
           <NotificationIcon />
           <Link to="/profile" className="header-user-link">
@@ -323,7 +324,52 @@ export function Header() {
 export function Footer() {
   return (
     <footer className="footer">
-      <p>&copy; 2026 WDP-ECS. All rights reserved.</p>
+      <div className="footer-container">
+        <div className="footer-section">
+          <h3 className="footer-brand">
+            <img src={ecsIcon} alt="ECS icon" className="footer-brand-icon" />
+            <span>WDP - Eye Care System</span>
+          </h3>
+          <p>
+            Hệ thống đặt lịch khám mắt trực tuyến giúp bạn dễ dàng kết nối với
+            bác sĩ và quản lý lịch hẹn mọi lúc, mọi nơi.
+          </p>
+        </div>
+
+        <div className="footer-section">
+          <h4>Liên hệ</h4>
+          <p>Email: support@eyecare.com</p>
+          <p>Hotline: 0123 456 789</p>
+          <p>Địa chỉ: Hà Nội, Việt Nam</p>
+        </div>
+
+        <div className="footer-section">
+          <h4>Liên kết nhanh</h4>
+          <ul>
+            <li>
+              <a href="/">Trang chủ</a>
+            </li>
+            <li>
+              <a href="/doctors">Bác sĩ</a>
+            </li>
+            <li>
+              <a href="/appointments">Đặt lịch</a>
+            </li>
+            <li>
+              <a href="/about">Giới thiệu</a>
+            </li>
+          </ul>
+        </div>
+
+        <div className="footer-section">
+          <h4>Kết nối</h4>
+          <p>Facebook | Zalo | Instagram</p>
+        </div>
+      </div>
+
+      <div className="footer-bottom">
+        <p>&copy; 2026 WDP - Eye Care System. All rights reserved.</p>
+      </div>
     </footer>
   );
 }
