@@ -75,6 +75,10 @@ export function ServiceDetail() {
     ? "Trẻ từ 3 tuổi trở lên"
     : "Mọi độ tuổi";
 
+  const handleOpenChat = () => {
+    globalThis.dispatchEvent(new CustomEvent("open-eyecare-chat"));
+  };
+
   return (
     <div className="page vsdetail-page">
       <div className="vsdetail-back-bar">
@@ -131,18 +135,22 @@ export function ServiceDetail() {
             <Link to="/appointments" className="vsdetail-btn-book-lg">
               Đặt lịch khám ngay
             </Link>
-            <Link to="/appointments" className="vsdetail-btn-ask">
+            <button
+              type="button"
+              className="vsdetail-btn-ask"
+              onClick={handleOpenChat}
+            >
               Tư vấn miễn phí
-            </Link>
+            </button>
           </div>
 
           {/* <p className="vsdetail-cta-note">
             ℹ Hủy lịch miễn phí trước 24 giờ · Không phát sinh phụ phí
           </p> */}
 
-          <Link to="/services" className="vsdetail-back-bottom">
+          {/* <Link to="/services" className="vsdetail-back-bottom">
             ← Quay lại danh sách dịch vụ
-          </Link>
+          </Link> */}
         </div>
 
         <aside className="vsdetail-sidebar">
@@ -156,9 +164,13 @@ export function ServiceDetail() {
             <Link to="/appointments" className="vsdetail-btn-book-cta">
               Đặt lịch khám ngay
             </Link>
-            <Link to="/appointments" className="vsdetail-btn-ask-cta">
+            <button
+              type="button"
+              className="vsdetail-btn-ask-cta"
+              onClick={handleOpenChat}
+            >
               Tư vấn miễn phí
-            </Link>
+            </button>
             {/* <p className="vsdetail-cta-note-dark">
               Hủy lịch miễn phí trước 24 giờ
             </p> */}

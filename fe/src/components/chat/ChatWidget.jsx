@@ -29,17 +29,6 @@ export function ChatWidget() {
 
   const isCustomer = user?.role === ROLE_NAME.CUSTOMER;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, showTyping, otherTyping]);
-
-  // Don't render for non-customers
-  if (!user || !isCustomer) return null;
-
   const handleOpen = async () => {
     setOpen(true);
     if (!session) {
@@ -50,6 +39,28 @@ export function ChatWidget() {
       }
     }
   };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, showTyping, otherTyping]);
+
+  useEffect(() => {
+    const openFromOutside = () => {
+      handleOpen();
+    };
+
+    globalThis.addEventListener("open-eyecare-chat", openFromOutside);
+    return () => {
+      globalThis.removeEventListener("open-eyecare-chat", openFromOutside);
+    };
+  }, [session, startSession]);
+
+  // Don't render for non-customers
+  if (!user || !isCustomer) return null;
 
   const handleInputChange = (e) => {
     const val = e.target.value;
@@ -120,6 +131,12 @@ export function ChatWidget() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getSenderLabel = (sender) => {
+    if (sender === "CUSTOMER") return "Bạn";
+    if (sender === "AI") return "AI";
+    return "Nhân viên";
   };
 
   // Floating button
@@ -246,13 +263,7 @@ export function ChatWidget() {
             key={msg._id || idx}
             className={`chat-msg ${msg.sender === "CUSTOMER" ? "chat-msg-customer" : "chat-msg-other"}`}
           >
-            <div className="chat-msg-label">
-              {msg.sender === "CUSTOMER"
-                ? "Bạn"
-                : msg.sender === "AI"
-                  ? "AI"
-                  : "Nhân viên"}
-            </div>
+            <div className="chat-msg-label">{getSenderLabel(msg.sender)}</div>
             <div className="chat-msg-bubble">{msg.content}</div>
             {msg.createdAt && (
               <div className="chat-msg-time">{formatTime(msg.createdAt)}</div>
