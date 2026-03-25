@@ -33,13 +33,19 @@ export const authService = {
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
   },
 
+  getToken: () =>
+    localStorage.getItem("token") || sessionStorage.getItem("token"),
+
   getCurrentUser: () => {
-    const user = localStorage.getItem("user");
+    const user = localStorage.getItem("user") || sessionStorage.getItem("user");
     if (!user || user === "undefined" || user === "null") {
       // cleanup invalid stored values
       localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
       return null;
     }
     try {
@@ -47,23 +53,38 @@ export const authService = {
     } catch (err) {
       console.error("Failed to parse user from localStorage:", err);
       localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
       return null;
     }
   },
 
-  setToken: (token) => {
+  setToken: (token, remember = true) => {
     if (token === undefined || token === null) {
       localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
     } else {
-      localStorage.setItem("token", token);
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      if (remember) {
+        localStorage.setItem("token", token);
+      } else {
+        sessionStorage.setItem("token", token);
+      }
     }
   },
 
-  setUser: (user) => {
+  setUser: (user, remember = true) => {
     if (user === undefined || user === null) {
       localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
     } else {
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
+      if (remember) {
+        localStorage.setItem("user", JSON.stringify(user));
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(user));
+      }
     }
   },
 };
