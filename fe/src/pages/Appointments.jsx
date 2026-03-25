@@ -690,11 +690,11 @@ export function Appointments() {
                 </div>
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-pending-review" />{" "}
-                  Completed - Cho danh gia
+                  Completed - Chờ đánh giá
                 </div>
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-completed" />{" "}
-                  Completed - Da danh gia
+                  Completed - Đã đánh giá
                 </div>
               </div>
 
@@ -757,8 +757,8 @@ function AppointmentDetailPanel({
   let statusLabel = STATUS_LABELS[appointment.status] || appointment.status;
   if (appointment.status === APPOINTMENT_STATUS.COMPLETED) {
     statusLabel = existingFeedback
-      ? "Completed · Da danh gia"
-      : "Completed · Cho danh gia";
+      ? "Completed · Đã đánh giá"
+      : "Completed · Chờ đánh giá";
   }
 
   const formatDate = (date) => {
@@ -788,7 +788,7 @@ function AppointmentDetailPanel({
     <div className="apt-calendar__detail-panel show">
       <div className="apt-calendar__detail-header">
         <div>
-          <h3 className="font-semibold text-lg">Chi tiet lich hen</h3>
+          <h3 className="font-semibold text-lg">Chi tiết lịch hẹn</h3>
           <p className="text-sm text-gray-500">{appointment._id}</p>
         </div>
         <button
@@ -801,21 +801,21 @@ function AppointmentDetailPanel({
       </div>
 
       <div className="apt-calendar__detail-row">
-        <span className="apt-calendar__detail-label">Loai</span>
+        <span className="apt-calendar__detail-label">Loại</span>
         <span className="apt-calendar__detail-value">
           {appointment.type === APPOINTMENT_TYPE.BASIC ? "Basic" : "Advanced"}
         </span>
       </div>
 
       <div className="apt-calendar__detail-row">
-        <span className="apt-calendar__detail-label">Trang thai</span>
+        <span className="apt-calendar__detail-label">Trạng thái</span>
         <span className="apt-calendar__badge" style={badgeStyle}>
           {statusLabel}
         </span>
       </div>
 
       <div className="apt-calendar__detail-row">
-        <span className="apt-calendar__detail-label">Ngay</span>
+        <span className="apt-calendar__detail-label">Ngày</span>
         <span className="apt-calendar__detail-value">
           {formatDate(dateValue)}
         </span>
@@ -823,7 +823,7 @@ function AppointmentDetailPanel({
 
       {startTime && endTime && (
         <div className="apt-calendar__detail-row">
-          <span className="apt-calendar__detail-label">Gio</span>
+          <span className="apt-calendar__detail-label">Giờ</span>
           <span className="apt-calendar__detail-value">
             {formatTime(startTime, endTime)}
           </span>
@@ -831,22 +831,22 @@ function AppointmentDetailPanel({
       )}
 
       <div className="apt-calendar__detail-row">
-        <span className="apt-calendar__detail-label">Bac si</span>
+        <span className="apt-calendar__detail-label">Bác sĩ</span>
         <span className="apt-calendar__detail-value">
-          {appointment.doctorId?.fullName || "Chua phan cong"}
+          {appointment.doctorId?.fullName || "Chưa phân công"}
         </span>
       </div>
 
       {appointment.note && (
         <div className="apt-calendar__detail-row">
-          <span className="apt-calendar__detail-label">Ghi chu</span>
+          <span className="apt-calendar__detail-label">Ghi chú</span>
           <span className="apt-calendar__detail-value">{appointment.note}</span>
         </div>
       )}
 
       {appointment.approvedAt && (
         <div className="apt-calendar__detail-row">
-          <span className="apt-calendar__detail-label">Xac nhan luc</span>
+          <span className="apt-calendar__detail-label">Xác nhận lúc</span>
           <span className="apt-calendar__detail-value">
             {new Date(appointment.approvedAt).toLocaleString("vi-VN")}
           </span>
@@ -890,7 +890,7 @@ function AppointmentDetailPanel({
 
       {!hasReview && isCompleted && (
         <div className="apt-calendar__review-prompt">
-          Lich hen nay chua duoc danh gia.
+          Lịch hẹn này chưa được đánh giá.
         </div>
       )}
 
@@ -924,7 +924,7 @@ function AppointmentDetailPanel({
                 : "apt-feedback-btn apt-feedback-btn--new"
             }
           >
-            {hasReview ? "Xem danh gia" : "Danh gia ngay"}
+            {hasReview ? "Xem đánh giá" : "Đánh giá ngay"}
           </button>
         )}
       </div>

@@ -138,6 +138,13 @@ export const profileService = {
   updateMyProfile: (data) => apiClient.patch("/user/me", data),
 };
 
+export const adminAccountService = {
+  getAccounts: (params = {}) =>
+    apiClient.get("/user/admin/accounts", { params }),
+  updateStatus: (accountId, status) =>
+    apiClient.patch(`/user/admin/accounts/${accountId}/status`, { status }),
+};
+
 export const medicalRecordService = {
   create: (data) => apiClient.post("/medical-records", data),
   getMy: (params = {}) => apiClient.get("/medical-records/my", { params }),
@@ -201,7 +208,8 @@ export const specializationService = {
 
 export const degreeService = {
   getAllNames: () => apiClient.get("/degrees/names"),
-  getMyDegrees: (params = {}) => apiClient.get("/degrees/my-degrees", { params }),
+  getMyDegrees: (params = {}) =>
+    apiClient.get("/degrees/my-degrees", { params }),
   addDegree: (data) => apiClient.post("/degrees/add-my-degrees", data),
   getDegreeDetail: (id) => apiClient.get(`/degrees/my-degrees/${id}`),
   updateDegree: (id, data) => apiClient.put(`/degrees/my-degrees/${id}`, data),
@@ -211,23 +219,29 @@ export const degreeService = {
 export const doctorProfileService = {
   getMyProfile: () => apiClient.get("/doctors/profile/me"),
   updateMyProfile: (data) => apiClient.put("/doctors/profile/me", data),
-}
+};
 
 export const certificateService = {
-  getMyCertificates: (params = {}) => apiClient.get("/certificates/my-certificates", { params }),
-  addCertificate: (data) => apiClient.post("/certificates/add-my-certificates", data),
-  getCertificateDetail: (id) => apiClient.get(`/certificates/my-certificates/${id}`),
-  updateCertificate: (id, data) => apiClient.put(`/certificates/my-certificates/${id}`, data),
-  deleteCertificate: (id) => apiClient.delete(`/certificates/my-certificates/${id}`),
-}
+  getMyCertificates: (params = {}) =>
+    apiClient.get("/certificates/my-certificates", { params }),
+  addCertificate: (data) =>
+    apiClient.post("/certificates/add-my-certificates", data),
+  getCertificateDetail: (id) =>
+    apiClient.get(`/certificates/my-certificates/${id}`),
+  updateCertificate: (id, data) =>
+    apiClient.put(`/certificates/my-certificates/${id}`, data),
+  deleteCertificate: (id) =>
+    apiClient.delete(`/certificates/my-certificates/${id}`),
+};
 
 export const manageCertificateService = {
-  reviewCertificate: (id, data) => apiClient.patch(`/certificates/${id}/review`, data),
-  getAllCertificates: (params = {}) => apiClient.get("/certificates", { params }),
-}
+  reviewCertificate: (id, data) =>
+    apiClient.patch(`/certificates/${id}/review`, data),
+  getAllCertificates: (params = {}) =>
+    apiClient.get("/certificates", { params }),
+};
 
 export const manageDegreeService = {
   reviewDegree: (id, data) => apiClient.patch(`/degrees/${id}/review`, data),
   getAllDegrees: (params = {}) => apiClient.get("/degrees", { params }),
-}
-
+};

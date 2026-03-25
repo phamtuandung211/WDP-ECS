@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { statisticsService } from "../services";
+import React, { useEffect, useRef, useState } from "react";
+import Chart from "chart.js/auto";
+import { statisticsService, adminAccountService } from "../services";
 import { Loading, Alert } from "../components/UI";
 import { PageHeader } from "../components/PageHeader";
 
@@ -33,6 +34,36 @@ function formatPeriodLabel(period, groupBy) {
 
   const [, year, month, day] = match;
   return `${day}/${month}/${year}`;
+}
+
+function getInitials(name = "") {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 3)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("") || "BS"
+  );
+}
+
+function getStatusBadgeClass(status = "") {
+  const key = status.toUpperCase();
+  if (key === "ACTIVE") return "badge-active";
+  if (key === "INACTIVE" || key === "REJECTED") return "badge-inactive";
+  if (key === "SUSPENDED") return "badge-suspended";
+  if (key === "PENDING") return "badge-pending";
+  return "";
+}
+
+function getRoleBadgeClass(role = "") {
+  const key = role.toUpperCase();
+  if (key === "ADMIN") return "badge-admin";
+  if (key === "DOCTOR") return "badge-doctor";
+  if (key === "CUSTOMER") return "badge-customer";
+  if (key === "CUSTOMER_SUPPORT") return "badge-support";
+  if (key === "SALE_STAFF") return "badge-sale";
+  return "";
 }
 
 function DateFilter({ from, to, groupBy, onChange }) {
@@ -145,10 +176,19 @@ function OverviewTab() {
               value={data.pendingPaymentCount}
               color="#e67e22"
             />
-            <StatCard label="BASIC" value={data.basicRevenue} color="#3498db" />
+            <StatCard
+              label="Chờ phân công"
+              value={data.waitingAssignCount}
+              color="#f39c12"
+            />
+            <StatCard
+              label="BASIC"
+              value={data.basicCount ?? data.basicRevenue}
+              color="#3498db"
+            />
             <StatCard
               label="ADVANCED"
-              value={data.advancedRevenue}
+              value={data.advancedCount ?? data.advancedRevenue}
               color="#9b59b6"
             />
           </div>
@@ -188,6 +228,8 @@ function RevenueTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState({ from: "", to: "", groupBy: "month" });
+  const revenueChartCanvasRef = useRef(null);
+  const revenueChartRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -213,6 +255,68 @@ function RevenueTab() {
 
   const total = data.reduce((s, r) => s + r.totalRevenue, 0);
 
+  useEffect(() => {
+    if (!revenueChartCanvasRef.current || !data.length) {
+      if (revenueChartRef.current) {
+        revenueChartRef.current.destroy();
+        revenueChartRef.current = null;
+      }
+      return;
+    }
+
+    if (revenueChartRef.current) {
+      revenueChartRef.current.destroy();
+    }
+
+    revenueChartRef.current = new Chart(revenueChartCanvasRef.current, {
+      type: "bar",
+      data: {
+        labels: data.map((r) => formatPeriodLabel(r.period, filter.groupBy)),
+        datasets: [
+          {
+            label: "Doanh thu (VNĐ)",
+            data: data.map((r) => Number(r.totalRevenue) || 0),
+            backgroundColor: "rgba(39,174,96,0.72)",
+            borderColor: "#27ae60",
+            borderWidth: 1.2,
+            borderRadius: 6,
+            borderSkipped: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) =>
+                `${Number(ctx.parsed.y).toLocaleString("vi-VN")} ₫`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: "#a09d97" },
+          },
+          y: {
+            grid: { color: "rgba(0,0,0,0.06)" },
+            ticks: { color: "#a09d97" },
+          },
+        },
+      },
+    });
+
+    return () => {
+      if (revenueChartRef.current) {
+        revenueChartRef.current.destroy();
+        revenueChartRef.current = null;
+      }
+    };
+  }, [data, filter.groupBy]);
+
   return (
     <div>
       <DateFilter {...filter} onChange={handleFilter} />
@@ -227,6 +331,17 @@ function RevenueTab() {
             <span className="stat-value" style={{ color: "#27ae60" }}>
               {total.toLocaleString("vi-VN")} ₫
             </span>
+          </div>
+          <div className="chart-wrap">
+            <div className="chart-header">
+              <span className="chart-title">Doanh thu theo kỳ (VNĐ)</span>
+              <span className="chart-note">
+                Nhóm theo {filter.groupBy === "month" ? "tháng" : "ngày"}
+              </span>
+            </div>
+            <div className="chart-canvas-wrap">
+              <canvas ref={revenueChartCanvasRef} />
+            </div>
           </div>
           <div className="table-wrap">
             <table className="data-table">
@@ -268,6 +383,10 @@ function AppointmentsStatsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState({ from: "", to: "", groupBy: "month" });
+  const statusCanvasRef = useRef(null);
+  const typeCanvasRef = useRef(null);
+  const statusChartRef = useRef(null);
+  const typeChartRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -291,6 +410,134 @@ function AppointmentsStatsTab() {
 
   const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
 
+  useEffect(() => {
+    if (!data.length || !statusCanvasRef.current || !typeCanvasRef.current) {
+      if (statusChartRef.current) {
+        statusChartRef.current.destroy();
+        statusChartRef.current = null;
+      }
+      if (typeChartRef.current) {
+        typeChartRef.current.destroy();
+        typeChartRef.current = null;
+      }
+      return;
+    }
+
+    const labels = data.map((row) =>
+      formatPeriodLabel(row.period, filter.groupBy),
+    );
+    const confirmed = [];
+    const canceled = [];
+    const pending = [];
+    let basicTotal = 0;
+    let advancedTotal = 0;
+
+    data.forEach((row) => {
+      const byStatus = {};
+      const byType = {};
+      row.breakdown.forEach((b) => {
+        if (b.status) {
+          byStatus[b.status] = (byStatus[b.status] || 0) + b.count;
+        }
+        if (b.type) {
+          byType[b.type] = (byType[b.type] || 0) + b.count;
+        }
+      });
+      confirmed.push(byStatus.CONFIRMED || 0);
+      canceled.push(byStatus.CANCELED || 0);
+      pending.push(byStatus.PENDING_PAYMENT || 0);
+      basicTotal += byType.BASIC || 0;
+      advancedTotal += byType.ADVANCED || 0;
+    });
+
+    if (statusChartRef.current) statusChartRef.current.destroy();
+    if (typeChartRef.current) typeChartRef.current.destroy();
+
+    statusChartRef.current = new Chart(statusCanvasRef.current, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Confirmed",
+            data: confirmed,
+            backgroundColor: "rgba(39,174,96,0.8)",
+            borderRadius: 4,
+          },
+          {
+            label: "Canceled",
+            data: canceled,
+            backgroundColor: "rgba(231,76,60,0.8)",
+            borderRadius: 4,
+          },
+          {
+            label: "Pending",
+            data: pending,
+            backgroundColor: "rgba(230,126,34,0.8)",
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { display: false },
+            ticks: { color: "#a09d97" },
+          },
+          y: {
+            stacked: true,
+            grid: { color: "rgba(0,0,0,0.06)" },
+            ticks: { color: "#a09d97" },
+          },
+        },
+      },
+    });
+
+    typeChartRef.current = new Chart(typeCanvasRef.current, {
+      type: "doughnut",
+      data: {
+        labels: ["BASIC", "ADVANCED"],
+        datasets: [
+          {
+            data: [basicTotal, advancedTotal],
+            backgroundColor: ["rgba(52,152,219,0.85)", "rgba(155,89,182,0.85)"],
+            borderColor: ["#3498db", "#9b59b6"],
+            borderWidth: 1.4,
+            hoverOffset: 5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "62%",
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${ctx.parsed}`,
+            },
+          },
+        },
+      },
+    });
+
+    return () => {
+      if (statusChartRef.current) {
+        statusChartRef.current.destroy();
+        statusChartRef.current = null;
+      }
+      if (typeChartRef.current) {
+        typeChartRef.current.destroy();
+        typeChartRef.current = null;
+      }
+    };
+  }, [data, filter.groupBy]);
+
   return (
     <div>
       <DateFilter {...filter} onChange={handleFilter} />
@@ -299,54 +546,103 @@ function AppointmentsStatsTab() {
       ) : error ? (
         <Alert type="error">{error}</Alert>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Kỳ</th>
-                <th>Tổng</th>
-                <th>CONFIRMED</th>
-                <th>CANCELED</th>
-                <th>PENDING</th>
-                <th>BASIC</th>
-                <th>ADVANCED</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length ? (
-                data.map((row) => {
-                  const byStatus = {};
-                  const byType = {};
-                  row.breakdown.forEach((b) => {
-                    if (b.status)
-                      byStatus[b.status] = (byStatus[b.status] || 0) + b.count;
-                    if (b.type)
-                      byType[b.type] = (byType[b.type] || 0) + b.count;
-                  });
-                  return (
-                    <tr key={row.period}>
-                      <td>{formatPeriodLabel(row.period, filter.groupBy)}</td>
-                      <td>
-                        <strong>{row.total}</strong>
-                      </td>
-                      <td>{byStatus.CONFIRMED ?? 0}</td>
-                      <td>{byStatus.CANCELED ?? 0}</td>
-                      <td>{byStatus.PENDING_PAYMENT ?? 0}</td>
-                      <td>{byType.BASIC ?? 0}</td>
-                      <td>{byType.ADVANCED ?? 0}</td>
-                    </tr>
-                  );
-                })
-              ) : (
+        <>
+          {data.length > 0 && (
+            <div className="chart-grid-2">
+              <div className="chart-wrap">
+                <div className="chart-header">
+                  <span className="chart-title">Cuộc hẹn theo trạng thái</span>
+                </div>
+                <div className="chart-canvas-wrap chart-canvas-wrap-tall">
+                  <canvas ref={statusCanvasRef} />
+                </div>
+                <div className="chart-legend">
+                  <span className="chart-legend-item">
+                    <span className="chart-legend-dot chart-dot-confirmed" />
+                    Confirmed
+                  </span>
+                  <span className="chart-legend-item">
+                    <span className="chart-legend-dot chart-dot-canceled" />
+                    Canceled
+                  </span>
+                  <span className="chart-legend-item">
+                    <span className="chart-legend-dot chart-dot-pending" />
+                    Pending
+                  </span>
+                </div>
+              </div>
+
+              <div className="chart-wrap">
+                <div className="chart-header">
+                  <span className="chart-title">Phân bổ gói dịch vụ</span>
+                </div>
+                <div className="chart-canvas-wrap chart-canvas-wrap-tall">
+                  <canvas ref={typeCanvasRef} />
+                </div>
+                <div className="chart-legend">
+                  <span className="chart-legend-item">
+                    <span className="chart-legend-dot chart-dot-basic" />
+                    BASIC
+                  </span>
+                  <span className="chart-legend-item">
+                    <span className="chart-legend-dot chart-dot-advanced" />
+                    ADVANCED
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="cell-empty">
-                    Không có dữ liệu.
-                  </td>
+                  <th>Kỳ</th>
+                  <th>Tổng</th>
+                  <th>CONFIRMED</th>
+                  <th>CANCELED</th>
+                  <th>PENDING</th>
+                  <th>BASIC</th>
+                  <th>ADVANCED</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.length ? (
+                  data.map((row) => {
+                    const byStatus = {};
+                    const byType = {};
+                    row.breakdown.forEach((b) => {
+                      if (b.status)
+                        byStatus[b.status] =
+                          (byStatus[b.status] || 0) + b.count;
+                      if (b.type)
+                        byType[b.type] = (byType[b.type] || 0) + b.count;
+                    });
+                    return (
+                      <tr key={row.period}>
+                        <td>{formatPeriodLabel(row.period, filter.groupBy)}</td>
+                        <td>
+                          <strong>{row.total}</strong>
+                        </td>
+                        <td>{byStatus.CONFIRMED ?? 0}</td>
+                        <td>{byStatus.CANCELED ?? 0}</td>
+                        <td>{byStatus.PENDING_PAYMENT ?? 0}</td>
+                        <td>{byType.BASIC ?? 0}</td>
+                        <td>{byType.ADVANCED ?? 0}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="cell-empty">
+                      Không có dữ liệu.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
@@ -360,6 +656,8 @@ function DoctorsStatsTab() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState({ from: "", to: "" });
   const limit = 10;
+  const doctorsCanvasRef = useRef(null);
+  const doctorsChartRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -386,7 +684,77 @@ function DoctorsStatsTab() {
     setPage(1);
     setFilter((f) => ({ ...f, [key]: val }));
   };
+
   const { data: doctors, metadata } = result;
+
+  useEffect(() => {
+    if (!doctorsCanvasRef.current || !doctors.length) {
+      if (doctorsChartRef.current) {
+        doctorsChartRef.current.destroy();
+        doctorsChartRef.current = null;
+      }
+      return;
+    }
+
+    if (doctorsChartRef.current) {
+      doctorsChartRef.current.destroy();
+    }
+
+    doctorsChartRef.current = new Chart(doctorsCanvasRef.current, {
+      type: "bar",
+      data: {
+        labels: doctors.map((d) => d.fullName || "Không rõ"),
+        datasets: [
+          {
+            label: "Tổng",
+            data: doctors.map((d) => d.totalAppointments || 0),
+            backgroundColor: "rgba(67,97,238,0.74)",
+            borderRadius: 5,
+          },
+          {
+            label: "Xác nhận",
+            data: doctors.map((d) => d.confirmed || 0),
+            backgroundColor: "rgba(39,174,96,0.74)",
+            borderRadius: 5,
+          },
+          {
+            label: "Hoàn thành",
+            data: doctors.map((d) => d.completed || 0),
+            backgroundColor: "rgba(52,152,219,0.74)",
+            borderRadius: 5,
+          },
+          {
+            label: "Hủy",
+            data: doctors.map((d) => d.canceled || 0),
+            backgroundColor: "rgba(231,76,60,0.74)",
+            borderRadius: 5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: "index", intersect: false },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: "#a09d97" } },
+          y: {
+            grid: { color: "rgba(0,0,0,0.06)" },
+            ticks: { color: "#a09d97" },
+          },
+        },
+      },
+    });
+
+    return () => {
+      if (doctorsChartRef.current) {
+        doctorsChartRef.current.destroy();
+        doctorsChartRef.current = null;
+      }
+    };
+  }, [doctors]);
 
   return (
     <div>
@@ -397,6 +765,101 @@ function DoctorsStatsTab() {
         <Alert type="error">{error}</Alert>
       ) : (
         <>
+          {doctors.length > 0 && (
+            <div className="doctor-perf-grid">
+              {doctors.map((d) => {
+                const total = d.totalAppointments || 0;
+                const completionRate = total
+                  ? Math.round(((d.completed || 0) / total) * 100)
+                  : 0;
+                const initials = getInitials(d.fullName);
+                return (
+                  <div className="doctor-perf-card" key={`card-${d.doctorId}`}>
+                    <div className="doctor-perf-header">
+                      <div className="doctor-avatar">{initials}</div>
+                      <div>
+                        <div className="doctor-name">{d.fullName || "—"}</div>
+                        <div className="doctor-role">Bac si nhan khoa</div>
+                      </div>
+                    </div>
+                    <div className="doctor-mini-stats">
+                      <div className="doctor-mini-stat">
+                        <div className="doctor-mini-stat-val">{total}</div>
+                        <div className="doctor-mini-stat-lbl">Tong</div>
+                      </div>
+                      <div className="doctor-mini-stat">
+                        <div
+                          className="doctor-mini-stat-val"
+                          style={{ color: "#27ae60" }}
+                        >
+                          {d.confirmed || 0}
+                        </div>
+                        <div className="doctor-mini-stat-lbl">Xac nhan</div>
+                      </div>
+                      <div className="doctor-mini-stat">
+                        <div
+                          className="doctor-mini-stat-val"
+                          style={{ color: "#1d4ed8" }}
+                        >
+                          {d.completed || 0}
+                        </div>
+                        <div className="doctor-mini-stat-lbl">Hoan thanh</div>
+                      </div>
+                      <div className="doctor-mini-stat">
+                        <div
+                          className="doctor-mini-stat-val"
+                          style={{ color: "#e74c3c" }}
+                        >
+                          {d.canceled || 0}
+                        </div>
+                        <div className="doctor-mini-stat-lbl">Da huy</div>
+                      </div>
+                    </div>
+                    <div className="doctor-progress-label">
+                      <span>Ty le hoan thanh</span>
+                      <span>{completionRate}%</span>
+                    </div>
+                    <div className="doctor-progress-bg">
+                      <div
+                        className="doctor-progress-fill"
+                        style={{ width: `${completionRate}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {doctors.length > 0 && (
+            <div className="chart-wrap">
+              <div className="chart-header">
+                <span className="chart-title">So sanh hieu suat bac si</span>
+              </div>
+              <div className="chart-canvas-wrap">
+                <canvas ref={doctorsCanvasRef} />
+              </div>
+              <div className="chart-legend">
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-total" />
+                  Tong
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-confirmed" />
+                  Xac nhan
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-completed" />
+                  Hoan thanh
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-canceled" />
+                  Huy
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -568,6 +1031,8 @@ function AccountsStatsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState({ from: "", to: "", groupBy: "month" });
+  const accountsCanvasRef = useRef(null);
+  const accountsChartRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -591,6 +1056,106 @@ function AccountsStatsTab() {
 
   const handleFilter = (key, val) => setFilter((f) => ({ ...f, [key]: val }));
 
+  const roleSummary = data.reduce(
+    (acc, row) => {
+      row.byRole.forEach((r) => {
+        acc[r.role] = (acc[r.role] || 0) + r.count;
+      });
+      return acc;
+    },
+    { ADMIN: 0, CUSTOMER: 0, DOCTOR: 0, SALE_STAFF: 0, CUSTOMER_SUPPORT: 0 },
+  );
+
+  useEffect(() => {
+    if (!accountsCanvasRef.current || !data.length) {
+      if (accountsChartRef.current) {
+        accountsChartRef.current.destroy();
+        accountsChartRef.current = null;
+      }
+      return;
+    }
+
+    if (accountsChartRef.current) {
+      accountsChartRef.current.destroy();
+    }
+
+    const labels = data.map((row) =>
+      formatPeriodLabel(row.period, filter.groupBy),
+    );
+    const getRoleSeries = (role) =>
+      data.map((row) => {
+        const found = row.byRole.find((item) => item.role === role);
+        return found?.count || 0;
+      });
+
+    accountsChartRef.current = new Chart(accountsCanvasRef.current, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Customer",
+            data: getRoleSeries("CUSTOMER"),
+            borderColor: "#3498db",
+            backgroundColor: "rgba(52,152,219,0.08)",
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+          },
+          {
+            label: "Doctor",
+            data: getRoleSeries("DOCTOR"),
+            borderColor: "#9b59b6",
+            backgroundColor: "rgba(155,89,182,0.08)",
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+          },
+          {
+            label: "Sale Staff",
+            data: getRoleSeries("SALE_STAFF"),
+            borderColor: "#e67e22",
+            backgroundColor: "rgba(230,126,34,0.08)",
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+          },
+          {
+            label: "Support",
+            data: getRoleSeries("CUSTOMER_SUPPORT"),
+            borderColor: "#2ecc71",
+            backgroundColor: "rgba(46,204,113,0.08)",
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: "index", intersect: false },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: "#a09d97" } },
+          y: {
+            grid: { color: "rgba(0,0,0,0.06)" },
+            ticks: { color: "#a09d97" },
+          },
+        },
+      },
+    });
+
+    return () => {
+      if (accountsChartRef.current) {
+        accountsChartRef.current.destroy();
+        accountsChartRef.current = null;
+      }
+    };
+  }, [data, filter.groupBy]);
+
   return (
     <div>
       <DateFilter {...filter} onChange={handleFilter} />
@@ -599,48 +1164,367 @@ function AccountsStatsTab() {
       ) : error ? (
         <Alert type="error">{error}</Alert>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Kỳ</th>
-                <th>Tổng</th>
-                <th>CUSTOMER</th>
-                <th>DOCTOR</th>
-                <th>SALE_STAFF</th>
-                <th>CUSTOMER_SUPPORT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length ? (
-                data.map((row) => {
-                  const byRole = {};
-                  row.byRole.forEach((r) => {
-                    byRole[r.role] = r.count;
-                  });
-                  return (
-                    <tr key={row.period}>
-                      <td>{row.period}</td>
-                      <td>
-                        <strong>{row.total}</strong>
+        <>
+          {data.length > 0 && (
+            <div className="chart-wrap">
+              <div className="chart-header">
+                <span className="chart-title">Tai khoan dang ky theo ky</span>
+                <span className="chart-note">
+                  Nhom theo {filter.groupBy === "month" ? "thang" : "ngay"}
+                </span>
+              </div>
+              <div className="chart-canvas-wrap">
+                <canvas ref={accountsCanvasRef} />
+              </div>
+              <div className="chart-legend">
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-basic" />
+                  Customer
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-advanced" />
+                  Doctor
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-pending" />
+                  Sale Staff
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-confirmed" />
+                  Support
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="accounts-stats-layout">
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Kỳ</th>
+                    <th>Tổng</th>
+                    <th>CUSTOMER</th>
+                    <th>DOCTOR</th>
+                    <th>SALE_STAFF</th>
+                    <th>CUSTOMER_SUPPORT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.length ? (
+                    data.map((row) => {
+                      const byRole = {};
+                      row.byRole.forEach((r) => {
+                        byRole[r.role] = r.count;
+                      });
+                      return (
+                        <tr key={row.period}>
+                          <td>
+                            {formatPeriodLabel(row.period, filter.groupBy)}
+                          </td>
+                          <td>
+                            <strong>{row.total}</strong>
+                          </td>
+                          <td>{byRole.CUSTOMER ?? 0}</td>
+                          <td>{byRole.DOCTOR ?? 0}</td>
+                          <td>{byRole.SALE_STAFF ?? 0}</td>
+                          <td>{byRole.CUSTOMER_SUPPORT ?? 0}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="cell-empty">
+                        Không có dữ liệu.
                       </td>
-                      <td>{byRole.CUSTOMER ?? 0}</td>
-                      <td>{byRole.DOCTOR ?? 0}</td>
-                      <td>{byRole.SALE_STAFF ?? 0}</td>
-                      <td>{byRole.CUSTOMER_SUPPORT ?? 0}</td>
                     </tr>
-                  );
-                })
-              ) : (
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {data.length > 0 && (
+              <div className="role-summary-card">
+                <h4 className="role-summary-title">Phan bo vai tro</h4>
+                <div className="role-row">
+                  <span className="role-row-left">
+                    <span className="role-color-dot chart-dot-basic" />
+                    <span className="role-row-name">Customer</span>
+                  </span>
+                  <span className="role-row-count">{roleSummary.CUSTOMER}</span>
+                </div>
+                <div className="role-row">
+                  <span className="role-row-left">
+                    <span className="role-color-dot chart-dot-advanced" />
+                    <span className="role-row-name">Doctor</span>
+                  </span>
+                  <span className="role-row-count">{roleSummary.DOCTOR}</span>
+                </div>
+                <div className="role-row">
+                  <span className="role-row-left">
+                    <span className="role-color-dot chart-dot-pending" />
+                    <span className="role-row-name">Sale Staff</span>
+                  </span>
+                  <span className="role-row-count">
+                    {roleSummary.SALE_STAFF}
+                  </span>
+                </div>
+                <div className="role-row">
+                  <span className="role-row-left">
+                    <span className="role-color-dot chart-dot-confirmed" />
+                    <span className="role-row-name">Support</span>
+                  </span>
+                  <span className="role-row-count">
+                    {roleSummary.CUSTOMER_SUPPORT}
+                  </span>
+                </div>
+                <div className="role-row">
+                  <span className="role-row-left">
+                    <span className="role-color-dot chart-dot-dark" />
+                    <span className="role-row-name">Admin</span>
+                  </span>
+                  <span className="role-row-count">{roleSummary.ADMIN}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Account Manager Tab ─────────────────────────────────────────────────────
+function AccountManagerTab() {
+  const [result, setResult] = useState({ data: [], metadata: {} });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [updatingId, setUpdatingId] = useState("");
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState({
+    search: "",
+    role: "ALL",
+    status: "ALL",
+  });
+  const [draft, setDraft] = useState(filters);
+  const limit = 10;
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminAccountService.getAccounts({
+        page,
+        limit,
+        search: filters.search || undefined,
+        role: filters.role === "ALL" ? undefined : filters.role,
+        status: filters.status === "ALL" ? undefined : filters.status,
+      });
+      setResult({
+        data: res.data?.data || [],
+        metadata: res.data?.metadata || {},
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Lỗi tải danh sách tài khoản");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [filters, page]);
+
+  const applyFilters = () => {
+    setPage(1);
+    setFilters(draft);
+  };
+
+  const updateStatus = async (accountId, status) => {
+    setUpdatingId(accountId);
+    try {
+      await adminAccountService.updateStatus(accountId, status);
+      setResult((prev) => ({
+        ...prev,
+        data: prev.data.map((acc) =>
+          acc._id === accountId ? { ...acc, status } : acc,
+        ),
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || "Không thể cập nhật trạng thái");
+    } finally {
+      setUpdatingId("");
+    }
+  };
+
+  const { data, metadata } = result;
+
+  return (
+    <div>
+      <div className="filter-bar stats-filter">
+        <label className="form-label" htmlFor="account-search-input">
+          Tìm email
+        </label>
+        <input
+          id="account-search-input"
+          className="form-input"
+          type="text"
+          value={draft.search}
+          placeholder="Nhập email"
+          onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
+        />
+        <label className="form-label" htmlFor="account-role-select">
+          Vai trò
+        </label>
+        <select
+          id="account-role-select"
+          className="form-input"
+          value={draft.role}
+          onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
+        >
+          <option value="ALL">Tất cả</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="SALE_STAFF">SALE_STAFF</option>
+          <option value="CUSTOMER_SUPPORT">CUSTOMER_SUPPORT</option>
+          <option value="DOCTOR">DOCTOR</option>
+          <option value="CUSTOMER">CUSTOMER</option>
+        </select>
+        <label className="form-label" htmlFor="account-status-select">
+          Trạng thái
+        </label>
+        <select
+          id="account-status-select"
+          className="form-input"
+          value={draft.status}
+          onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
+        >
+          <option value="ALL">Tất cả</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+          <option value="PENDING">PENDING</option>
+          <option value="REJECTED">REJECTED</option>
+          <option value="SUSPENDED">SUSPENDED</option>
+        </select>
+        <button className="btn btn-primary" onClick={applyFilters}>
+          Lọc
+        </button>
+      </div>
+
+      {error && <Alert type="error">{error}</Alert>}
+
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={6} className="cell-empty">
-                    Không có dữ liệu.
-                  </td>
+                  <th>#</th>
+                  <th>Email</th>
+                  <th>Họ tên</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th>Verified</th>
+                  <th>Ngày tạo</th>
+                  <th>Hành động</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.length ? (
+                  data.map((acc, i) => (
+                    <tr key={acc._id}>
+                      <td>{(page - 1) * limit + i + 1}</td>
+                      <td>{acc.email}</td>
+                      <td>{acc.fullName || "—"}</td>
+                      <td>
+                        <span
+                          className={`badge ${getRoleBadgeClass(
+                            acc.role?.name,
+                          )}`.trim()}
+                        >
+                          {acc.role?.name || "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`badge ${getStatusBadgeClass(acc.status)}`.trim()}
+                        >
+                          {acc.status}
+                        </span>
+                      </td>
+                      <td>{acc.isVerified ? "Yes" : "No"}</td>
+                      <td>
+                        {acc.createdAt
+                          ? new Date(acc.createdAt).toLocaleDateString("vi-VN")
+                          : "—"}
+                      </td>
+                      <td>
+                        <div className="action-group">
+                          {acc.status !== "ACTIVE" && (
+                            <button
+                              className="btn btn-secondary"
+                              disabled={updatingId === acc._id}
+                              onClick={() => updateStatus(acc._id, "ACTIVE")}
+                            >
+                              Kích hoạt
+                            </button>
+                          )}
+                          {acc.status !== "SUSPENDED" && (
+                            <button
+                              className="btn btn-secondary"
+                              disabled={updatingId === acc._id}
+                              onClick={() => updateStatus(acc._id, "SUSPENDED")}
+                            >
+                              Tạm khóa
+                            </button>
+                          )}
+                          {acc.status !== "INACTIVE" && (
+                            <button
+                              className="btn btn-danger"
+                              disabled={updatingId === acc._id}
+                              onClick={() => updateStatus(acc._id, "INACTIVE")}
+                            >
+                              Vô hiệu
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="cell-empty">
+                      Không có dữ liệu.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {metadata?.totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="btn btn-secondary"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Trước
+              </button>
+              <span className="pagination-info">
+                Trang {metadata.currentPage || page}/{metadata.totalPages}
+              </span>
+              <button
+                className="btn btn-secondary"
+                disabled={page >= metadata.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -654,6 +1538,7 @@ const TABS = [
   { id: "doctors", label: "Bác sĩ" },
   { id: "feedbacks", label: "Đánh giá" },
   { id: "accounts", label: "Tài khoản" },
+  { id: "account-manager", label: "QL tài khoản" },
 ];
 
 export function AdminStatisticsPage() {
@@ -661,7 +1546,10 @@ export function AdminStatisticsPage() {
 
   return (
     <div className="page statistics-page">
-      <PageHeader title="📊 Thống kê — Admin Dashboard" />
+      <PageHeader
+        title="📊 Thống kê — Admin Dashboard"
+        action={<span className="header-pill">Admin</span>}
+      />
 
       <div className="tab-bar">
         {TABS.map((t) => (
@@ -682,6 +1570,7 @@ export function AdminStatisticsPage() {
         {activeTab === "doctors" && <DoctorsStatsTab />}
         {activeTab === "feedbacks" && <FeedbackStatsTab />}
         {activeTab === "accounts" && <AccountsStatsTab />}
+        {activeTab === "account-manager" && <AccountManagerTab />}
       </div>
     </div>
   );

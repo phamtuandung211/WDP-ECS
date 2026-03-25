@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { appointmentService, medicalRecordService } from "../../services";
-import {
-  APPOINTMENT_STATUS,
-  STATUS_LABELS,
-  STATUS_COLORS,
-} from "../../constants/appointment";
+import { APPOINTMENT_STATUS, STATUS_LABELS } from "../../constants/appointment";
 import { Loading, Alert } from "../UI";
 import { useAppointmentNotificationRefresh } from "../../context/AppointmentNotificationContext";
+import "./DoctorAppointmentDashboard.css";
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function DoctorAppointmentDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [viewMode, setViewMode] = useState("today"); // 'today', 'week', 'month'
+  const [viewMode, setViewMode] = useState("today");
   const [medicalRecord, setMedicalRecord] = useState(null);
   const [showMedicalForm, setShowMedicalForm] = useState(false);
   const [medicalFormData, setMedicalFormData] = useState({
@@ -24,26 +22,40 @@ export function DoctorAppointmentDashboard() {
   });
   const [savingRecord, setSavingRecord] = useState(false);
 
+  const toDateKey = (value) => {
+    if (!value) return "";
+    return new Date(value).toISOString().split("T")[0];
+  };
+
+  const todayDate = new Date();
+  const todayKey = toDateKey(todayDate);
+  const tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(todayDate.getDate() + 1);
+  const tomorrowKey = toDateKey(tomorrowDate);
+
+  const plusDaysKey = (days) => {
+    const d = new Date(todayDate);
+    d.setDate(todayDate.getDate() + days);
+    return toDateKey(d);
+  };
+
+  const upcomingFromKey = plusDaysKey(2);
+  const upcomingToKey = plusDaysKey(5);
+  const weekToKey = plusDaysKey(6);
+
   // Fetch appointments
   useEffect(() => {
     fetchAppointments();
-  }, [viewMode]);
+  }, []);
 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const now = new Date();
-      let dateFilter = null;
-
-      if (viewMode === "today") {
-        dateFilter = now.toISOString().split("T")[0];
-      }
-
       const response = await appointmentService.getAllForStaff({
         status: APPOINTMENT_STATUS.CONFIRMED,
-        date: dateFilter,
+        limit: 200,
       });
 
       setAppointments(response.data?.data || response.data || []);
@@ -59,6 +71,67 @@ export function DoctorAppointmentDashboard() {
     onAssigned: () =>
       fetchAppointments().catch((err) => console.warn("Refresh failed:", err)),
   });
+
+  const filteredAppointments = appointments
+    .filter((apt) => {
+      const aptDateKey = toDateKey(apt.slotId?.startTime);
+      if (!aptDateKey) return false;
+
+      if (viewMode === "today") return aptDateKey === todayKey;
+      if (viewMode === "tomorrow") return aptDateKey === tomorrowKey;
+      if (viewMode === "upcoming") {
+        return aptDateKey >= upcomingFromKey && aptDateKey <= upcomingToKey;
+      }
+      if (viewMode === "week") {
+        return aptDateKey >= todayKey && aptDateKey <= weekToKey;
+      }
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.slotId?.startTime || 0).getTime() -
+        new Date(b.slotId?.startTime || 0).getTime(),
+    );
+
+  useEffect(() => {
+    if (!filteredAppointments.length) {
+      setSelectedAppointment(null);
+      setMedicalRecord(null);
+      setShowMedicalForm(false);
+      return;
+    }
+
+    const stillVisible = filteredAppointments.find(
+      (apt) => apt._id === selectedAppointment?._id,
+    );
+
+    if (!stillVisible) {
+      handleSelectAppointment(filteredAppointments[0]);
+    }
+  }, [viewMode, appointments]);
+
+  const groupedAppointments = filteredAppointments.reduce((acc, apt) => {
+    const key = toDateKey(apt.slotId?.startTime) || "N/A";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(apt);
+    return acc;
+  }, {});
+
+  const groupKeys = Object.keys(groupedAppointments).sort((a, b) =>
+    a.localeCompare(b),
+  );
+
+  const getAppointmentState = (apt) => {
+    const now = new Date();
+    const start = new Date(apt.slotId?.startTime);
+    if (Number.isNaN(start.getTime())) return "upcoming";
+    if (start <= now) return "done";
+    return "upcoming";
+  };
+
+  const nextAppointment = filteredAppointments.find(
+    (apt) => new Date(apt.slotId?.startTime).getTime() >= Date.now(),
+  );
 
   const handleSelectAppointment = async (appointment) => {
     setSelectedAppointment(appointment);
@@ -76,8 +149,8 @@ export function DoctorAppointmentDashboard() {
         appointment._id,
       );
       if (response.data?.data) {
-        setMedicalRecord(response.data.data);
         const record = response.data.data;
+        setMedicalRecord(record);
         setMedicalFormData({
           symptoms: record.symptoms || "",
           diagnosis: record.diagnosis || "",
@@ -86,8 +159,13 @@ export function DoctorAppointmentDashboard() {
         });
       }
     } catch (err) {
-      // No medical record yet, that's fine
-      setMedicalRecord(null);
+      if (err.response?.status === 404) {
+        // No medical record yet, that's fine
+        setMedicalRecord(null);
+      } else {
+        console.error("Failed to load medical record", err);
+        setError("Failed to load medical record");
+      }
     }
   };
 
@@ -122,14 +200,18 @@ export function DoctorAppointmentDashboard() {
       };
 
       if (medicalRecord) {
-        await medicalRecordService.update(medicalRecord._id, payload);
+        const response = await medicalRecordService.update(
+          medicalRecord._id,
+          payload,
+        );
+        setMedicalRecord(response.data?.data || payload);
       } else {
-        await medicalRecordService.create(payload);
+        const response = await medicalRecordService.create(payload);
+        setMedicalRecord(response.data?.data || payload);
       }
 
       alert("Medical record saved successfully");
       setShowMedicalForm(false);
-      setMedicalRecord(payload);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to save medical record");
     } finally {
@@ -155,7 +237,7 @@ export function DoctorAppointmentDashboard() {
       return;
     }
 
-    if (!window.confirm("Mark this appointment as completed?")) {
+    if (!globalThis.confirm("Mark this appointment as completed?")) {
       return;
     }
 
@@ -180,6 +262,31 @@ export function DoctorAppointmentDashboard() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const formatHeaderDate = () =>
+    new Date().toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+
+  const getInitials = (name = "") => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "CU";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts.at(-1)[0]}`.toUpperCase();
+  };
+
+  const getListPillText = (apt) => {
+    if (nextAppointment?._id === apt._id) return "Next";
+    return getAppointmentState(apt) === "done" ? "Done" : "Upcoming";
+  };
+
+  const getListPillClass = (apt) => {
+    if (nextAppointment?._id === apt._id) return "pill-next";
+    return getAppointmentState(apt) === "done" ? "pill-done" : "pill-upcoming";
   };
 
   const formatTime = (slot) => {
@@ -211,323 +318,378 @@ export function DoctorAppointmentDashboard() {
     return `Appointment starts in ${timeLeft} minutes`;
   };
 
+  const hasMedicalRecord = Boolean(medicalRecord);
+  const timeArrived = isAppointmentTimeArrived();
+  const canComplete = timeArrived && hasMedicalRecord;
+
+  let completeButtonTitle = "Click to complete appointment";
+  if (!hasMedicalRecord) {
+    completeButtonTitle = "Medical record required";
+  } else if (!timeArrived) {
+    completeButtonTitle = "Appointment time not reached";
+  }
+
+  const completeButtonText = hasMedicalRecord
+    ? "Mark as Completed"
+    : "Add Medical Record to Complete";
+
+  let medicalSectionContent = (
+    <div className="ddoc-record-empty">
+      <p>No medical record yet. Add one to document the appointment.</p>
+      <div className="ddoc-ready-banner">
+        <div>
+          <div className="ddoc-ready-label">
+            {timeArrived ? "Ready to proceed" : getTimeLeftMessage()}
+          </div>
+          <div className="ddoc-ready-sub">Add Medical Record to Complete</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (showMedicalForm) {
+    medicalSectionContent = (
+      <form
+        onSubmit={handleSaveMedicalRecord}
+        className="ddoc-record-form show"
+      >
+        <div className="ddoc-form-group">
+          <label className="ddoc-form-label" htmlFor="symptoms">
+            Symptoms <span className="required">*</span>
+          </label>
+          <textarea
+            id="symptoms"
+            value={medicalFormData.symptoms}
+            onChange={(e) =>
+              setMedicalFormData((prev) => ({
+                ...prev,
+                symptoms: e.target.value,
+              }))
+            }
+            required
+          />
+        </div>
+
+        <div className="ddoc-form-group">
+          <label className="ddoc-form-label" htmlFor="diagnosis">
+            Diagnosis <span className="required">*</span>
+          </label>
+          <textarea
+            id="diagnosis"
+            value={medicalFormData.diagnosis}
+            onChange={(e) =>
+              setMedicalFormData((prev) => ({
+                ...prev,
+                diagnosis: e.target.value,
+              }))
+            }
+            required
+          />
+        </div>
+
+        <div className="ddoc-form-group">
+          <label className="ddoc-form-label" htmlFor="prescription">
+            Prescription
+          </label>
+          <textarea
+            id="prescription"
+            value={medicalFormData.prescription}
+            onChange={(e) =>
+              setMedicalFormData((prev) => ({
+                ...prev,
+                prescription: e.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="ddoc-form-group">
+          <label className="ddoc-form-label" htmlFor="notes">
+            Notes
+          </label>
+          <textarea
+            id="notes"
+            value={medicalFormData.notes}
+            onChange={(e) =>
+              setMedicalFormData((prev) => ({
+                ...prev,
+                notes: e.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="ddoc-btn-row">
+          <button
+            type="submit"
+            disabled={savingRecord}
+            className="ddoc-btn ddoc-btn-primary"
+          >
+            {savingRecord ? "Saving..." : "Save Record"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowMedicalForm(false)}
+            className="ddoc-btn ddoc-btn-ghost"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    );
+  } else if (hasMedicalRecord) {
+    medicalSectionContent = (
+      <div className="ddoc-record-card show">
+        <div className="ddoc-record-card-head">
+          <div className="rc-title">Medical record saved</div>
+          <button
+            type="button"
+            className="ddoc-btn-edit-record"
+            onClick={() => setShowMedicalForm(true)}
+          >
+            Edit
+          </button>
+        </div>
+        <div className="ddoc-record-card-body">
+          <div className="ddoc-rc-row">
+            <span className="ddoc-rc-label">Symptoms</span>
+            <span className="ddoc-rc-value">
+              {medicalRecord.symptoms || "-"}
+            </span>
+          </div>
+          <div className="ddoc-rc-row">
+            <span className="ddoc-rc-label">Diagnosis</span>
+            <span className="ddoc-rc-value">
+              {medicalRecord.diagnosis || "-"}
+            </span>
+          </div>
+          <div className="ddoc-rc-row">
+            <span className="ddoc-rc-label">Prescription</span>
+            <span className="ddoc-rc-value">
+              {medicalRecord.prescription || "-"}
+            </span>
+          </div>
+          <div className="ddoc-rc-row">
+            <span className="ddoc-rc-label">Notes</span>
+            <span className="ddoc-rc-value">{medicalRecord.notes || "-"}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading && appointments.length === 0) return <Loading />;
 
   return (
-    <div className="doctor-dashboard">
-      <h2 className="text-3xl font-bold mb-6">My Appointments</h2>
+    <div className="ddoc-root">
+      <div className="ddoc-header">
+        <div className="ddoc-header-left">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect
+              x="3"
+              y="4"
+              width="14"
+              height="14"
+              rx="2"
+              stroke="#5f5e5a"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M7 2v4M13 2v4M3 9h14"
+              stroke="#5f5e5a"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M10 9v5M7.5 11.5h5"
+              stroke="#5f5e5a"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span className="ddoc-header-title">My Appointments</span>
+        </div>
+        <div className="ddoc-header-sub">Bác sĩ . {formatHeaderDate()}</div>
+      </div>
 
       {error && <Alert type="error">{error}</Alert>}
 
-      {/* View Mode Selector */}
-      <div className="flex gap-2 mb-6">
-        {["today", "week", "month"].map((mode) => (
+      <div className="ddoc-filter-tabs">
+        {["today", "tomorrow", "upcoming", "week"].map((mode) => (
           <button
             key={mode}
+            type="button"
             onClick={() => setViewMode(mode)}
-            className={`px-4 py-2 rounded-md capitalize transition ${
-              viewMode === mode
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`ddoc-tab-btn ${viewMode === mode ? "active" : ""}`}
           >
             {mode}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Appointments List */}
-        <div className="lg:col-span-1 border rounded-lg p-4 bg-gray-50">
-          <h3 className="text-lg font-semibold mb-4">
-            {appointments.length} Confirmed Appointments
-          </h3>
+      <div className="ddoc-stat-bar">
+        <span className="count">
+          {filteredAppointments.length} Confirmed Appointment
+          {filteredAppointments.length === 1 ? "" : "s"}
+        </span>
+      </div>
 
-          {appointments.length === 0 ? (
-            <p className="text-gray-500">No confirmed appointments</p>
-          ) : (
-            <div className="space-y-2">
-              {appointments.map((apt) => (
-                <button
-                  key={apt._id}
-                  onClick={() => handleSelectAppointment(apt)}
-                  className={`w-full p-3 rounded-lg text-left transition ${
-                    selectedAppointment?._id === apt._id
-                      ? "bg-blue-500 text-white"
-                      : "bg-white hover:bg-blue-50 border border-gray-200"
-                  }`}
-                >
-                  <div className="font-medium">
-                    {apt.customerId?.fullName || "Customer"}
-                  </div>
-                  <div className="text-xs opacity-75">
-                    {formatDate(apt.slotId?.startTime)}
-                  </div>
-                  <div className="text-xs opacity-75">
-                    {formatTime(apt.slotId)}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="ddoc-layout">
+        <div className="ddoc-panel">
+          <div className="ddoc-panel-head">
+            <span>Danh sách lịch hẹn</span>
+          </div>
+
+          <div className="ddoc-appt-scroll">
+            {groupKeys.length === 0 ? (
+              <div className="ddoc-empty-list">Không có lịch hẹn nào</div>
+            ) : (
+              groupKeys.map((key) => (
+                <div key={key}>
+                  <div className="ddoc-group-date">{formatDate(key)}</div>
+                  {groupedAppointments[key].map((apt) => (
+                    <button
+                      type="button"
+                      key={apt._id}
+                      onClick={() => handleSelectAppointment(apt)}
+                      className={`ddoc-appt-item ${selectedAppointment?._id === apt._id ? "active" : ""}`}
+                    >
+                      <div className="ddoc-appt-avatar">
+                        {getInitials(apt.customerId?.fullName || "Customer")}
+                      </div>
+                      <div className="ddoc-appt-body">
+                        <div className="ddoc-appt-name">
+                          {apt.customerId?.fullName || "Customer"}
+                        </div>
+                        <div className="ddoc-appt-meta">
+                          <span>{formatTime(apt.slotId)}</span>
+                        </div>
+                      </div>
+                      <span className={`pill ${getListPillClass(apt)}`}>
+                        {getListPillText(apt)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Right: Appointment Details & Medical Record */}
-        <div className="lg:col-span-2 border rounded-lg p-4">
-          {selectedAppointment ? (
-            <div className="space-y-6">
-              {/* Patient Information */}
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-lg mb-3">
-                  Patient Information
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium">Name:</span>{" "}
-                    {selectedAppointment.customerId?.fullName}
-                  </div>
-                  <div>
-                    <span className="font-medium">Phone:</span>{" "}
-                    {selectedAppointment.customerId?.phone}
-                  </div>
-                  <div>
-                    <span className="font-medium">Email:</span>{" "}
-                    {selectedAppointment.customerId?.email}
-                  </div>
-                  {selectedAppointment.note && (
-                    <div>
-                      <span className="font-medium">Patient Notes:</span>{" "}
-                      {selectedAppointment.note}
-                    </div>
-                  )}
-                </div>
-              </div>
+        <div className="ddoc-panel">
+          <div className="ddoc-panel-head">
+            <span>
+              {selectedAppointment?.customerId?.fullName || "Chi tiết lịch hẹn"}
+            </span>
+            <span className="pill pill-confirmed">
+              {STATUS_LABELS[APPOINTMENT_STATUS.CONFIRMED]}
+            </span>
+          </div>
 
-              {/* Appointment Details */}
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold mb-3">Appointment Details</h3>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium">Date:</span>{" "}
-                    {formatDate(selectedAppointment.slotId?.startTime)}
+          <div className="ddoc-detail-scroll">
+            <div className="ddoc-detail-body">
+              {selectedAppointment ? (
+                <>
+                  <div className="ddoc-section-title">Patient Information</div>
+                  <div className="ddoc-info-grid">
+                    <div className="ddoc-info-item">
+                      <div className="ddoc-info-label">Name</div>
+                      <span>
+                        {selectedAppointment.customerId?.fullName || "-"}
+                      </span>
+                    </div>
+                    <div className="ddoc-info-item">
+                      <div className="ddoc-info-label">Phone</div>
+                      <span>
+                        {selectedAppointment.customerId?.phone || "-"}
+                      </span>
+                    </div>
+                    <div className="ddoc-info-item full-width">
+                      <div className="ddoc-info-label">Email</div>
+                      <span>
+                        {selectedAppointment.customerId?.email || "-"}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-medium">Time:</span>{" "}
-                    {formatTime(selectedAppointment.slotId)}
+
+                  <div className="ddoc-section-title">Patient Notes</div>
+                  <div className="ddoc-notes-box">
+                    {selectedAppointment.note || "No notes"}
                   </div>
-                  <div>
-                    <span className="font-medium">Status:</span>{" "}
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs ${
-                        STATUS_COLORS[selectedAppointment.status]
-                      }`}
-                    >
-                      {STATUS_LABELS[selectedAppointment.status]}
-                    </span>
+
+                  <hr className="ddoc-divider" />
+
+                  <div className="ddoc-section-title">Appointment Details</div>
+                  <div className="ddoc-detail-row">
+                    <div className="ddoc-detail-chip">
+                      <strong>
+                        {formatDate(selectedAppointment.slotId?.startTime)}
+                      </strong>
+                    </div>
+                    <div className="ddoc-detail-chip">
+                      <strong>{formatTime(selectedAppointment.slotId)}</strong>
+                    </div>
+                    <div className="ddoc-detail-chip">
+                      <strong>
+                        {STATUS_LABELS[selectedAppointment.status]}
+                      </strong>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Medical Record */}
-              <div className="border rounded-lg p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold">Medical Records</h3>
-                  {!showMedicalForm && (
-                    <button
-                      onClick={() => setShowMedicalForm(true)}
-                      disabled={!isAppointmentTimeArrived()}
-                      className={`px-3 py-1 text-sm rounded transition ${
-                        !isAppointmentTimeArrived()
-                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
-                      title={
-                        !isAppointmentTimeArrived()
-                          ? `Cannot add medical record yet. ${getTimeLeftMessage()}`
-                          : ""
-                      }
-                    >
-                      {medicalRecord ? "Edit" : "Add"} Record
-                    </button>
-                  )}
-                </div>
+                  <hr className="ddoc-divider" />
 
-                {!showMedicalForm && medicalRecord ? (
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="font-medium">Symptoms:</span>
-                      <p className="mt-1 text-gray-700">
-                        {medicalRecord.symptoms}
-                      </p>
+                  <div className="ddoc-record-head-row">
+                    <div className="ddoc-section-title no-margin">
+                      Medical Records
                     </div>
-                    <div>
-                      <span className="font-medium">Diagnosis:</span>
-                      <p className="mt-1 text-gray-700">
-                        {medicalRecord.diagnosis}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Prescription:</span>
-                      <p className="mt-1 text-gray-700">
-                        {medicalRecord.prescription}
-                      </p>
-                    </div>
-                    {medicalRecord.notes && (
-                      <div>
-                        <span className="font-medium">Notes:</span>
-                        <p className="mt-1 text-gray-700">
-                          {medicalRecord.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : showMedicalForm ? (
-                  <form
-                    onSubmit={handleSaveMedicalRecord}
-                    className="space-y-3"
-                  >
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Symptoms <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        value={medicalFormData.symptoms}
-                        onChange={(e) =>
-                          setMedicalFormData((prev) => ({
-                            ...prev,
-                            symptoms: e.target.value,
-                          }))
-                        }
-                        rows="2"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Diagnosis <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        value={medicalFormData.diagnosis}
-                        onChange={(e) =>
-                          setMedicalFormData((prev) => ({
-                            ...prev,
-                            diagnosis: e.target.value,
-                          }))
-                        }
-                        rows="2"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Prescription
-                      </label>
-                      <textarea
-                        value={medicalFormData.prescription}
-                        onChange={(e) =>
-                          setMedicalFormData((prev) => ({
-                            ...prev,
-                            prescription: e.target.value,
-                          }))
-                        }
-                        rows="2"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Medications, treatments, etc."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Notes
-                      </label>
-                      <textarea
-                        value={medicalFormData.notes}
-                        onChange={(e) =>
-                          setMedicalFormData((prev) => ({
-                            ...prev,
-                            notes: e.target.value,
-                          }))
-                        }
-                        rows="2"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Follow-up requirements, additional notes..."
-                      />
-                    </div>
-
-                    <div className="flex gap-2 pt-3 border-t">
-                      <button
-                        type="submit"
-                        disabled={savingRecord}
-                        className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-                      >
-                        {savingRecord ? "Saving..." : "Save Record"}
-                      </button>
+                    {!showMedicalForm && (
                       <button
                         type="button"
-                        onClick={() => setShowMedicalForm(false)}
-                        className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400"
+                        className="ddoc-btn-add-record"
+                        onClick={() => setShowMedicalForm(true)}
+                        disabled={!isAppointmentTimeArrived()}
                       >
-                        Cancel
+                        {medicalRecord ? "Edit" : "Add"} Record
                       </button>
-                    </div>
-                  </form>
-                ) : (
-                  <p className="text-gray-500 text-sm">
-                    No medical record yet. Add one to document the appointment.
-                  </p>
-                )}
-              </div>
+                    )}
+                  </div>
 
-              {/* Time Status */}
-              {!showMedicalForm && selectedAppointment && (
-                <div
-                  className={`p-3 rounded-md text-sm font-medium ${
-                    isAppointmentTimeArrived()
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                  }`}
-                >
-                  {getTimeLeftMessage()}
+                  {medicalSectionContent}
+
+                  {!showMedicalForm && selectedAppointment && (
+                    <div
+                      className={`ddoc-time-status ${
+                        timeArrived ? "success" : "warning"
+                      }`}
+                    >
+                      {getTimeLeftMessage()}
+                    </div>
+                  )}
+
+                  {!showMedicalForm && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleCompleteAppointment(selectedAppointment._id)
+                      }
+                      disabled={!canComplete}
+                      className={`ddoc-complete-btn ${
+                        canComplete ? "active" : "disabled"
+                      }`}
+                      title={completeButtonTitle}
+                    >
+                      {completeButtonText}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="ddoc-empty-detail">
+                  Select an appointment to view details and manage medical
+                  records
                 </div>
               )}
-
-              {/* Complete Button */}
-              {!showMedicalForm && (
-                <button
-                  onClick={() =>
-                    handleCompleteAppointment(selectedAppointment._id)
-                  }
-                  disabled={!isAppointmentTimeArrived() || !medicalRecord}
-                  className={`w-full py-3 rounded-md font-medium transition ${
-                    !isAppointmentTimeArrived() || !medicalRecord
-                      ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  }`}
-                  title={
-                    !medicalRecord
-                      ? "Medical record required"
-                      : !isAppointmentTimeArrived()
-                        ? "Appointment time not reached"
-                        : "Click to complete appointment"
-                  }
-                >
-                  {!medicalRecord
-                    ? "Add Medical Record to Complete"
-                    : "Mark as Completed"}
-                </button>
-              )}
             </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>
-                Select an appointment to view details and manage medical records
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

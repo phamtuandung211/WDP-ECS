@@ -66,7 +66,7 @@ const DoctorDetailPage = () => {
       return;
     }
 
-    alert("Chuc nang dat lich chi danh cho tai khoan khach hang");
+    alert("Chức năng đặt lịch chỉ dành cho tài khoản khách hàng");
   };
 
   if (loading) return <div className="p-20 text-center">Đang tải...</div>;
@@ -76,6 +76,13 @@ const DoctorDetailPage = () => {
   return (
     <div className="bg-gray-100 min-h-screen py-12">
       <div className="container mx-auto px-6">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition"
+        >
+          ← Quay lại
+        </button>
         {/* ============ PROFILE SECTION ============ */}
         <div className="bg-white rounded-3xl shadow-lg p-10 flex flex-col md:flex-row gap-10">
           {/* Avatar */}
