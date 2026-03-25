@@ -40,13 +40,30 @@ function extractDegrees(doctor) {
     ? doctor.degreeNames
     : [];
   const degreeObjs = Array.isArray(doctor?.degrees)
-    ? doctor.degrees.map((item) => item?.name)
+    ? doctor.degrees.map(
+        (item) => item?.name || item?.fullName || item?.title || item,
+      )
     : [];
-  const single = [doctor?.degree, doctor?.degreeName];
-  return [...directNames, ...degreeObjs, ...single]
-    .filter(Boolean)
-    .map((name) => name.toString().trim())
-    .filter(Boolean);
+  const single = [
+    doctor?.degree,
+    doctor?.degreeName,
+    doctor?.fullDegreeName,
+    doctor?.degreeTitle,
+  ];
+
+  const allDegrees = [...directNames, ...degreeObjs, ...single]
+    .filter((item) => item && String(item).trim())
+    .map((name) => String(name).trim())
+    .filter(
+      (name) => name.length > 0 && name !== "undefined" && name !== "null",
+    );
+
+  // Debug log
+  if (allDegrees.length === 0 && doctor) {
+    console.warn("No degrees found for doctor:", doctor.fullName, doctor);
+  }
+
+  return allDegrees;
 }
 
 function extractSpecializations(doctor) {
@@ -241,7 +258,9 @@ const DoctorListPage = () => {
                 <div className="vdoc-info-row">
                   <span className="vdoc-info-label">Học vị:</span>
                   <span className="vdoc-info-val">
-                    {doctor._degreeList[0] || "Đang cập nhật"}
+                    {doctor._degreeList[0] ||
+                      doctor._specList[0]?.name ||
+                      "Đang cập nhật"}
                   </span>
                 </div>
               </div>
