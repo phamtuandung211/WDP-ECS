@@ -7,7 +7,10 @@ const DoctorCard = ({ doctor, onBookClick }) => {
     const navigate = useNavigate();
 
     return (
-        <div className="bg-white rounded-2xl shadow hover:shadow-xl transition p-6 text-center">
+        <div
+          onClick={() => navigate(`/doctors/${doctor._id}`)}
+          className="bg-white rounded-2xl shadow hover:shadow-xl transition p-6 text-center cursor-pointer"
+        >
 
             {/* Avatar circle */}
             <div className="w-48 h-48 mx-auto rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
@@ -19,7 +22,7 @@ const DoctorCard = ({ doctor, onBookClick }) => {
             </div>
 
             {/* Name */}
-            <h4 className="mt-6 font-semibold text-lg uppercase" onClick={() => navigate(`/doctors/${doctor._id}`)}>
+            <h4 className="mt-6 font-semibold text-lg uppercase">
                 {doctor?.fullName || "N/A"}
             </h4>
 
