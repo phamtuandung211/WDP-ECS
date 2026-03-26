@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAppointmentNotification } from "../context/AppointmentNotificationContext";
 import { ROLE_NAME } from "../constants/role";
@@ -132,6 +132,7 @@ function NotificationIcon() {
 
 export function Header() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const role = user?.role;
   const isSaleStaff = role === ROLE_NAME.SALE_STAFF;
@@ -148,7 +149,7 @@ export function Header() {
 
   const handleLogout = () => {
     logout();
-    globalThis.location.href = "/";
+    navigate("/login", { replace: true });
   };
 
   const getUserName = () => user?.fullName || user?.name || user?.email || "U";
