@@ -102,6 +102,9 @@ export function ChatWidget() {
 
   const handleTransfer = async () => {
     try {
+      if (!session) {
+        await startSession();
+      }
       await transferToStaff();
     } catch (err) {
       console.error("Failed to transfer:", err);
@@ -190,11 +193,12 @@ export function ChatWidget() {
               </svg>
             </button>
           )}
-          {mode === "AI_MODE" && session && (
+          {mode === "AI_MODE" && (
             <button
               className="chat-widget-btn-small"
               onClick={handleTransfer}
               title="Kết nối nhân viên"
+              disabled={loading}
             >
               <svg
                 width="16"
