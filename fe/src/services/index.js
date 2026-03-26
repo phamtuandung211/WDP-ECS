@@ -112,6 +112,10 @@ export const appointmentService = {
   getAllForStaff: (params = {}) =>
     apiClient.get("/appointments/staff", { params }),
 
+  // Get my approval history (Sale Staff)
+  getMyApprovalHistory: (params = {}) =>
+    apiClient.get("/appointments/my-approval-history", { params }),
+
   // Update appointment (for future use)
   update: (id, data) => apiClient.put(`/appointments/${id}`, data),
 };
@@ -211,6 +215,7 @@ export const paymentService = {
 
 export const doctorService = {
   getAllDoctor: (params = {}) => apiClient.get("/doctors", { params }),
+  getList: (params = {}) => apiClient.get("/doctors", { params }),
   getDoctorById: (id) => apiClient.get(`/doctors/${id}`),
   getRelatedDoctor: (id) => apiClient.get(`/doctors/${id}/related`),
 };

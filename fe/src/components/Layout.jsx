@@ -165,7 +165,8 @@ export function Header() {
           <a href="/staff/manage-blogs">Quản lý bài viết</a>
           <a href="/staff/manage-specializations">Quản lý chuyên khoa</a>
           <a href="/staff/review-approvals">Duyệt hồ sơ</a>
-          <a href="/appointments">Bảng điều khiển</a>
+          <a href="/appointments">Duyệt lịch hẹn</a>
+          <a href="/staff/approval-history">Lịch sử duyệt</a>
           <NotificationIcon />
           <Link to="/profile" className="header-user-link">
             <span className="user-info">

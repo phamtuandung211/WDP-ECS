@@ -37,6 +37,7 @@ import DoctorDetailPage from "./pages/DoctorDetail";
 import ManageCertificatesDoctor from "./pages/ManageCertificatesDoctor";
 import ManageDegreesDoctor from "./pages/ManageDegreesDoctor";
 import StaffReviewApprovals from "./pages/StaffReviewApprovals";
+import { StaffApprovalHistory } from "./pages/StaffApprovalHistory";
 
 /**
  * PrivateRoute - Bảo vệ route, yêu cầu user đã login
@@ -307,6 +308,17 @@ function App() {
                     <RoleProtectedRoute
                       allowedRoles={[ROLE_NAME.DOCTOR]}
                       element={<ManageDegreesDoctor />}
+                    />
+                  }
+                />
+
+                {/* ========== Staff: Approval History ========== */}
+                <Route
+                  path="/staff/approval-history"
+                  element={
+                    <RoleProtectedRoute
+                      allowedRoles={staffRoles}
+                      element={<StaffApprovalHistory />}
                     />
                   }
                 />

@@ -9,6 +9,7 @@ import {
   approveBasicAppointmentController,
   getAppointmentByIdController,
   getAllAppointmentsForStaffController,
+  getMyApprovalHistoryController,
 } from "../controllers/appointment.controller.js";
 
 const router = express.Router();
@@ -27,6 +28,14 @@ router.post(
   authenticate,
   authorize(ROLE_NAME.SALE_STAFF),
   approveBasicAppointmentController,
+);
+
+// GET /api/appointments/my-approval-history – Get my approval history (Sale Staff)
+router.get(
+  "/my-approval-history",
+  authenticate,
+  authorize(ROLE_NAME.SALE_STAFF),
+  getMyApprovalHistoryController,
 );
 
 // GET /api/appointments/staff – Get all appointments (Sale Staff)
