@@ -381,7 +381,14 @@ export const getAllAppointmentsForStaffService = async ({
 
   const [appointments, totalItems] = await Promise.all([
     Appointment.find(query)
-      .populate("customerId", "fullName phone email")
+      .populate({
+        path: "customerId",
+        select: "fullName phone accountId",
+        populate: {
+          path: "accountId",
+          select: "email",
+        },
+      })
       .populate("doctorId", "fullName specializations")
       .populate("slotId")
       .populate("approvedBy", "fullName email")
@@ -474,7 +481,14 @@ export const getAppointmentByIdService = async ({
     const appointment = await Appointment.findById(appointmentId)
       .populate("slotId")
       .populate("doctorId", "fullName specializations")
-      .populate("customerId", "fullName phone email")
+      .populate({
+        path: "customerId",
+        select: "fullName phone accountId",
+        populate: {
+          path: "accountId",
+          select: "email",
+        },
+      })
       .populate("approvedBy", "fullName")
       .lean();
 
