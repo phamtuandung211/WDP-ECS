@@ -9,6 +9,7 @@ import React, {
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { ROLE_NAME } from "../constants/role";
+import { authService } from "../services";
 
 const ChatContext = createContext();
 
@@ -50,11 +51,39 @@ export function ChatProvider({ children }) {
     activeStaffSessionRef.current = activeStaffSession;
   }, [activeStaffSession]);
 
+  const waitForSocketReady = useCallback((timeoutMs = 5000) => {
+    return new Promise((resolve, reject) => {
+      const startedAt = Date.now();
+
+      const check = () => {
+        const socket = socketRef.current;
+
+        if (socket && !socket.connected) {
+          socket.connect();
+        }
+
+        if (socket?.connected) {
+          resolve(socket);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs) {
+          reject(new Error("Socket not connected"));
+          return;
+        }
+
+        setTimeout(check, 100);
+      };
+
+      check();
+    });
+  }, []);
+
   // ── Connect socket ───────────────────────────────────────────────
   useEffect(() => {
     if (!user || (!isCustomer && !isStaff)) return;
 
-    const token = localStorage.getItem("token");
+    const token = authService.getToken();
     if (!token) return;
 
     const socket = io(SOCKET_URL, {
@@ -173,11 +202,10 @@ export function ChatProvider({ children }) {
   }, [user?.role]);
 
   // ── Customer: start session ──────────────────────────────────────
-  const startSession = useCallback(() => {
-    return new Promise((resolve, reject) => {
-      const socket = socketRef.current;
-      if (!socket) return reject(new Error("Socket not connected"));
+  const startSession = useCallback(async () => {
+    const socket = await waitForSocketReady();
 
+    return new Promise((resolve, reject) => {
       setLoading(true);
       socket.emit("start_session", (response) => {
         setLoading(false);
@@ -190,7 +218,7 @@ export function ChatProvider({ children }) {
         resolve(s);
       });
     });
-  }, []);
+  }, [waitForSocketReady]);
 
   // ── Customer: send message ───────────────────────────────────────
   const sendMessage = useCallback(
