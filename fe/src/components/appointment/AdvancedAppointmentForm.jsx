@@ -120,6 +120,13 @@ export function AdvancedAppointmentForm({ onSuccess }) {
       return;
     }
 
+    if (!selectedSlot || isSlotDisabledForSelection(selectedSlot)) {
+      setError(
+        "Khung giờ đã chọn không còn hợp lệ. Vui lòng chọn lại khung giờ khác.",
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
