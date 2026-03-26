@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { appointmentService, medicalRecordService } from "../../services";
 import {
+  APPOINTMENT_TYPE,
   APPOINTMENT_STATUS,
   BUSINESS_HOURS_END_HOUR,
   BUSINESS_HOURS_END_MINUTE,
@@ -426,6 +427,21 @@ export function DoctorAppointmentDashboard() {
 
   const getCustomerEmail = (apt) =>
     apt?.customerId?.email || apt?.customerId?.accountId?.email || "-";
+
+  const getAssignedStaffDisplay = (apt) => {
+    if (apt?.approvedBy) {
+      if (typeof apt.approvedBy === "string") {
+        return `Mã NV: ${apt.approvedBy}`;
+      }
+      return apt.approvedBy.fullName || apt.approvedBy.email || "Đã gán";
+    }
+
+    if (apt?.type === APPOINTMENT_TYPE.ADVANCED) {
+      return "Đặt trực tiếp (không qua nhân viên)";
+    }
+
+    return "Chưa có nhân viên gán";
+  };
 
   const getInitials = (name = "") => {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -897,6 +913,12 @@ export function DoctorAppointmentDashboard() {
                             {STATUS_LABELS[selectedAppointment.status]}
                           </strong>
                         </div>
+                        <div className="ddoc-detail-chip">
+                          <strong>
+                            Nhân viên gán:{" "}
+                            {getAssignedStaffDisplay(selectedAppointment)}
+                          </strong>
+                        </div>
                       </div>
 
                       <hr className="ddoc-divider" />
@@ -1101,6 +1123,12 @@ export function DoctorAppointmentDashboard() {
                       <strong>
                         {STATUS_LABELS[selectedHistoryAppointment.status] ||
                           selectedHistoryAppointment.status}
+                      </strong>
+                    </div>
+                    <div className="ddoc-detail-chip">
+                      <strong>
+                        Nhân viên gán:{" "}
+                        {getAssignedStaffDisplay(selectedHistoryAppointment)}
                       </strong>
                     </div>
                   </div>
