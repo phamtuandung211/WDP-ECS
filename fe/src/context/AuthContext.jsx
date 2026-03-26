@@ -9,19 +9,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, remember = true) => {
     setLoading(true);
     setError(null);
     try {
       const { data } = await authService.login(email, password);
       const token = data?.token || data?.accessToken || data?.access_token;
-      if (token) authService.setToken(token);
+      if (token) authService.setToken(token, remember);
       const payload = token ? jwtDecode(token) : {};
       const userData = data?.user || {
         email,
         role: payload.role || data?.role,
       };
-      authService.setUser(userData);
+      authService.setUser(userData, remember);
       setUser(userData);
       return userData;
     } catch (err) {
@@ -91,18 +91,18 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const googleLogin = useCallback(async (idToken) => {
+  const googleLogin = useCallback(async (idToken, remember = true) => {
     setLoading(true);
     setError(null);
     try {
       const { data } = await authService.googleAuth(idToken);
       const token = data?.token || data?.accessToken || data?.access_token;
-      if (token) authService.setToken(token);
+      if (token) authService.setToken(token, remember);
       const payload = token ? jwtDecode(token) : {};
       const userData = data?.user || {
         role: payload.role || data?.role,
       };
-      authService.setUser(userData);
+      authService.setUser(userData, remember);
       setUser(userData);
       return userData;
     } catch (err) {

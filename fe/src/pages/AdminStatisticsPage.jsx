@@ -101,16 +101,32 @@ function DateFilter({ from, to, groupBy, onChange }) {
 }
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
-function OverviewTab() {
+function OverviewTab({ onViewCustomerDetails }) {
   const [data, setData] = useState(null);
+  const [topCustomers, setTopCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await statisticsService.getOverview();
-      setData(res.data.data);
+      const [overviewRes, customersRes] = await Promise.allSettled([
+        statisticsService.getOverview(),
+        statisticsService.getCustomers({ page: 1, limit: 5 }),
+      ]);
+
+      if (overviewRes.status === "rejected") {
+        throw overviewRes.reason;
+      }
+
+      setData(overviewRes.value.data.data);
+
+      if (customersRes.status === "fulfilled") {
+        setTopCustomers(customersRes.value.data?.data || []);
+      } else {
+        setTopCustomers([]);
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Lỗi tải dữ liệu");
     } finally {
@@ -215,6 +231,65 @@ function OverviewTab() {
               }
               color="#f39c12"
             />
+          </div>
+
+          <SectionTitle>Khách hàng tiềm năng (Top 5)</SectionTitle>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Khách hàng</th>
+                  <th>Email</th>
+                  <th>Tổng cuộc hẹn</th>
+                  <th>Hoàn thành</th>
+                  <th>Tỉ lệ hoàn thành</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCustomers.length ? (
+                  topCustomers.map((customer, index) => {
+                    const total = customer.totalAppointments || 0;
+                    const completionRate = total
+                      ? Math.round(((customer.completed || 0) / total) * 100)
+                      : 0;
+
+                    return (
+                      <tr key={customer.customerId || index}>
+                        <td>{index + 1}</td>
+                        <td>{customer.fullName || "—"}</td>
+                        <td>{customer.email || "—"}</td>
+                        <td>
+                          <strong>{total}</strong>
+                        </td>
+                        <td>{customer.completed ?? 0}</td>
+                        <td>{completionRate}%</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="cell-empty">
+                      Chưa có dữ liệu khách hàng tiềm năng.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 12,
+            }}
+          >
+            <button
+              className="btn btn-secondary"
+              onClick={onViewCustomerDetails}
+            >
+              Xem chi tiết khách hàng
+            </button>
           </div>
         </>
       )}
@@ -923,6 +998,247 @@ function DoctorsStatsTab() {
   );
 }
 
+// ─── Customers Stats Tab ──────────────────────────────────────────────────────
+function CustomersStatsTab() {
+  const [result, setResult] = useState({ data: [], metadata: {} });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState({ from: "", to: "" });
+  const limit = 10;
+  const customersCanvasRef = useRef(null);
+  const customersChartRef = useRef(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await statisticsService.getCustomers({
+        from: filter.from || undefined,
+        to: filter.to || undefined,
+        page,
+        limit,
+      });
+      setResult({
+        data: res.data?.data || [],
+        metadata: res.data?.metadata || {},
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Lỗi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [filter, page]);
+
+  const handleFilter = (key, val) => {
+    setPage(1);
+    setFilter((f) => ({ ...f, [key]: val }));
+  };
+
+  const { data: customers, metadata } = result;
+
+  const totals = customers.reduce(
+    (acc, c) => {
+      acc.totalAppointments += c.totalAppointments || 0;
+      acc.completed += c.completed || 0;
+      acc.confirmed += c.confirmed || 0;
+      return acc;
+    },
+    { totalAppointments: 0, completed: 0, confirmed: 0 },
+  );
+
+  useEffect(() => {
+    if (!customersCanvasRef.current || !customers.length) {
+      if (customersChartRef.current) {
+        customersChartRef.current.destroy();
+        customersChartRef.current = null;
+      }
+      return;
+    }
+
+    if (customersChartRef.current) {
+      customersChartRef.current.destroy();
+    }
+
+    customersChartRef.current = new Chart(customersCanvasRef.current, {
+      type: "bar",
+      data: {
+        labels: customers.map((c) => c.fullName || "Không rõ"),
+        datasets: [
+          {
+            label: "Tổng cuộc hẹn",
+            data: customers.map((c) => c.totalAppointments || 0),
+            backgroundColor: "rgba(67,97,238,0.74)",
+            borderRadius: 5,
+          },
+          {
+            label: "Hoàn thành",
+            data: customers.map((c) => c.completed || 0),
+            backgroundColor: "rgba(52,152,219,0.74)",
+            borderRadius: 5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: "index", intersect: false },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: "#a09d97" },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "rgba(0,0,0,0.06)" },
+            ticks: { color: "#a09d97", precision: 0 },
+          },
+        },
+      },
+    });
+
+    return () => {
+      if (customersChartRef.current) {
+        customersChartRef.current.destroy();
+        customersChartRef.current = null;
+      }
+    };
+  }, [customers]);
+
+  return (
+    <div>
+      <DateFilter from={filter.from} to={filter.to} onChange={handleFilter} />
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <Alert type="error">{error}</Alert>
+      ) : (
+        <>
+          <div className="stat-grid">
+            <StatCard
+              label="Khách hàng trong trang"
+              value={customers.length}
+              color="#4361ee"
+            />
+            <StatCard
+              label="Tổng cuộc hẹn"
+              value={totals.totalAppointments}
+              color="#2ecc71"
+            />
+            <StatCard
+              label="Đã hoàn thành"
+              value={totals.completed}
+              color="#3498db"
+            />
+          </div>
+
+          {customers.length > 0 && (
+            <div className="chart-wrap">
+              <div className="chart-header">
+                <span className="chart-title">
+                  So sánh tổng quan theo khách hàng
+                </span>
+              </div>
+              <div className="chart-canvas-wrap">
+                <canvas ref={customersCanvasRef} />
+              </div>
+              <div className="chart-legend">
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-total" />
+                  Tông cuoc hen
+                </span>
+                <span className="chart-legend-item">
+                  <span className="chart-legend-dot chart-dot-completed" />
+                  Hoan thanh
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Khách hàng</th>
+                  <th>Email</th>
+                  <th>Điện thoại</th>
+                  <th>Tổng cuộc hẹn</th>
+                  <th>Đã xác nhận</th>
+                  <th>Hoàn thành</th>
+                  <th>Đã hủy</th>
+                  <th>Chờ thanh toán</th>
+                  <th>Tỉ lệ hoàn thành</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customers.length ? (
+                  customers.map((c, i) => {
+                    const total = c.totalAppointments || 0;
+                    const completionRate = total
+                      ? Math.round(((c.completed || 0) / total) * 100)
+                      : 0;
+                    return (
+                      <tr key={c.customerId}>
+                        <td>{(page - 1) * limit + i + 1}</td>
+                        <td>{c.fullName || "—"}</td>
+                        <td>{c.email || "—"}</td>
+                        <td>{c.phone || "—"}</td>
+                        <td>
+                          <strong>{total}</strong>
+                        </td>
+                        <td>{c.confirmed ?? 0}</td>
+                        <td>{c.completed ?? 0}</td>
+                        <td>{c.canceled ?? 0}</td>
+                        <td>{c.pendingPayment ?? 0}</td>
+                        <td>{completionRate}%</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={10} className="cell-empty">
+                      Không có dữ liệu.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {metadata?.totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="btn btn-secondary"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Trước
+              </button>
+              <span className="pagination-info">
+                Trang {metadata.currentPage || page}/{metadata.totalPages}
+              </span>
+              <button
+                className="btn btn-secondary"
+                disabled={page >= metadata.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sau
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Feedbacks Stats Tab ──────────────────────────────────────────────────────
 function FeedbackStatsTab() {
   const [data, setData] = useState(null);
@@ -1536,6 +1852,7 @@ const TABS = [
   { id: "revenue", label: "Doanh thu" },
   { id: "appointments", label: "Cuộc hẹn" },
   { id: "doctors", label: "Bác sĩ" },
+  { id: "customers", label: "Khách hàng" },
   { id: "feedbacks", label: "Đánh giá" },
   { id: "accounts", label: "Tài khoản" },
   { id: "account-manager", label: "QL tài khoản" },
@@ -1564,10 +1881,15 @@ export function AdminStatisticsPage() {
       </div>
 
       <div className="tab-content">
-        {activeTab === "overview" && <OverviewTab />}
+        {activeTab === "overview" && (
+          <OverviewTab
+            onViewCustomerDetails={() => setActiveTab("customers")}
+          />
+        )}
         {activeTab === "revenue" && <RevenueTab />}
         {activeTab === "appointments" && <AppointmentsStatsTab />}
         {activeTab === "doctors" && <DoctorsStatsTab />}
+        {activeTab === "customers" && <CustomersStatsTab />}
         {activeTab === "feedbacks" && <FeedbackStatsTab />}
         {activeTab === "accounts" && <AccountsStatsTab />}
         {activeTab === "account-manager" && <AccountManagerTab />}

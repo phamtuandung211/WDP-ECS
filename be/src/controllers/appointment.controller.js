@@ -7,6 +7,7 @@ import {
   approveBasicAppointment,
   getAppointmentByIdService,
   getAllAppointmentsForStaffService,
+  getMyApprovalHistoryService,
 } from "../services/appointment.service.js";
 import { APPOINTMENT_TYPE } from "../constants/Appointment.enum.js";
 import Customer from "../models/Customer.js";
@@ -136,6 +137,49 @@ export const getAppointmentByIdController = async (req, res) => {
   } catch (error) {
     return res.status(error.status || 500).json({
       message: error.message || "Failed to retrieve appointment",
+    });
+  }
+};
+
+export const getMyApprovalHistoryController = async (req, res) => {
+  try {
+    const accountId = req.user.accountId;
+    const saleStaff = await SaleStaff.findOne({ accountId });
+
+    if (!saleStaff) {
+      return res.status(404).json({ message: "Sale staff not found" });
+    }
+
+    const {
+      status,
+      fromDate,
+      toDate,
+      type,
+      doctorId,
+      customerSearch,
+      page,
+      limit,
+    } = req.query;
+
+    const result = await getMyApprovalHistoryService({
+      saleStaffId: saleStaff._id,
+      status,
+      fromDate,
+      toDate,
+      type,
+      doctorId,
+      customerSearch,
+      page: Number.parseInt(page, 10) || 1,
+      limit: Number.parseInt(limit, 10) || 10,
+    });
+
+    return res.status(200).json({
+      message: "Approval history retrieved successfully",
+      ...result,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      message: error.message || "Failed to get approval history",
     });
   }
 };

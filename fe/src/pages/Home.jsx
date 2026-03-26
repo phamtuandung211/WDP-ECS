@@ -277,7 +277,7 @@ export function Home() {
             [
               "02",
               "Thanh toán",
-              "Basic: thanh toán và chờ hệ thống sắp xếp lịch. Advanced: chọn lịch và xác nhận ngay.",
+              "Basic: thanh toán và chờ hệ thống sắp xếp lịch. \n Advanced: chọn lịch và xác nhận ngay.",
             ],
             [
               "03",

@@ -3,6 +3,7 @@ import {
   getRevenueStats,
   getAppointmentStats,
   getDoctorStats,
+  getCustomerStats,
   getFeedbackStats,
   getAccountStats,
 } from "../services/statistics.service.js";
@@ -60,7 +61,7 @@ export const getOverviewStatsController = async (req, res) => {
       totalDoctors: result.accounts?.doctors || 0,
       totalCustomers: result.accounts?.customers || 0,
       totalAccounts: result.accounts || 0,
-      medicalRecords: result.medicalRecords || 0, 
+      medicalRecords: result.medicalRecords || 0,
       feedbacks: result.feedbacks || 0,
     };
 
@@ -156,6 +157,36 @@ export const getDoctorStatsController = async (req, res) => {
   } catch (err) {
     return res.status(err.status || 500).json({
       message: err.message || "Failed to get doctor statistics",
+    });
+  }
+};
+
+export const getCustomerStatsController = async (req, res) => {
+  try {
+    let { from, to, page, limit, range } = req.query;
+
+    // If range is provided, convert it to from/to
+    if (range && !from && !to) {
+      const dateRange = getDateRangeFromRange(range);
+      from = dateRange.from;
+      to = dateRange.to;
+    }
+
+    const result = await getCustomerStats({
+      from,
+      to,
+      page: page ? Number.parseInt(page) : 1,
+      limit: limit ? Number.parseInt(limit) : 10,
+    });
+
+    return res.status(200).json({
+      message: "Customer statistics retrieved successfully",
+      data: result.data,
+      metadata: result.metadata,
+    });
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || "Failed to get customer statistics",
     });
   }
 };

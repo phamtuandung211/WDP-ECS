@@ -2,12 +2,13 @@ import express from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 import { ROLE_NAME } from "../constants/Role.enum.js";
 import {
-    getOverviewStatsController,
-    getRevenueStatsController,
-    getAppointmentStatsController,
-    getDoctorStatsController,
-    getFeedbackStatsController,
-    getAccountStatsController,
+  getOverviewStatsController,
+  getRevenueStatsController,
+  getAppointmentStatsController,
+  getDoctorStatsController,
+  getCustomerStatsController,
+  getFeedbackStatsController,
+  getAccountStatsController,
 } from "../controllers/statistics.controller.js";
 
 const router = express.Router();
@@ -21,6 +22,8 @@ router.get("/revenue", getRevenueStatsController);
 router.get("/appointments", getAppointmentStatsController);
 
 router.get("/doctors", getDoctorStatsController);
+
+router.get("/customers", getCustomerStatsController);
 
 router.get("/feedbacks", getFeedbackStatsController);
 

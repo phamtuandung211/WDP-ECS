@@ -14,6 +14,7 @@ export function BasicAppointmentForm({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Business hours: 7:30 AM - 5:30 PM
   const BUSINESS_HOURS_START_HOUR = 7;
@@ -82,6 +83,11 @@ export function BasicAppointmentForm({ onSuccess }) {
       return;
     }
 
+    if (!acceptedTerms) {
+      setError("Vui lòng đồng ý với điều khoản đặt lịch trước khi tiếp tục");
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -140,10 +146,11 @@ export function BasicAppointmentForm({ onSuccess }) {
 
   return (
     <div className="basic-appointment-form">
-      <h3>Book Basic Appointment</h3>
+      <h3>Đặt lịch cơ bản</h3>
       <p className="text-sm text-gray-600 mb-4">
-        Choose your preferred date. A doctor and time slot will be assigned by
-        our staff.
+        Chọn ngày bạn muốn khám, sau đó hoàn tất thanh toán. Nhân viên sẽ xem
+        xét và xác nhận lịch hẹn của bạn trong vòng 24 giờ. Bạn sẽ nhận được
+        thông báo
       </p>
 
       {error && <Alert type="error">{error}</Alert>}
@@ -155,7 +162,7 @@ export function BasicAppointmentForm({ onSuccess }) {
             htmlFor="desiredDate"
             className="block text-sm font-medium mb-1"
           >
-            Preferred Date <span className="text-red-500">*</span>
+            Ngày mong muốn <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -169,25 +176,25 @@ export function BasicAppointmentForm({ onSuccess }) {
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            Must book at least 1 day in advance {getBookingRules()}
+            Phải đặt lịch ít nhất 1 ngày trước {getBookingRules()}
           </p>
           <p className="text-xs text-amber-600 mt-1 font-medium">
             {isWithinBusinessHours
-              ? `✓ Currently within business hours (${BUSINESS_HOURS_START_HOUR}:${String(BUSINESS_HOURS_START_MINUTE).padStart(2, "0")} - ${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, "0")})`
-              : `⚠ Currently outside business hours. Earliest booking: ${new Date(minDate).toLocaleDateString("vi-VN")}`}
+              ? `✓ Hiện tại trong giờ làm việc (${BUSINESS_HOURS_START_HOUR}:${String(BUSINESS_HOURS_START_MINUTE).padStart(2, "0")} - ${BUSINESS_HOURS_END_HOUR}:${String(BUSINESS_HOURS_END_MINUTE).padStart(2, "0")})`
+              : `⚠ Hiện tại ngoài giờ làm việc. Thời gian đặt lịch sớm nhất có thể đặt: ${new Date(minDate).toLocaleDateString("vi-VN")}`}
           </p>
         </div>
 
         <div>
           <label htmlFor="note" className="block text-sm font-medium mb-1">
-            Notes (Optional)
+            Ghi chú thêm (tình trạng sức khỏe, yêu cầu đặc biệt, v.v.)
           </label>
           <textarea
             id="note"
             name="note"
             value={formData.note}
             onChange={handleChange}
-            placeholder="Any special requirements or health concerns?"
+            placeholder="Bạn có thể ghi chú các yêu cầu đặc biệt hoặc thông tin cần thiết cho bác sĩ... (tình trạng sức khỏe, yêu cầu đặc biệt, v.v.)"
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -195,33 +202,89 @@ export function BasicAppointmentForm({ onSuccess }) {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
           className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? "Creating..." : "Create Appointment"}
+          {loading ? "Creating..." : "Tạo lịch hẹn và thanh toán"}
         </button>
       </form>
 
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <h4 className="font-medium text-blue-900 mb-2">Booking Rules</h4>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+        <h4 className="font-medium text-blue-900 mb-3">Điều khoản đặt lịch</h4>
+
+        {/* Điều khoản đặt lịch */}
+        <p className="text-sm font-semibold text-blue-900 mb-1">
+          📌 Điều khoản đặt lịch
+        </p>
+        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside mb-3">
           <li>
-            <strong>During business hours (7:30 - 17:30):</strong> Book from
-            tomorrow onwards
+            <strong>Trong giờ hành chính (7:30 - 17:30):</strong> Được đặt lịch
+            từ ngày mai trở đi
           </li>
           <li>
-            <strong>After business hours:</strong> Book from day after tomorrow
-            onwards
+            <strong>Ngoài giờ hành chính:</strong> Được đặt lịch từ ngày kia trở
+            đi
           </li>
-          <li>Maximum booking window: 7 days in advance</li>
+          <li>Thời gian đặt lịch tối đa: trước 7 ngày</li>
           <li>
-            You'll be redirected to payment (must complete within 15 minutes)
-          </li>
-          <li>Our staff will review and assign a doctor and time slot</li>
-          <li>
-            You'll receive a notification once your appointment is confirmed
+            <strong>Lưu ý (gói cơ bản):</strong> Sau khi thanh toán, lịch hẹn
+            chỉ được sắp xếp trong ngày (không chọn trước giờ cụ thể)
           </li>
         </ul>
+
+        {/* Quy trình xử lý */}
+        <p className="text-sm font-semibold text-blue-900 mb-1">
+          🔄 Quy trình xử lý
+        </p>
+        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside mb-3">
+          <li>
+            Bạn sẽ được chuyển đến trang thanh toán (cần hoàn tất trong 15 phút)
+          </li>
+          <li>
+            Nhân viên của chúng tôi sẽ xem xét và phân công bác sĩ cùng thời
+            gian phù hợp
+          </li>
+          <li>Bạn sẽ nhận được thông báo khi lịch hẹn được xác nhận</li>
+        </ul>
+
+        {/* Chính sách & lưu ý */}
+        <p className="text-sm font-semibold text-blue-900 mb-1">
+          ⚠️ Chính sách & lưu ý
+        </p>
+        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+          <li>
+            Nếu không hoàn tất thanh toán trong 15 phút, lịch đặt sẽ tự động bị
+            hủy
+          </li>
+          <li>
+            Sau khi thanh toán, nếu muốn hủy lịch, vui lòng liên hệ hotline để
+            được hỗ trợ
+          </li>
+          <li>
+            Phí đã thanh toán có thể không được hoàn lại tùy theo thời điểm hủy
+          </li>
+          <li>
+            Vui lòng đến đúng giờ, nếu đến trễ có thể phải chờ hoặc dời lịch
+          </li>
+        </ul>
+
+        <label className="mt-4 flex items-start gap-2 text-sm text-blue-900">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => {
+              setAcceptedTerms(e.target.checked);
+              if (e.target.checked) {
+                setError(null);
+              }
+            }}
+            className="mt-0.5"
+          />
+          <span>
+            Tôi đã đọc và đồng ý với{" "}
+            <strong>các điều khoản và chính sách đặt lịch</strong>.
+          </span>
+        </label>
       </div>
     </div>
   );

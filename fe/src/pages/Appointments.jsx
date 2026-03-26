@@ -9,22 +9,29 @@ import { AppointmentPaymentCountdown } from "../components/appointment/Appointme
 import {
   APPOINTMENT_STATUS,
   APPOINTMENT_TYPE,
+  BUSINESS_HOURS_END_HOUR,
+  BUSINESS_HOURS_END_MINUTE,
+  BUSINESS_HOURS_START_HOUR,
+  BUSINESS_HOURS_START_MINUTE,
+  SLOT_STEP_MINUTES,
   STATUS_LABELS,
 } from "../constants/appointment";
 import { useAppointmentNotificationRefresh } from "../context/AppointmentNotificationContext";
 
-const HOUR_START = 7;
-const HOUR_END = 18;
-const STEP_MIN = 30;
-
 function buildSlots() {
   const slots = [];
-  for (let h = HOUR_START; h < HOUR_END; h += 1) {
-    for (let m = 0; m < 60; m += STEP_MIN) {
-      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    }
+  const startTotal =
+    BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
+  const endTotal = BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
+
+  for (let t = startTotal; t < endTotal; t += SLOT_STEP_MINUTES) {
+    const hour = Math.floor(t / 60);
+    const minute = t % 60;
+    slots.push(
+      `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+    );
   }
-  slots.push(`${String(HOUR_END).padStart(2, "0")}:00`);
+
   return slots;
 }
 
@@ -421,7 +428,7 @@ export function Appointments() {
               : "text-gray-600 hover:text-blue-600"
           }`}
         >
-          My Appointments
+          Lịch của tôi
         </button>
         <button
           onClick={() => setActiveTab("basic")}
@@ -431,7 +438,7 @@ export function Appointments() {
               : "text-gray-600 hover:text-blue-600"
           }`}
         >
-          Book Basic
+          Đặt lịch cơ bản
         </button>
         <button
           onClick={() => setActiveTab("advanced")}
@@ -441,7 +448,7 @@ export function Appointments() {
               : "text-gray-600 hover:text-blue-600"
           }`}
         >
-          Book Advanced
+          Đặt lịch nâng cao
         </button>
       </div>
 
@@ -455,7 +462,7 @@ export function Appointments() {
                 htmlFor="appointment-status-filter"
                 className="block text-sm font-medium mb-1"
               >
-                Filter by Status
+                Lọc theo trạng thái
               </label>
               <select
                 id="appointment-status-filter"
@@ -553,7 +560,7 @@ export function Appointments() {
                     );
                   })}
 
-                  {SLOTS.slice(0, -1).map((slotTime) => (
+                  {SLOTS.map((slotTime) => (
                     <React.Fragment key={slotTime}>
                       <div className="apt-calendar__time-label">{slotTime}</div>
                       {weekDates.map((day) => {
@@ -624,7 +631,7 @@ export function Appointments() {
                   ) && (
                     <>
                       <div className="apt-calendar__no-time-label">
-                        Chưa có giờ
+                        Chưa được xếp giờ
                       </div>
                       {weekDates.map((day) => {
                         const dayKey = toDateKey(day);
@@ -673,10 +680,6 @@ export function Appointments() {
 
               <div className="apt-calendar__legend">
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-confirmed" />{" "}
-                  Confirmed
-                </div>
-                <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-waiting-pay" />{" "}
                   Waiting for Payment
                 </div>
@@ -685,8 +688,8 @@ export function Appointments() {
                   Waiting for Assignment
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-canceled" />{" "}
-                  Cancel
+                  <span className="apt-calendar__legend-dot is-confirmed" />{" "}
+                  Confirmed
                 </div>
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-pending-review" />{" "}
@@ -695,6 +698,10 @@ export function Appointments() {
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-completed" />{" "}
                   Completed - Đã đánh giá
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-canceled" />{" "}
+                  Cancelled
                 </div>
               </div>
 

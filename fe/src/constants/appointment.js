@@ -18,6 +18,11 @@ export const APPOINTMENT_PRICE = {
 
 export const PAYMENT_TIMEOUT_MINUTES = 15;
 export const MAX_BOOKING_ADVANCE_DAYS = 7;
+export const BUSINESS_HOURS_START_HOUR = 7;
+export const BUSINESS_HOURS_START_MINUTE = 30;
+export const BUSINESS_HOURS_END_HOUR = 17;
+export const BUSINESS_HOURS_END_MINUTE = 30;
+export const SLOT_STEP_MINUTES = 30;
 
 // Status display names
 export const STATUS_LABELS = {

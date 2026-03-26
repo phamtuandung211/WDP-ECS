@@ -381,7 +381,14 @@ export const getAllAppointmentsForStaffService = async ({
 
   const [appointments, totalItems] = await Promise.all([
     Appointment.find(query)
-      .populate("customerId", "fullName phone email")
+      .populate({
+        path: "customerId",
+        select: "fullName phone accountId",
+        populate: {
+          path: "accountId",
+          select: "email",
+        },
+      })
       .populate("doctorId", "fullName specializations")
       .populate("slotId")
       .populate("approvedBy", "fullName email")
@@ -397,6 +404,91 @@ export const getAllAppointmentsForStaffService = async ({
     data: appointments,
     metadata: getPaginationMetadata(
       appointments.length,
+      totalItems,
+      safeLimit,
+      offset,
+    ),
+  };
+};
+
+export const getMyApprovalHistoryService = async ({
+  saleStaffId,
+  status,
+  fromDate,
+  toDate,
+  type,
+  doctorId,
+  customerSearch,
+  page = 1,
+  limit = 10,
+}) => {
+  const query = {
+    approvedBy: saleStaffId,
+  };
+
+  if (status) query.status = status;
+  if (type) query.type = type;
+  if (doctorId) query.doctorId = doctorId;
+
+  // Filter by approvedAt date range
+  if (fromDate || toDate) {
+    query.approvedAt = {};
+    if (fromDate) {
+      const from = new Date(fromDate);
+      from.setHours(0, 0, 0, 0);
+      query.approvedAt.$gte = from;
+    }
+    if (toDate) {
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999);
+      query.approvedAt.$lte = to;
+    }
+  }
+
+  const { limit: safeLimit, offset } = buildPagination({
+    page,
+    limit,
+  });
+
+  // For customer search, fetch all then filter by name/email
+  let appointments = await Appointment.find(query)
+    .populate({
+      path: "customerId",
+      select: "fullName phone accountId",
+      populate: {
+        path: "accountId",
+        select: "email",
+      },
+    })
+    .populate("doctorId", "fullName specializations")
+    .populate("slotId")
+    .populate("approvedBy", "fullName email")
+    .sort({ approvedAt: -1 })
+    .lean();
+
+  let totalItems = appointments.length;
+
+  // Filter by customer name or email if provided
+  if (customerSearch) {
+    const searchTerm = customerSearch.toLowerCase();
+    appointments = appointments.filter((apt) => {
+      const customerName = apt.customerId?.fullName?.toLowerCase() || "";
+      const customerEmail =
+        apt.customerId?.accountId?.email?.toLowerCase() || "";
+      return (
+        customerName.includes(searchTerm) || customerEmail.includes(searchTerm)
+      );
+    });
+    totalItems = appointments.length;
+  }
+
+  // Apply pagination after filtering
+  const paginatedAppts = appointments.slice(offset, offset + safeLimit);
+
+  return {
+    data: paginatedAppts,
+    metadata: getPaginationMetadata(
+      paginatedAppts.length,
       totalItems,
       safeLimit,
       offset,
@@ -474,7 +566,14 @@ export const getAppointmentByIdService = async ({
     const appointment = await Appointment.findById(appointmentId)
       .populate("slotId")
       .populate("doctorId", "fullName specializations")
-      .populate("customerId", "fullName phone email")
+      .populate({
+        path: "customerId",
+        select: "fullName phone accountId",
+        populate: {
+          path: "accountId",
+          select: "email",
+        },
+      })
       .populate("approvedBy", "fullName")
       .lean();
 
