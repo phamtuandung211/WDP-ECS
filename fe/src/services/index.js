@@ -197,6 +197,8 @@ export const statisticsService = {
   getAppointments: (params = {}) =>
     apiClient.get("/statistics/appointments", { params }),
   getDoctors: (params = {}) => apiClient.get("/statistics/doctors", { params }),
+  getCustomers: (params = {}) =>
+    apiClient.get("/statistics/customers", { params }),
   getFeedbacks: (params = {}) =>
     apiClient.get("/statistics/feedbacks", { params }),
   getAccounts: (params = {}) =>
