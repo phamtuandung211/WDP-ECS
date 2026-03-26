@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { appointmentService, slotService, doctorService } from "../../services";
 import { APPOINTMENT_TYPE } from "../../constants/appointment";
@@ -20,41 +21,14 @@ export function AdvancedAppointmentForm({ onSuccess }) {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Business hours: 7:30 AM - 5:30 PM
-  const BUSINESS_HOURS_START_HOUR = 7;
-  const BUSINESS_HOURS_START_MINUTE = 30;
-  const BUSINESS_HOURS_END_HOUR = 17;
-  const BUSINESS_HOURS_END_MINUTE = 30;
+  const ADVANCED_BOOKING_CUTOFF_MINUTES = 60;
 
-  // Calculate min and max dates
+  // Advanced appointments can be booked on the same day.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-
-  // Convert to minutes for comparison
-  const currentTimeInMinutes = currentHour * 60 + currentMinute;
-  const businessStartInMinutes =
-    BUSINESS_HOURS_START_HOUR * 60 + BUSINESS_HOURS_START_MINUTE;
-  const businessEndInMinutes =
-    BUSINESS_HOURS_END_HOUR * 60 + BUSINESS_HOURS_END_MINUTE;
-
-  const isWithinBusinessHours =
-    currentTimeInMinutes >= businessStartInMinutes &&
-    currentTimeInMinutes < businessEndInMinutes;
-
-  // Determine minimum booking date
-  let minDate = new Date(today);
-  if (isWithinBusinessHours) {
-    // During business hours: can book from tomorrow
-    minDate.setDate(minDate.getDate() + 1);
-  } else {
-    // After business hours: can only book from day after tomorrow
-    minDate.setDate(minDate.getDate() + 2);
-  }
+  const minDate = new Date(today);
 
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7);
@@ -70,6 +44,14 @@ export function AdvancedAppointmentForm({ onSuccess }) {
   const minDateString = formatDateString(minDate);
   const maxDateString = formatDateString(maxDate);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   // Load doctors on component mount
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -80,7 +62,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         });
         setDoctors(response.data?.data || response.data || []);
       } catch (err) {
-        setError("Failed to load doctors");
+        setError("Không thể tải danh sách bác sĩ");
         console.error(err);
       } finally {
         setLoading(false);
@@ -107,7 +89,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         });
         setSlots(response.data?.data || response.data || []);
       } catch (err) {
-        setError("Failed to load available slots");
+        setError("Không thể tải các khung giờ trống");
         console.error(err);
         setSlots([]);
       } finally {
@@ -134,7 +116,14 @@ export function AdvancedAppointmentForm({ onSuccess }) {
     setSuccess(null);
 
     if (!formData.doctorId || !formData.slotId) {
-      setError("Please select both doctor and time slot");
+      setError("Vui lòng chọn cả bác sĩ và khung giờ");
+      return;
+    }
+
+    if (!selectedSlot || isSlotDisabledForSelection(selectedSlot)) {
+      setError(
+        "Khung giờ đã chọn không còn hợp lệ. Vui lòng chọn lại khung giờ khác.",
+      );
       return;
     }
 
@@ -150,7 +139,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
       const response = await appointmentService.create(payload);
       const appointment = response.data?.data || response.data;
 
-      setSuccess("Appointment created! Redirecting to payment...");
+      setSuccess("Đặt lịch thành công! Đang chuyển đến trang thanh toán...");
 
       if (onSuccess) {
         onSuccess(appointment);
@@ -161,8 +150,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         navigate(`/payment?appointmentId=${appointment._id}`);
       }, 1000);
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Failed to create appointment";
+      const message = err.response?.data?.message || "Không thể tạo lịch hẹn";
       setError(message);
       setLoading(false);
     }
@@ -183,11 +171,123 @@ export function AdvancedAppointmentForm({ onSuccess }) {
       .padStart(2, "0")}`;
   };
 
-  const getSlotAvailability = (slot) => {
-    const remaining = slot.maxPatients - slot.bookedCount;
-    if (remaining <= 0) return "FULL";
-    return `${remaining} spots available`;
+  const isSlotBeforeCutoff = (slot) => {
+    const slotStartTime = new Date(slot.startTime);
+    const cutoffTime = new Date(
+      currentTime.getTime() + ADVANCED_BOOKING_CUTOFF_MINUTES * 60 * 1000,
+    );
+
+    return slotStartTime < cutoffTime;
   };
+
+  const isSlotDisabledForSelection = (slot) => {
+    const remaining = slot.maxPatients - slot.bookedCount;
+    const isFull = remaining <= 0;
+    const isDisabledForAdvanced = slot.bookedCount >= 1;
+    const isDisabledByCutoff = isSlotBeforeCutoff(slot);
+
+    return isFull || isDisabledForAdvanced || isDisabledByCutoff;
+  };
+
+  const hasSelectableSlots = slots.some(
+    (slot) => !isSlotDisabledForSelection(slot),
+  );
+
+  const getSlotMeta = (slot) => {
+    const remaining = slot.maxPatients - slot.bookedCount;
+    const isFull = remaining <= 0;
+    const isDisabledForAdvanced = slot.bookedCount >= 1;
+    const isDisabledByCutoff = isSlotBeforeCutoff(slot);
+    const isDisabled = isFull || isDisabledForAdvanced || isDisabledByCutoff;
+
+    let statusClass = "text-green-600";
+    // Show remaining slots or specific reason if disabled
+    let statusText = `Còn ${remaining} chỗ`;
+
+    if (isFull) {
+      statusClass = "text-red-500";
+      statusText = "Đã đầy";
+    } else if (isDisabledForAdvanced) {
+      statusClass = "text-amber-600";
+      statusText = `Còn ${remaining} chỗ (không khả dụng cho gói nâng cao)`;
+    } else if (isDisabledByCutoff) {
+      statusClass = "text-amber-600";
+      statusText = "Không khả dụng: còn dưới 60 phút so với hiện tại";
+    }
+
+    let containerClass = "border-gray-300 hover:border-blue-400";
+    if (formData.slotId === slot._id) {
+      containerClass = "border-blue-500 bg-blue-50";
+    } else if (isDisabled) {
+      containerClass =
+        "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed";
+    }
+
+    return {
+      isDisabled,
+      statusClass,
+      statusText,
+      containerClass,
+    };
+  };
+
+  let slotSelectionContent = null;
+  if (slotsLoading) {
+    slotSelectionContent = (
+      <p className="text-sm text-gray-500">Đang tải các khung giờ có sẵn...</p>
+    );
+  } else if (slots.length === 0) {
+    slotSelectionContent = (
+      <Alert type="warning">
+        Không có khung giờ cho ngày{" "}
+        {selectedDoctor?.fullName || selectedDoctor?.name} vào ngày{" "}
+        {new Date(formData.date).toLocaleDateString()}
+      </Alert>
+    );
+  } else {
+    slotSelectionContent = (
+      <>
+        {!hasSelectableSlots && (
+          <Alert type="warning">
+            Không còn khung giờ hợp lệ trong ngày này. Vui lòng chọn ngày khác
+            hoặc khung giờ cách hiện tại ít nhất 60 phút.
+          </Alert>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {slots.map((slot) => {
+            const { isDisabled, statusClass, statusText, containerClass } =
+              getSlotMeta(slot);
+
+            return (
+              <label
+                key={slot._id}
+                className={`flex items-center p-3 border rounded-md cursor-pointer transition ${containerClass}`}
+              >
+                <span className="sr-only">
+                  Chọn khung giờ {formatSlotTime(slot)}
+                </span>
+                <input
+                  type="radio"
+                  name="slotId"
+                  value={slot._id}
+                  checked={formData.slotId === slot._id}
+                  onChange={handleChange}
+                  disabled={isDisabled}
+                  className="mr-3"
+                />
+                <div>
+                  <div className="font-medium text-sm">
+                    {formatSlotTime(slot)}
+                  </div>
+                  <div className={`text-xs ${statusClass}`}>{statusText}</div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
 
   if (loading && doctors.length === 0) return <Loading />;
 
@@ -221,7 +321,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
             {doctors.map((doctor) => (
               <option key={doctor._id} value={doctor._id}>
                 {doctor.fullName || doctor.name} (
-                {doctor.specializations?.length || 0} specializations)
+                {doctor.specializations?.length || 0} chuyên khoa)
               </option>
             ))}
           </select>
@@ -257,70 +357,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
             <label htmlFor="slotId" className="block text-sm font-medium mb-2">
               Chọn khung giờ <span className="text-red-500">*</span>
             </label>
-            {slotsLoading ? (
-              <p className="text-sm text-gray-500">
-                Đang tải các khung giờ có sẵn...
-              </p>
-            ) : slots.length === 0 ? (
-              <Alert type="warning">
-                Không có khung giờ cho ngày{" "}
-                {selectedDoctor?.fullName || selectedDoctor?.name} on{" "}
-                {new Date(formData.date).toLocaleDateString()}
-              </Alert>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {slots.map((slot) => {
-                  const remaining = slot.maxPatients - slot.bookedCount;
-                  const isFull = remaining <= 0;
-                  // ADVANCED: Chỉ có thể book khi slot hoàn toàn trống (bookedCount = 0)
-                  const isDisabledForAdvanced = slot.bookedCount >= 1;
-                  const isDisabled = isFull || isDisabledForAdvanced;
-
-                  return (
-                    <label
-                      key={slot._id}
-                      className={`flex items-center p-3 border rounded-md cursor-pointer transition ${
-                        formData.slotId === slot._id
-                          ? "border-blue-500 bg-blue-50"
-                          : isDisabled
-                            ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                            : "border-gray-300 hover:border-blue-400"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="slotId"
-                        value={slot._id}
-                        checked={formData.slotId === slot._id}
-                        onChange={handleChange}
-                        disabled={isDisabled}
-                        className="mr-3"
-                      />
-                      <div>
-                        <div className="font-medium text-sm">
-                          {formatSlotTime(slot)}
-                        </div>
-                        <div
-                          className={`text-xs ${
-                            isFull
-                              ? "text-red-500"
-                              : isDisabledForAdvanced
-                                ? "text-amber-600"
-                                : "text-green-600"
-                          }`}
-                        >
-                          {isFull
-                            ? "FULL"
-                            : isDisabledForAdvanced
-                              ? `${remaining} spots (unavailable for Advanced)`
-                              : `${remaining} spots`}
-                        </div>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
+            {slotSelectionContent}
           </div>
         )}
 
@@ -371,9 +408,13 @@ export function AdvancedAppointmentForm({ onSuccess }) {
           disabled={loading || !formData.doctorId || !formData.slotId}
           className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? "Booking..." : "Đặt lịch ngay"}
+          {loading ? "Đang đặt lịch..." : "Đặt lịch ngay"}
         </button>
       </form>
     </div>
   );
 }
+
+AdvancedAppointmentForm.propTypes = {
+  onSuccess: PropTypes.func,
+};
