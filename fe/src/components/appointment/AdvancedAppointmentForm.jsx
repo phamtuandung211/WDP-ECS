@@ -193,9 +193,9 @@ export function AdvancedAppointmentForm({ onSuccess }) {
 
   return (
     <div className="advanced-appointment-form">
-      <h3>Book Advanced Appointment</h3>
+      <h3>Đặt lịch nâng cao</h3>
       <p className="text-sm text-gray-600 mb-4">
-        Choose your preferred doctor and available time slot directly.
+        chọn bác sĩ, ngày giờ cụ thể và nhận ưu tiên đặt lịch (nếu có)
       </p>
 
       {error && <Alert type="error">{error}</Alert>}
@@ -205,7 +205,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         {/* Doctor Selection */}
         <div>
           <label htmlFor="doctorId" className="block text-sm font-medium mb-2">
-            Select Doctor <span className="text-red-500">*</span>
+            Chọn bác sĩ <span className="text-red-500">*</span>
           </label>
           <select
             id="doctorId"
@@ -215,7 +215,9 @@ export function AdvancedAppointmentForm({ onSuccess }) {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
-            <option value="">-- Choose a doctor --</option>
+            <option value="" disabled hidden>
+              -- Vui lòng chọn bác sĩ --
+            </option>
             {doctors.map((doctor) => (
               <option key={doctor._id} value={doctor._id}>
                 {doctor.fullName || doctor.name} (
@@ -228,7 +230,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         {/* Date Selection */}
         <div>
           <label htmlFor="date" className="block text-sm font-medium mb-2">
-            Select Date <span className="text-red-500">*</span>
+            Chọn ngày <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -244,7 +246,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
           />
           {!formData.doctorId && (
             <p className="text-xs text-gray-500 mt-1">
-              Please select a doctor first
+              Vui lòng chọn bác sĩ trước khi chọn ngày
             </p>
           )}
         </div>
@@ -253,15 +255,15 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         {formData.date && (
           <div>
             <label htmlFor="slotId" className="block text-sm font-medium mb-2">
-              Select Time Slot <span className="text-red-500">*</span>
+              Chọn khung giờ <span className="text-red-500">*</span>
             </label>
             {slotsLoading ? (
               <p className="text-sm text-gray-500">
-                Loading available slots...
+                Đang tải các khung giờ có sẵn...
               </p>
             ) : slots.length === 0 ? (
               <Alert type="warning">
-                No available slots for{" "}
+                Không có khung giờ cho ngày{" "}
                 {selectedDoctor?.fullName || selectedDoctor?.name} on{" "}
                 {new Date(formData.date).toLocaleDateString()}
               </Alert>
@@ -325,14 +327,14 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         {/* Notes */}
         <div>
           <label htmlFor="note" className="block text-sm font-medium mb-1">
-            Notes (Optional)
+            Ghi chú thêm (tình trạng sức khỏe, yêu cầu đặc biệt, v.v.)
           </label>
           <textarea
             id="note"
             name="note"
             value={formData.note}
             onChange={handleChange}
-            placeholder="Any special requirements or health concerns?"
+            placeholder="Bạn có thể ghi chú các yêu cầu đặc biệt hoặc thông tin cần thiết cho bác sĩ..."
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -341,21 +343,24 @@ export function AdvancedAppointmentForm({ onSuccess }) {
         {/* Summary */}
         {selectedDoctor && selectedSlot && (
           <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-            <h4 className="font-medium text-green-900 mb-2">Booking Summary</h4>
+            <h4 className="font-medium text-green-900 mb-2">
+              Nội dung lịch hẹn
+            </h4>
             <ul className="text-sm text-green-800 space-y-1">
               <li>
-                <strong>Doctor:</strong>{" "}
+                <strong>Bác sĩ:</strong>{" "}
                 {selectedDoctor.fullName || selectedDoctor.name}
               </li>
               <li>
-                <strong>Date:</strong>{" "}
+                <strong>Ngày:</strong>{" "}
                 {new Date(formData.date).toLocaleDateString()}
               </li>
               <li>
-                <strong>Time:</strong> {formatSlotTime(selectedSlot)}
+                <strong>Khung giờ:</strong> {formatSlotTime(selectedSlot)}
               </li>
               <li>
-                <strong>Type:</strong> Advanced Appointment
+                <strong>Loại:</strong> Nâng cao (ưu tiên chọn chỗ sau khi thanh
+                toán)
               </li>
             </ul>
           </div>
@@ -366,7 +371,7 @@ export function AdvancedAppointmentForm({ onSuccess }) {
           disabled={loading || !formData.doctorId || !formData.slotId}
           className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? "Booking..." : "Book Appointment"}
+          {loading ? "Booking..." : "Đặt lịch ngay"}
         </button>
       </form>
     </div>

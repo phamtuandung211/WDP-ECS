@@ -428,7 +428,7 @@ export function Appointments() {
               : "text-gray-600 hover:text-blue-600"
           }`}
         >
-          My Appointments
+          Lịch của tôi
         </button>
         <button
           onClick={() => setActiveTab("basic")}
@@ -438,7 +438,7 @@ export function Appointments() {
               : "text-gray-600 hover:text-blue-600"
           }`}
         >
-          Book Basic
+          Đặt lịch cơ bản
         </button>
         <button
           onClick={() => setActiveTab("advanced")}
@@ -448,7 +448,7 @@ export function Appointments() {
               : "text-gray-600 hover:text-blue-600"
           }`}
         >
-          Book Advanced
+          Đặt lịch nâng cao
         </button>
       </div>
 
@@ -462,7 +462,7 @@ export function Appointments() {
                 htmlFor="appointment-status-filter"
                 className="block text-sm font-medium mb-1"
               >
-                Filter by Status
+                Lọc theo trạng thái
               </label>
               <select
                 id="appointment-status-filter"
