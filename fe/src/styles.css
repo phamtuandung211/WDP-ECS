@@ -7378,13 +7378,13 @@ button {
   --apt-color-canceled-bd: #991b1b;
   --apt-color-canceled-txt: #fff1f2;
 
-  --apt-color-completed: #d3d1c7;
-  --apt-color-completed-bd: #b4b2a9;
-  --apt-color-completed-txt: #444441;
+  --apt-color-completed: #166534;
+  --apt-color-completed-bd: #14532d;
+  --apt-color-completed-txt: #ecfdf5;
 
-  --apt-color-pending-review: #faeeda;
-  --apt-color-pending-review-bd: #fac775;
-  --apt-color-pending-review-txt: #633806;
+  --apt-color-pending-review: #dcfce7;
+  --apt-color-pending-review-bd: #86efac;
+  --apt-color-pending-review-txt: #166534;
 
   --apt-color-waiting-assign: #f4c0d1;
   --apt-color-waiting-assign-bd: #ed93b1;
@@ -7487,8 +7487,12 @@ button {
   padding: 4px 6px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   border-right: 1px solid #eee;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 
 .apt-calendar__no-time-cell {

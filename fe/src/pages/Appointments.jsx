@@ -631,7 +631,7 @@ export function Appointments() {
                   ) && (
                     <>
                       <div className="apt-calendar__no-time-label">
-                        Chưa có giờ
+                        Chưa được xếp giờ
                       </div>
                       {weekDates.map((day) => {
                         const dayKey = toDateKey(day);
@@ -680,10 +680,6 @@ export function Appointments() {
 
               <div className="apt-calendar__legend">
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-confirmed" />{" "}
-                  Confirmed
-                </div>
-                <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-waiting-pay" />{" "}
                   Waiting for Payment
                 </div>
@@ -692,8 +688,8 @@ export function Appointments() {
                   Waiting for Assignment
                 </div>
                 <div className="apt-calendar__legend-item">
-                  <span className="apt-calendar__legend-dot is-canceled" />{" "}
-                  Cancel
+                  <span className="apt-calendar__legend-dot is-confirmed" />{" "}
+                  Confirmed
                 </div>
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-pending-review" />{" "}
@@ -702,6 +698,10 @@ export function Appointments() {
                 <div className="apt-calendar__legend-item">
                   <span className="apt-calendar__legend-dot is-completed" />{" "}
                   Completed - Đã đánh giá
+                </div>
+                <div className="apt-calendar__legend-item">
+                  <span className="apt-calendar__legend-dot is-canceled" />{" "}
+                  Cancelled
                 </div>
               </div>
 
