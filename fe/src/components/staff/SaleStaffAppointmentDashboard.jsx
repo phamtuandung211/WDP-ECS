@@ -491,7 +491,9 @@ export function SaleStaffAppointmentDashboard() {
                   </div>
                   <div className="ssad-info-item">
                     <div className="ssad-info-label">Email</div>
-                    <span>{selectedAppointment.customerId?.email || "-"}</span>
+                    <span>
+                      {selectedAppointment.customerId?.accountId?.email || "-"}
+                    </span>
                   </div>
                   <div className="ssad-info-item">
                     <div className="ssad-info-label">Loại</div>
