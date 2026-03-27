@@ -73,6 +73,19 @@ function extractSpecializations(doctor) {
     .filter((item) => item.id || item.name);
 }
 
+function resolveDoctorAvatar(doctor, fallbackAvatar) {
+  const rawAvatar =
+    doctor?.accountId?.avatar || doctor?.avatar || doctor?.img || "";
+
+  if (typeof rawAvatar === "string" && rawAvatar.trim()) {
+    return rawAvatar.startsWith("http")
+      ? rawAvatar
+      : getUploadFullUrl(rawAvatar) || fallbackAvatar;
+  }
+
+  return fallbackAvatar;
+}
+
 const DoctorListPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [specializations, setSpecializations] = useState([]);
@@ -139,9 +152,7 @@ const DoctorListPage = () => {
         _dataDegree: dataDegree,
         _dataGender: gender,
         _dataExp: exp,
-        _avatar: doctor?.avatar?.startsWith("http")
-          ? doctor.avatar
-          : getUploadFullUrl(doctor?.avatar) || fallbackAvatar,
+        _avatar: resolveDoctorAvatar(doctor, fallbackAvatar),
       };
     });
   }, [doctors]);

@@ -1,5 +1,21 @@
 import { useNavigate } from "react-router-dom";
+import { getUploadFullUrl } from "../../services";
 
+const FALLBACK_AVATAR =
+    "https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg";
+
+const resolveDoctorAvatar = (doctor) => {
+    const rawAvatar =
+        doctor?.accountId?.avatar || doctor?.avatar || doctor?.img || "";
+
+    if (typeof rawAvatar === "string" && rawAvatar.trim()) {
+        return rawAvatar.startsWith("http")
+            ? rawAvatar
+            : getUploadFullUrl(rawAvatar) || FALLBACK_AVATAR;
+    }
+
+    return FALLBACK_AVATAR;
+};
 
 
 const DoctorCard = ({ doctor, onBookClick }) => {
@@ -15,7 +31,7 @@ const DoctorCard = ({ doctor, onBookClick }) => {
             {/* Avatar circle */}
             <div className="w-48 h-48 mx-auto rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                 <img
-                    src={doctor?.avatar || "https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg"}
+                    src={resolveDoctorAvatar(doctor)}
                     alt={doctor?.fullName || "Doctor avatar"}
                     className="w-full h-full object-cover"
                 />

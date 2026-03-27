@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doctorService } from "../services/index.js";
+import { doctorService, getUploadFullUrl } from "../services/index.js";
 import DoctorCard from "../components/doctor/DoctorCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { ROLE_NAME } from "../constants/role";
@@ -14,6 +14,24 @@ const DoctorDetailPage = () => {
   const [relatedDoctors, setRelatedDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const resolveDoctorAvatar = (currentDoctor) => {
+    const fallbackAvatar =
+      "https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg";
+    const rawAvatar =
+      currentDoctor?.accountId?.avatar ||
+      currentDoctor?.avatar ||
+      currentDoctor?.img ||
+      "";
+
+    if (typeof rawAvatar === "string" && rawAvatar.trim()) {
+      return rawAvatar.startsWith("http")
+        ? rawAvatar
+        : getUploadFullUrl(rawAvatar) || fallbackAvatar;
+    }
+
+    return fallbackAvatar;
+  };
 
   useEffect(() => {
     fetchDoctor();
@@ -89,7 +107,7 @@ const DoctorDetailPage = () => {
           <div className="flex-shrink-0">
             <div className="w-56 h-56 rounded-full overflow-hidden shadow-lg">
               <img
-                src="https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg"
+                src={resolveDoctorAvatar(doctor)}
                 alt={doctor?.fullName}
                 className="w-full h-full object-cover"
               />
