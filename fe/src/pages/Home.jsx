@@ -114,6 +114,21 @@ export function Home() {
     return "Khác";
   };
 
+  const resolveDoctorAvatar = (doctor) => {
+    const fallbackAvatar =
+      "https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg";
+    const rawAvatar =
+      doctor?.accountId?.avatar || doctor?.avatar || doctor?.img || "";
+
+    if (typeof rawAvatar === "string" && rawAvatar.trim()) {
+      return rawAvatar.startsWith("http")
+        ? rawAvatar
+        : getUploadFullUrl(rawAvatar) || fallbackAvatar;
+    }
+
+    return fallbackAvatar;
+  };
+
   if (
     loading &&
     services.length === 0 &&
@@ -328,10 +343,7 @@ export function Home() {
                 >
                   <div className="vc-doctor-cover">
                     <img
-                      src={
-                        doctor.avatar ||
-                        "https://www.shutterstock.com/image-photo/healthcare-medical-staff-concept-portrait-600nw-2281024823.jpg"
-                      }
+                      src={resolveDoctorAvatar(doctor)}
                       alt={doctor.fullName || "Bác sĩ"}
                     />
                     <span>{specializations[0] || "Nhãn khoa tổng quát"}</span>
