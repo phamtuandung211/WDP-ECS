@@ -1,226 +1,197 @@
-# WDP-ECS - Eye Clinic Appointment Management System
+# WDP-ECS
 
-**Syllabus ID:** 12037 | **Code:** WDP301 | **Credits:** 3 | **Level:** Bachelor
+Eye Clinic Appointment Management System built with React, Express, and MongoDB.
 
-Modern full-stack web application for managing eye clinic appointments with React, Node.js, Express, and MongoDB.
+## Overview
 
-## Project Overview
+WDP-ECS is a full-stack clinic platform for booking and managing eye-care appointments.
 
-WDP-ECS (Web Development Project - Eye Clinic System) is a comprehensive appointment management platform for eye clinics. Built with modern web technologies, it supports multiple user roles (admin, doctor, staff, customer, support) with features for appointment booking, medical records, service management, and payments.
+Main capabilities:
+
+- Authentication and role-based access control
+- Basic and advanced appointment booking flows
+- Slot management and staff assignment
+- Payment integration
+- Medical records and feedback management
+- Blog/service administration
+- Real-time chat (Socket.IO)
 
 ## Tech Stack
 
 ### Backend
 
-- **Runtime:** Node.js (ES Modules)
-- **Framework:** Express.js
-- **Database:** MongoDB (Online: Atlas / Local)
-- **Auth:** JWT (JSON Web Tokens)
-- **Validation:** Validator.js, bcryptjs
+- Node.js (ES Modules)
+- Express.js
+- MongoDB + Mongoose
+- JWT, bcryptjs, validator
+- Socket.IO, node-cron
 
 ### Frontend
 
-- **Framework:** React 18
-- **Build:** Vite
-- **Routing:** React Router v6
-- **HTTP Client:** Axios
-- **Styling:** CSS3
+- React 18
+- Vite
+- React Router v6
+- Axios
+- TailwindCSS + CSS
 
-## Project Structure
+## Repository Structure
 
-```
+```text
 WDP-ECS/
-├── be/                          # Backend API
-│   ├── src/
-│   │   ├── config/             # Database config
-│   │   ├── middleware/         # Auth, error handling
-│   │   ├── models/             # MongoDB schemas
-│   │   ├── routes/             # API endpoints
-│   │   ├── utils/              # Validators, helpers
-│   │   └── index.js            # Entry point
-│   ├── package.json
-│   ├── .env.example
-│   ├── .gitignore
-│   ├── README.md
-│   
-│
-├── fe/                          # Frontend App
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   ├── context/            # Auth context
-│   │   ├── pages/              # Page components
-│   │   ├── services/           # API clients
-│   │   ├── styles.css
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── .env.example
-│   ├── .gitignore
-│   └── README.md
-│
-├── .gitignore                  # Root gitignore
-├── .gitattributes              # Line endings
-└── README.md                   # This file
+|-- be/                     # Backend API
+|   |-- src/
+|   |   |-- config/
+|   |   |-- constants/
+|   |   |-- controllers/
+|   |   |-- cron/
+|   |   |-- middleware/
+|   |   |-- models/
+|   |   |-- routes/
+|   |   |-- services/
+|   |   |-- utils/
+|   |   `-- index.js
+|   `-- package.json
+|-- fe/                     # Frontend app
+|   |-- src/
+|   |   |-- components/
+|   |   |-- constants/
+|   |   |-- context/
+|   |   |-- hooks/
+|   |   |-- pages/
+|   |   `-- services/
+|   `-- package.json
+`-- README.md
 ```
+
+## Prerequisites
+
+- Node.js 16+
+- npm 8+
+- MongoDB (Atlas or local)
 
 ## Quick Start
 
-### Prerequisites
-
-- Node.js 16+
-- MongoDB (local or Atlas online)
-
-### Backend Setup
+### 1. Backend
 
 ```bash
 cd be
-cp .env.example .env
-# Update .env with MongoDB URI and JWT_SECRET
 npm install
-npm run dev
-```
-
-Server runs on `http://localhost:5000`
-
-See [be/README.md](be/README.md) and [be/MONGODB_SETUP.md](be/MONGODB_SETUP.md) for details.
-
-### Frontend Setup
-
-```bash
-cd fe
 cp .env.example .env
-# VITE_API_URL=http://localhost:5000/api
-npm install
-npm run dev
 ```
 
-App runs on `http://localhost:3000`
+If you are on Windows PowerShell, use:
 
-See [fe/README.md](fe/README.md) for details.
-
-## Key Features
-
-### User Roles
-
-- **Admin:** System management, approve staff
-- **Doctor:** View/update medical records, schedules
-- **Sales Staff:** Manage services, campaigns, discounts
-- **Customer:** Book appointments, view records
-- **Support:** Handle inquiries, manage reviews
-- **Guest:** Browse services, blog posts
-
-### Core Functions
-
-- Account management (registration, login, JWT auth)
-- Service package management
-- Appointment booking & scheduling
-- Medical record tracking
-- Payment processing
-- Feedback & reviews
-- Blog/content management
-- Admin dashboard & reports
-
-## API Endpoints
-
-| Method | Endpoint                | Description                 |
-| ------ | ----------------------- | --------------------------- |
-| POST   | `/api/auth/register`    | Register new user           |
-| POST   | `/api/auth/login`       | Login & get JWT token       |
-| GET    | `/api/services`         | List services               |
-| POST   | `/api/services`         | Create service (admin/sale) |
-| GET    | `/api/appointments`     | List user appointments      |
-| POST   | `/api/appointments`     | Create appointment          |
-| PUT    | `/api/appointments/:id` | Update appointment          |
-
-See [be/README.md](be/README.md) for complete API docs.
-
-## Environment Variables
-
-### Backend (.env)
-
+```powershell
+Copy-Item .env.example .env
 ```
+
+Update `.env` with your values:
+
+```env
 PORT=5000
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/wdp-ecs
 JWT_SECRET=your_secret_key
 NODE_ENV=development
 ```
 
-### Frontend (.env)
+Run backend:
 
+```bash
+npm run dev
 ```
+
+Backend URL:
+
+- API base: `http://localhost:5000/api`
+- Health check: `http://localhost:5000/`
+
+### 2. Frontend
+
+```bash
+cd fe
+npm install
+cp .env.example .env
+```
+
+If you are on Windows PowerShell, use:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Set frontend env:
+
+```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-## Team Requirements
-
-- **Team Size:** 3-5 members
-- **Git:** GitLab for version control
-- **Project Management:** OneDrive for documents
-- **Attendance:** Min 80% contact hours
-- **Deliverables:** Code + Project docs + Presentation
-
-## Development Guidelines
-
-- Use Git for collaboration
-- Follow conventional commits
-- Regular code reviews
-- Test endpoints before merging
-- Update documentation
-- Use `.env.example` for config template
-
-## Useful Commands
-
-**Backend:**
+Run frontend:
 
 ```bash
-npm install          # Install dependencies
-npm run dev          # Start dev server with auto-reload
+npm run dev
 ```
 
-**Frontend:**
+Frontend URL:
 
-```bash
-npm install          # Install dependencies
-npm run dev          # Start dev server
-npm run build        # Build for production
-npm run preview      # Preview production build
-```
+- App: `http://localhost:3000`
 
-## Database Models
+## Scripts
 
-- **User** — Authentication, profiles, roles
-- **Service** — Eye care services offered
-- **Appointment** — Booking, scheduling, status
-- **MedicalRecord** — Doctor notes, diagnosis, prescription
+### Backend (`be/package.json`)
 
-## Security Notes
+- `npm run dev`: start with nodemon
+- `npm start`: run production mode
 
-- Passwords hashed with bcryptjs
-- JWT tokens expire in 7 days
-- CORS enabled for cross-origin requests
-- Environment variables for sensitive data
-- Role-based access control (RBAC)
+### Frontend (`fe/package.json`)
 
-## Deployment
+- `npm run dev`: start Vite dev server (port 3000)
+- `npm run build`: build production bundle
+- `npm run preview`: preview build output
 
-- **Backend:** Node.js hosting (Heroku, Railway, Render)
-- **Frontend:** Static hosting (Vercel, Netlify, GitHub Pages)
-- **Database:** MongoDB Atlas (cloud)
+## Main API Groups
 
-## References
+The backend currently mounts these route groups:
 
-- [Express.js Docs](https://expressjs.com)
-- [React Docs](https://react.dev)
-- [MongoDB Docs](https://docs.mongodb.com)
-- [Vite Docs](https://vitejs.dev)
+- `/api/auth`
+- `/api/user`
+- `/api/roles`
+- `/api/manage-services`
+- `/api/services`
+- `/api/manage-blogs`
+- `/api/blogs`
+- `/api/appointments`
+- `/api/payments`
+- `/api/slots`
+- `/api/doctors`
+- `/api/specializations`
+- `/api/medical-records`
+- `/api/feedbacks`
+- `/api/statistics`
+- `/api/upload`
+- `/api/degrees`
+- `/api/certificates`
+- `/api/chat`
 
-## Contact & Support
+## User Roles
 
-For course information, see [FPT University WDP301](https://fpt.edu.vn)
+- Admin
+- Doctor
+- Sale Staff
+- Customer
+- Support
+
+## Notes
+
+- Keep secrets only in `.env` files (never commit real secrets).
+- Use `.env.example` as the template for team onboarding.
+- Follow conventional commits and open PRs with clear scope.
+
+## Related Docs
+
+- [be/README.md](be/README.md)
+- [fe/README.md](fe/README.md)
+- [be/MONGODB_SETUP.md](be/MONGODB_SETUP.md)
 
 ---
 
-**Last Updated:** January 27, 2026  
-**Status:** Development
+Last updated: 2026-03-27
