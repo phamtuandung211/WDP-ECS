@@ -1615,6 +1615,20 @@ function AccountManagerTab() {
   const [result, setResult] = useState({ data: [], metadata: {} });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
+  const [createFieldErrors, setCreateFieldErrors] = useState({
+    email: "",
+    fullName: "",
+    password: "",
+  });
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    email: "",
+    fullName: "",
+    password: "",
+    staffRole: "SALE_STAFF",
+  });
   const [updatingId, setUpdatingId] = useState("");
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -1656,6 +1670,100 @@ function AccountManagerTab() {
     setFilters(draft);
   };
 
+  const validateCreateForm = (form) => {
+    const email = form.email.trim();
+    const fullName = form.fullName.trim().replaceAll(/\s+/g, " ");
+    const password = form.password;
+    const fieldErrors = {
+      email: "",
+      fullName: "",
+      password: "",
+    };
+
+    if (!email) {
+      fieldErrors.email = "Email là bắt buộc.";
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      fieldErrors.email = "Email không đúng định dạng.";
+    }
+
+    if (!fullName) {
+      fieldErrors.fullName = "Họ tên là bắt buộc.";
+    } else if (fullName.length < 2) {
+      fieldErrors.fullName = "Họ tên phải có ít nhất 2 ký tự.";
+    }
+
+    if (!password) {
+      fieldErrors.password = "Mật khẩu là bắt buộc.";
+    } else if (password.length < 6) {
+      fieldErrors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
+    }
+
+    const hasError = Object.values(fieldErrors).some(Boolean);
+    return {
+      hasError,
+      fieldErrors,
+      normalized: {
+        email,
+        fullName,
+        password,
+        staffRole: form.staffRole,
+      },
+    };
+  };
+
+  const handleCreateFormChange = (key, value) => {
+    setCreateForm((prev) => ({ ...prev, [key]: value }));
+    setCreateFieldErrors((prev) => ({ ...prev, [key]: "" }));
+    if (createSuccess) setCreateSuccess("");
+  };
+
+  const createAccount = async (e) => {
+    e.preventDefault();
+    setCreateError("");
+    setCreateSuccess("");
+
+    const { hasError, fieldErrors, normalized } =
+      validateCreateForm(createForm);
+    setCreateFieldErrors(fieldErrors);
+
+    if (hasError) {
+      setCreateError("Vui lòng kiểm tra lại thông tin tài khoản mới.");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      await adminAccountService.createStaffAccount(normalized);
+      setCreateSuccess("Tạo tài khoản thành công.");
+      setCreateFieldErrors({ email: "", fullName: "", password: "" });
+      setCreateForm((prev) => ({
+        ...prev,
+        email: "",
+        fullName: "",
+        password: "",
+      }));
+
+      if (page === 1) {
+        load();
+      } else {
+        setPage(1);
+      }
+    } catch (err) {
+      const apiErrors = err.response?.data?.errors;
+      const firstFieldError =
+        apiErrors && typeof apiErrors === "object"
+          ? Object.values(apiErrors)[0]
+          : "";
+      setCreateError(
+        firstFieldError ||
+          err.response?.data?.message ||
+          "Không thể tạo tài khoản mới",
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const updateStatus = async (accountId, status) => {
     setUpdatingId(accountId);
     try {
@@ -1677,6 +1785,84 @@ function AccountManagerTab() {
 
   return (
     <div>
+      <form className="filter-bar stats-filter" onSubmit={createAccount}>
+        <label className="form-label" htmlFor="new-account-email">
+          Email mới
+        </label>
+        <input
+          id="new-account-email"
+          className="form-input"
+          type="email"
+          value={createForm.email}
+          placeholder="staff@example.com"
+          autoComplete="email"
+          required
+          onChange={(e) => handleCreateFormChange("email", e.target.value)}
+        />
+        {createFieldErrors.email && (
+          <span className="stat-sub" style={{ color: "#c0392b" }}>
+            {createFieldErrors.email}
+          </span>
+        )}
+        <label className="form-label" htmlFor="new-account-full-name">
+          Họ tên
+        </label>
+        <input
+          id="new-account-full-name"
+          className="form-input"
+          type="text"
+          value={createForm.fullName}
+          placeholder="Nguyễn Văn A"
+          autoComplete="name"
+          minLength={2}
+          required
+          onChange={(e) => handleCreateFormChange("fullName", e.target.value)}
+        />
+        {createFieldErrors.fullName && (
+          <span className="stat-sub" style={{ color: "#c0392b" }}>
+            {createFieldErrors.fullName}
+          </span>
+        )}
+        <label className="form-label" htmlFor="new-account-password">
+          Mật khẩu
+        </label>
+        <input
+          id="new-account-password"
+          className="form-input"
+          type="password"
+          value={createForm.password}
+          placeholder="Tối thiểu 6 ký tự"
+          autoComplete="new-password"
+          minLength={6}
+          required
+          onChange={(e) => handleCreateFormChange("password", e.target.value)}
+        />
+        {createFieldErrors.password && (
+          <span className="stat-sub" style={{ color: "#c0392b" }}>
+            {createFieldErrors.password}
+          </span>
+        )}
+        <label className="form-label" htmlFor="new-account-role">
+          Vai trò staff
+        </label>
+        <select
+          id="new-account-role"
+          className="form-input"
+          value={createForm.staffRole}
+          onChange={(e) => handleCreateFormChange("staffRole", e.target.value)}
+        >
+          <option value="SALE_STAFF">SALE_STAFF</option>
+          <option value="CUSTOMER_SUPPORT">CUSTOMER_SUPPORT</option>
+          <option value="DOCTOR">DOCTOR</option>
+        </select>
+        <button className="btn btn-primary" type="submit" disabled={creating}>
+          {creating ? "Đang tạo..." : "Thêm tài khoản"}
+        </button>
+      </form>
+
+      {createError && <Alert type="error">{createError}</Alert>}
+      {createSuccess && <Alert type="success">{createSuccess}</Alert>}
+
       <div className="filter-bar stats-filter">
         <label className="form-label" htmlFor="account-search-input">
           Tìm email

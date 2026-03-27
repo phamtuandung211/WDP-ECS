@@ -168,6 +168,8 @@ export const adminAccountService = {
     apiClient.get("/user/admin/accounts", { params }),
   updateStatus: (accountId, status) =>
     apiClient.patch(`/user/admin/accounts/${accountId}/status`, { status }),
+  createStaffAccount: (payload) =>
+    apiClient.post("/auth/register-staff", payload),
 };
 
 export const medicalRecordService = {
