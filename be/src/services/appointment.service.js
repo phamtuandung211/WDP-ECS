@@ -34,6 +34,11 @@ function throwErr(status, message) {
   throw err;
 }
 
+function isSlotExpired(slot) {
+  if (!slot?.endTime) return true;
+  return new Date(slot.endTime).getTime() <= Date.now();
+}
+
 function validateDesiredDate(desiredDate) {
   const now = new Date();
   const maxDate = new Date();
@@ -288,6 +293,10 @@ export const approveBasicAppointment = async (
 
     if (slot.doctorId.toString() !== doctorId.toString()) {
       throwErr(400, "Slot does not belong to this doctor");
+    }
+
+    if (isSlotExpired(slot)) {
+      throwErr(400, "Cannot approve appointment for an expired slot");
     }
 
     if (slot.isExclusive) {

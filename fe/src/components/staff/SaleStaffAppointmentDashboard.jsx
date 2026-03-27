@@ -174,6 +174,15 @@ export function SaleStaffAppointmentDashboard() {
       return;
     }
 
+    const selectedSlotForApproval = availableSlots.find(
+      (slot) => slot._id === assignmentData.slotId,
+    );
+
+    if (selectedSlotForApproval && isSlotExpired(selectedSlotForApproval)) {
+      alert("Slot đã quá giờ, vui lòng chọn slot khác");
+      return;
+    }
+
     try {
       setLoading(true);
       await appointmentService.approve(selectedAppointment._id, {
@@ -236,6 +245,11 @@ export function SaleStaffAppointmentDashboard() {
       .padStart(2, "0")}`;
   };
 
+  const isSlotExpired = (slot) => {
+    if (!slot?.endTime) return true;
+    return new Date(slot.endTime).getTime() <= Date.now();
+  };
+
   const renderSlotCards = (slots, label) => {
     if (slots.length === 0) return null;
     return (
@@ -247,11 +261,19 @@ export function SaleStaffAppointmentDashboard() {
             const isFull = remaining <= 0;
             const isSelected = assignmentData.slotId === slot._id;
             const isLow = !isFull && remaining === 1;
+            const isExpired = isSlotExpired(slot);
+            let slotStatusText = `${remaining} chỗ trống`;
+
+            if (isExpired) {
+              slotStatusText = "Đã quá giờ";
+            } else if (isFull) {
+              slotStatusText = "FULL";
+            }
 
             return (
               <label
                 key={slot._id}
-                className={`ssad-slot-card ${isSelected ? "selected" : ""} ${isLow ? "low" : ""} ${isFull ? "full" : ""}`}
+                className={`ssad-slot-card ${isSelected ? "selected" : ""} ${isLow ? "low" : ""} ${isFull ? "full" : ""} ${isExpired ? "full" : ""}`}
               >
                 <input
                   type="radio"
@@ -259,12 +281,10 @@ export function SaleStaffAppointmentDashboard() {
                   value={slot._id}
                   checked={isSelected}
                   onChange={handleAssignmentChange}
-                  disabled={isFull}
+                  disabled={isFull || isExpired}
                 />
                 <div className="ssad-slot-time">{formatSlotTime(slot)}</div>
-                <div className="ssad-slot-spots">
-                  {isFull ? "FULL" : `${remaining} chỗ trống`}
-                </div>
+                <div className="ssad-slot-spots">{slotStatusText}</div>
               </label>
             );
           })}

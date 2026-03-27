@@ -145,6 +145,7 @@ export const getAvailableSlots = async (params = {}) => {
   const { date, doctorId } = params;
 
   const query = { status: SLOT_STATUS.AVAILABLE };
+  query.endTime = { $gt: new Date() };
 
   if (date) {
     const dayStart = new Date(date);
